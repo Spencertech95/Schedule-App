@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      letter-spacing: 2px;
+      color: #e94560;
+    }
+
+    #status {
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      min-height: 1.8rem;
+      color: #a8dadc;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 110px);
+      grid-template-rows: repeat(3, 110px);
+      gap: 8px;
+    }
+
+    .cell {
+      background: #16213e;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      user-select: none;
+    }
+
+    .cell:hover:not(.taken) {
+      background: #0f3460;
+      transform: scale(1.05);
+    }
+
+    .cell.x { color: #e94560; }
+    .cell.o { color: #a8dadc; }
+
+    .cell.win {
+      background: #0f3460;
+      animation: pulse 0.5s ease;
+    }
+
+    @keyframes pulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+
+    #controls {
+      margin-top: 1.8rem;
+      display: flex;
+      gap: 1rem;
+    }
+
+    button {
+      padding: 0.6rem 1.6rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    button:hover { opacity: 0.85; }
+
+    #restart-btn {
+      background: #e94560;
+      color: #fff;
+    }
+
+    #mode-btn {
+      background: #0f3460;
+      color: #a8dadc;
+      border: 1px solid #a8dadc;
+    }
+
+    #scoreboard {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 2rem;
+      font-size: 1rem;
+      color: #aaa;
+    }
+
+    #scoreboard span { color: #eee; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+  <div id="status">X's turn</div>
+  <div id="board"></div>
+  <div id="controls">
+    <button id="restart-btn">Restart</button>
+    <button id="mode-btn">vs Computer</button>
+  </div>
+  <div id="scoreboard">
+    <div>X wins: <span id="score-x">0</span></div>
+    <div>Draws: <span id="score-d">0</span></div>
+    <div>O wins: <span id="score-o">0</span></div>
+  </div>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const modeBtn = document.getElementById('mode-btn');
+    const scoreX = document.getElementById('score-x');
+    const scoreO = document.getElementById('score-o');
+    const scoreD = document.getElementById('score-d');
+
+    const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+    let board, current, over, vsComputer, scores;
+
+    function init(keepScores = false) {
+      board = Array(9).fill('');
+      current = 'X';
+      over = false;
+      if (!keepScores) scores = { X: 0, O: 0, D: 0 };
+      render();
+      setStatus(`${current}'s turn`);
+    }
+
+    function render() {
+      boardEl.innerHTML = '';
+      board.forEach((val, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell' + (val ? ` ${val.toLowerCase()} taken` : '');
+        cell.textContent = val;
+        cell.addEventListener('click', () => move(i));
+        boardEl.appendChild(cell);
+      });
+    }
+
+    function setStatus(msg) { statusEl.textContent = msg; }
+
+    function move(i) {
+      if (over || board[i]) return;
+      board[i] = current;
+      render();
+
+      const win = checkWin(current);
+      if (win) {
+        highlight(win);
+        scores[current]++;
+        updateScore();
+        setStatus(`${current} wins!`);
+        over = true;
+        return;
+      }
+      if (board.every(c => c)) {
+        scores.D++;
+        updateScore();
+        setStatus("It's a draw!");
+        over = true;
+        return;
+      }
+
+      current = current === 'X' ? 'O' : 'X';
+      setStatus(`${current}'s turn`);
+
+      if (vsComputer && current === 'O' && !over) {
+        setTimeout(computerMove, 350);
+      }
+    }
+
+    function checkWin(player) {
+      return WINS.find(combo => combo.every(i => board[i] === player)) || null;
+    }
+
+    function highlight(combo) {
+      const cells = boardEl.querySelectorAll('.cell');
+      combo.forEach(i => cells[i].classList.add('win'));
+    }
+
+    function updateScore() {
+      scoreX.textContent = scores.X;
+      scoreO.textContent = scores.O;
+      scoreD.textContent = scores.D;
+    }
+
+    function computerMove() {
+      const best = minimax(board, 'O');
+      move(best.index);
+    }
+
+    function minimax(b, player) {
+      const opp = player === 'O' ? 'X' : 'O';
+      const win = WINS.find(c => c.every(i => b[i] === 'O'));
+      if (win) return { score: 10 };
+      const lose = WINS.find(c => c.every(i => b[i] === 'X'));
+      if (lose) return { score: -10 };
+      const empty = b.map((v, i) => v === '' ? i : -1).filter(i => i >= 0);
+      if (!empty.length) return { score: 0 };
+
+      const moves = empty.map(i => {
+        const nb = [...b];
+        nb[i] = player;
+        const result = minimax(nb, opp);
+        return { index: i, score: result.score };
+      });
+
+      if (player === 'O') {
+        return moves.reduce((a, m) => m.score > a.score ? m : a);
+      } else {
+        return moves.reduce((a, m) => m.score < a.score ? m : a);
+      }
+    }
+
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      init(true);
+    });
+
+    modeBtn.addEventListener('click', () => {
+      vsComputer = !vsComputer;
+      modeBtn.textContent = vsComputer ? 'vs Human' : 'vs Computer';
+      scores = { X: 0, O: 0, D: 0 };
+      updateScore();
+      init(true);
+    });
+
+    vsComputer = false;
+    init();
+  </script>
+</body>
+</html>
