@@ -754,6 +754,9 @@ textarea{resize:vertical;min-height:65px;}
     </button>
     <div style="font-size:10px;color:var(--text2);padding:4px 12px 0;" id="last-import-label"></div>
   </div>
+  <div style=padding:0 12px 1.2rem;>
+    <button onclick=if(confirm('Reset all data to defaults? This cannot be undone.')){{localStorage.removeItem('tec_scheduling_v1');location.reload();}} style=width:100%;padding:5px 0;font-size:10.5px;color:var(--text2);background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer; title=Clear saved data and reload defaults>Reset to defaults</button>
+  </div>
   </div><!-- /sidebar-nav -->
 </nav><!-- /sidebar -->
 
@@ -1315,6 +1318,27 @@ let state={
   rotationMode:'overview'
 };
 function uid(){return ++state.nextId;}
+// ── PERSISTENCE ─────────────────────────────────────────────────────────────
+const STORAGE_KEY='tec_scheduling_v1';
+const PERSIST_KEYS=['crew','offers','rotations','ships','positions','nextId','compliance'];
+
+function saveState(){
+  try{
+    const data={};
+    PERSIST_KEYS.forEach(k=>{data[k]=state[k];});
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+  }catch(e){console.warn('saveState failed:',e);}
+}
+
+(function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw)return;
+    const saved=JSON.parse(raw);
+    PERSIST_KEYS.forEach(k=>{if(saved[k]!==undefined)state[k]=saved[k];});
+  }catch(e){console.warn('loadState failed:',e);}
+})();
+// ────────────────────────────────────────────────────────────────────────────
 
 // ── NAVIGATION ──
 function showPage(name,el){
@@ -1395,9 +1419,9 @@ function saveShip(){
   const name=document.getElementById('ship-name').value.trim();if(!name)return;
   state.ships.push({id:uid(),name,shipClass:document.getElementById('ship-class').value,imo:document.getElementById('ship-imo').value.trim(),port:document.getElementById('ship-port').value.trim(),gt:document.getElementById('ship-gt').value.trim(),status:document.getElementById('ship-status').value,notes:document.getElementById('ship-notes').value.trim()});
   ['ship-name','ship-imo','ship-port','ship-gt','ship-notes'].forEach(id=>document.getElementById(id).value='');
-  toggleForm('ship-form');renderFleet();
+  toggleForm('ship-form');renderFleet();saveState();
 }
-function deleteShip(id){state.ships=state.ships.filter(s=>s.id!==id);renderFleet();}
+function deleteShip(id){state.ships=state.ships.filter(s=>s.id!==id);renderFleet();saveState();}
 
 // ── ROTATIONS ──
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1512,7 +1536,7 @@ function saveRotation(){
   if(!state.rotations[ship])state.rotations[ship]=[];
   state.rotations[ship].push(entry);
   ['rot-date','rot-port','rot-crew','rot-notes'].forEach(id=>document.getElementById(id).value='');
-  toggleForm('rotation-form');renderShipRotation(ship);
+  toggleForm('rotation-form');renderShipRotation(ship);saveState();
 }
 
 // ── CREW ──
@@ -1608,13 +1632,13 @@ function saveCrew(){
     notes:document.getElementById('crew-notes').value.trim()
   });
   ['crew-name','crew-nat','crew-airport','crew-email','crew-certs','crew-notes','crew-start','crew-end','crew-passport','crew-medical'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  toggleForm('crew-form');renderCrew();
+  toggleForm('crew-form');renderCrew();saveState();
 }
 function deleteCrew(id){
   const c=state.crew.find(x=>x.id===id);
   if(c&&!confirm(`Remove ${c.name} from the roster?`))return;
   state.crew=state.crew.filter(c=>c.id!==id);
-  renderCrew();
+  renderCrew();saveState();
 }
 
 // ── CREW PROFILE PANEL ───────────────────────────────────────────────────
@@ -2160,7 +2184,7 @@ function saveProfile(){
   renderProfilePanel();
   // Refresh roster table if open
   if(document.getElementById('page-crew').classList.contains('active')) renderCrew();
-  showToast(`${c.name} — profile saved`);
+  showToast(`${c.name} — profile saved`);saveState();
 }
 
 function deleteCrewFromProfile(){
@@ -2169,7 +2193,7 @@ function deleteCrewFromProfile(){
   state.crew=state.crew.filter(x=>x.id!==_profId);
   closeProfile();
   if(document.getElementById('page-crew').classList.contains('active')) renderCrew();
-  showToast(`${c.name} removed from roster`);
+  showToast(`${c.name} removed from roster`);saveState();
 }
 
 // ── POSITIONS ──
@@ -2272,7 +2296,7 @@ function savePositionEdit(id){
   p.certs=document.getElementById(`pos-edit-certs-${id}`).value.split(',').map(s=>s.trim()).filter(Boolean);
   p.desc=document.getElementById(`pos-edit-desc-${id}`).value.trim();
   renderPositions();
-  showToast(`Position "${p.title}" updated`);
+  showToast(`Position "${p.title}" updated`);saveState();
 }
 
 function savePosition(){
@@ -2290,14 +2314,14 @@ function savePosition(){
   ['pos-title','pos-abbr','pos-contract','pos-handover','pos-certs','pos-desc'].forEach(id=>document.getElementById(id).value='');
   toggleForm('pos-form');
   renderPositions();
-  showToast(`Position "${title}" added`);
+  showToast(`Position "${title}" added`);saveState();
 }
 
 function deletePosition(id){
   const p=state.positions.find(x=>x.id===id);
   if(p && !confirm(`Delete position "${p.title}"? This cannot be undone.`)) return;
   state.positions=state.positions.filter(p=>p.id!==id);
-  renderPositions();
+  renderPositions();saveState();
 }
 
 
@@ -3104,7 +3128,7 @@ function saveCoOffer(){
   closeCoModal();
   renderCoSummary();
   renderContracts();
-  showToast(`${type} created for ${crew?crew.name:'—'}`);
+  showToast(`${type} created for ${crew?crew.name:'—'}`);saveState()
 }
 
 function saveCoEdit(id){
@@ -3131,7 +3155,7 @@ function saveCoEdit(id){
   }
   renderCoDetailModal(o);
   renderCoSummary();
-  renderContracts();
+  renderContracts();saveState();
 }
 
 function advanceCoStage(id, stage){
@@ -3143,13 +3167,13 @@ function advanceCoStage(id, stage){
   o.history.push({date:new Date().toISOString().slice(0,10),note:`Stage: ${oldStage} → ${stage}`});
   renderCoDetailModal(o);
   renderCoSummary();
-  renderContracts();
+  renderContracts();saveState();
 }
 
 function deleteCoOffer(id){
   state.offers=state.offers.filter(o=>o.id!==id);
   renderCoSummary();
-  renderContracts();
+  renderContracts();saveState();
 }
 
 // legacy shims so old showPage dispatch still works
@@ -5110,6 +5134,7 @@ function importConfirm(){
 
   state.crew=finalRoster;
   if(state.crew.length>state.nextId) state.nextId=Math.max(...state.crew.map(c=>c.id))+1;
+  saveState();
 
   // Record import timestamp
   const now=new Date().toLocaleString();
