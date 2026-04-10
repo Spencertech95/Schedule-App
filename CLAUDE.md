@@ -4,15 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Git & GitHub
 
-Every meaningful change must be committed with a clean message and pushed to `origin/master`:
+**Commit and push after every meaningful unit of work** — a new feature, a bug fix, a refactor, or any change worth preserving. Do not batch up multiple sessions of work into a single vague commit. The goal is that GitHub always reflects the current state of the project so work is never lost and any change can be reverted cleanly.
+
+Workflow for every change:
 
 ```
 git add <specific files>
 git commit -m "subject line
 
-optional short body"
+optional short body explaining why"
 git push
 ```
+
+Commit message rules:
+- Subject line: short, imperative ("Add X", "Fix Y", "Remove Z") — not past tense
+- Body (optional): explain *why*, not *what* — the diff already shows what changed
+- Never use `git add -A` or `git add .` — stage specific files by name
 
 Remote: https://github.com/Spencertech95/tictactoe
 
