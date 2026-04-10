@@ -21,7 +21,8 @@ Commit message rules:
 - Body (optional): explain *why*, not *what* — the diff already shows what changed
 - Never use `git add -A` or `git add .` — stage specific files by name
 
-Remote: https://github.com/Spencertech95/tictactoe
+Remote: https://github.com/Spencertech95/Schedule-App
+Live: https://spencertech95.github.io/Schedule-App/
 
 ## Project Structure
 
@@ -29,27 +30,30 @@ This is a self-contained, no-build web project. Everything runs directly in the 
 
 | File | Purpose |
 |------|---------|
-| `tictactoe.html` | Entire app: HTML structure, CSS styles, and JS game logic in one file |
+| `index.html` | Entire app: HTML structure, CSS styles, and JS game logic in one file |
 
 ## Architecture
 
-`tictactoe.html` is organized into three inline sections:
+`index.html` is the Technical Entertainment Crew Scheduling SPA, organized into three inline sections:
 
-- **CSS** (`<style>`) — dark theme layout using CSS Grid for the 3×3 board, transitions, and a `pulse` animation for winning cells
-- **HTML** — board container (`#board`), status line, restart/mode buttons, scoreboard
-- **JavaScript** (`<script>`) — all game logic:
-  - `board[]` (9-element array), `current` player, `over` flag, `vsComputer` toggle, `scores` object
-  - `move(i)` — central handler: updates state, checks win/draw, triggers computer turn
-  - `checkWin(player)` — tests all 8 winning combos from the `WINS` constant
-  - `minimax(b, player)` — recursive minimax for unbeatable AI (called only when `vsComputer` is true)
-  - `render()` — rebuilds the board DOM from scratch on every state change
+- **CSS** (`<style>`) — dark theme with CSS variables, sidebar layout, CSS Grid for the board, animations
+- **HTML** — sidebar nav + 14+ page sections (Overview, Fleet, Rotations, Deployment, Ship pages, Crew roster, Contracts, Reports, Placement finder, Positions, Compliance, Dashboard)
+- **JavaScript** (`<script>`) — all app logic:
+  - `state` object holds all mutable data: `crew`, `offers`, `rotations`, `ships`, `positions`, `nextId`, `compliance`
+  - `saveState()` / `loadState()` — localStorage persistence under key `tec_scheduling_v1`; called after every mutation
+  - `showPage(name)` — SPA router that switches active page section
+  - `minimax` / Smart Suggest — placement scoring algorithm
+  - Leaflet.js (CDN) — fleet deployment map
+  - SheetJS/XLSX (CDN) — bulk roster import
 
 ## Running
 
-Open `tictactoe.html` directly in a browser:
+Open `index.html` directly in a browser:
 
 ```
-start tictactoe.html   # Windows
+start index.html   # Windows
 ```
+
+Or visit the live site: https://spencertech95.github.io/Schedule-App/
 
 No build step needed.
