@@ -709,6 +709,7 @@ textarea{resize:vertical;min-height:65px;}
 .sidebar-import-btn{display:flex;align-items:center;gap:7px;margin:8px 10px 0;padding:7px 10px;font-size:12px;font-weight:500;background:var(--highlight-dim);border:.5px solid rgba(255,127,69,.4);border-radius:var(--r);cursor:pointer;color:var(--highlight);transition:all .15s;}
 .sidebar-import-btn:hover{background:rgba(255,127,69,.22);box-shadow:0 2px 10px rgba(255,127,69,.2);}
 
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.65;transform:scale(1.1);}}
 
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -852,15 +853,71 @@ textarea{resize:vertical;min-height:65px;}
 <div id="page-deployment" class="page">
   <div class="page-title">Fleet deployment</div>
   <div class="page-sub">Live ship positions and port calls — upload deployment schedule to populate the map</div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:1rem;">
-    <label class="btn btn-sm" style="cursor:pointer;">
-      📂 Upload deployment xlsx
-      <input type="file" id="deployment-file" accept=".xlsx" onchange="loadDeployment(event)" style="display:none;"/>
-    </label>
-    <span id="deployment-status" style="font-size:12px;color:var(--text2);"></span>
+
+  <!-- Upload section (shown before data loaded) -->
+  <div id="deploy-upload-section">
+    <div class="deploy-drop-zone" id="deploy-drop"
+         ondragover="deployDragOver(event)" ondragleave="deployDragLeave()" ondrop="deployDrop(event)"
+         onclick="document.getElementById('deploy-file-inp').click()">
+      <div class="deploy-drop-icon">📂</div>
+      <div class="deploy-drop-title">Drop your deployment xlsx here, or click to browse</div>
+      <div class="deploy-drop-hint">REF Fleet Deployment Reference .xlsx — any date range</div>
+      <input type="file" id="deploy-file-inp" accept=".xlsx" style="display:none;" onchange="deployFileSelected(this)"/>
+    </div>
+    <div class="deploy-parse-bar" id="deploy-parse-bar">
+      <div class="deploy-parse-fill" id="deploy-parse-fill" style="width:0%;"></div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-top:6px;" id="deploy-parse-msg"></div>
   </div>
-  <div id="deployment-map" style="height:460px;border-radius:var(--r);overflow:hidden;border:.5px solid var(--border);"></div>
-  <div id="deployment-table" style="margin-top:1rem;"></div>
+
+  <!-- Map section (shown after data loaded) -->
+  <div id="deploy-map-section" style="display:none;">
+    <!-- Controls bar -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
+      <input type="date" id="deploy-date" onchange="deployRefresh()" style="font-size:12px;padding:5px 8px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);"/>
+      <button class="btn btn-sm" onclick="deployGoToday()">Today</button>
+      <select id="deploy-class-filter" onchange="deployRefresh()" style="font-size:12px;padding:5px 8px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);">
+        <option value="">All classes</option>
+        <option value="EDGE CLASS">Edge</option>
+        <option value="SOLSTICE CLASS">Solstice</option>
+        <option value="MILLENNIUM CLASS">Millennium</option>
+      </select>
+      <button class="btn btn-sm" onclick="deployResetView()" style="margin-left:auto;">Reset view</button>
+      <button class="btn btn-sm" onclick="deployReUpload()">Re-upload</button>
+      <span id="deploy-live-status" style="font-size:11px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:4px;"></span>
+    </div>
+
+    <!-- Ship chips -->
+    <div class="deploy-ship-chips" id="deploy-chips"></div>
+
+    <!-- Stats (refreshed after upload) -->
+    <div class="deploy-stats" id="deploy-stats" style="margin-bottom:0.75rem;"></div>
+
+    <!-- Map -->
+    <div id="deploy-map" style="width:100%;height:520px;border-radius:var(--r);z-index:0;border:.5px solid var(--border);"></div>
+
+    <!-- Voyage panel -->
+    <div class="voyage-panel" id="voyage-panel" style="display:none;">
+      <div class="voyage-panel-header">
+        <div class="voyage-panel-title" id="voyage-panel-title"></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:11px;color:var(--text2);">Show</label>
+          <input type="number" id="voyage-window" value="28" min="7" max="365" onchange="renderVoyagePanel()"
+                 style="width:50px;font-size:12px;padding:3px 6px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);text-align:center;"/>
+          <label style="font-size:11px;color:var(--text2);">days</label>
+          <button class="btn btn-sm" onclick="closeVoyagePanel()" style="margin-left:4px;">✕ Close</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+        <table class="voyage-table">
+          <thead><tr>
+            <th>Date</th><th>Day</th><th>Type</th><th>Port</th><th>Country</th><th>Arrival</th><th>Dep.</th>
+          </tr></thead>
+          <tbody id="voyage-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- SHIP DYNAMIC PAGE -->
@@ -4540,6 +4597,31 @@ let _depMarkers={};
 let _depTrails={};
 let _depSelectedShip=null;
 let _depCurrentVoyage=null; // array of rows for current voyage of selected ship
+let _livePositions=null;   // {updated:'ISO', ships:{SC:{lat,lon,speed,heading,ts}}}
+let _livePosTimer=null;
+let _liveMarkers={};       // Leaflet markers for live AIS positions
+
+async function fetchLivePositions(){
+  try{
+    const r=await fetch('./ship-positions.json?t='+Date.now());
+    if(!r.ok)return;
+    const data=await r.json();
+    if(data&&data.ships){
+      _livePositions=data;
+      // Refresh map if it's showing today (live layer only affects today view)
+      const dateInput=document.getElementById('deploy-date');
+      if(dateInput){
+        const today=new Date().toISOString().slice(0,10);
+        if(dateInput.value===today)deployRefresh();
+      }
+    }
+  }catch(e){console.warn('fetchLivePositions:',e);}
+}
+function startLiveTracking(){
+  fetchLivePositions();
+  if(_livePosTimer)clearInterval(_livePosTimer);
+  _livePosTimer=setInterval(fetchLivePositions,5*60*1000);
+}
 
 function deployDragOver(e){e.preventDefault();document.getElementById('deploy-drop').classList.add('dragover');}
 function deployDragLeave(){document.getElementById('deploy-drop').classList.remove('dragover');}
@@ -4696,13 +4778,21 @@ function initDeployMap(){
     attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19
   }).addTo(_depMap);
   setTimeout(()=>_depMap.invalidateSize(),120);
+  startLiveTracking();
 }
 
 function initDeployment(){
   if(!_depData)loadDeploymentData();
   if(_depData){
-    // Already loaded — just refresh map size and view
-    setTimeout(()=>{if(_depMap)_depMap.invalidateSize();},120);
+    // Already loaded — show map section and refresh
+    document.getElementById('deploy-upload-section').style.display='none';
+    document.getElementById('deploy-map-section').style.display='block';
+    if(!document.getElementById('deploy-date').value){
+      document.getElementById('deploy-date').value=new Date().toISOString().slice(0,10);
+    }
+    initDeployMap();
+    deployRefresh();
+    setTimeout(()=>{if(_depMap)_depMap.invalidateSize();},200);
     return;
   }
   // Show upload section
@@ -4739,8 +4829,11 @@ function deployRefresh(){
   // Clear old layers
   Object.values(_depTrails).forEach(l=>{if(l)_depMap.removeLayer(l);});
   Object.values(_depMarkers).forEach(m=>{if(m)_depMap.removeLayer(m);});
-  _depTrails={};_depMarkers={};
+  Object.values(_liveMarkers).forEach(m=>{if(m)_depMap.removeLayer(m);});
+  _depTrails={};_depMarkers={};_liveMarkers={};
 
+  const todayStr=new Date().toISOString().slice(0,10);
+  const isToday=dateStr===todayStr;
   const ships=Object.keys(_depData).sort();
   let chipsHtml='';
 
@@ -4790,6 +4883,14 @@ function deployRefresh(){
     }
     if(!markerCoord)return;
 
+    // Check for live AIS position (only applies when viewing today)
+    const livePos=isToday&&_livePositions&&_livePositions.ships&&_livePositions.ships[sc]?_livePositions.ships[sc]:null;
+    let hasLive=false;
+    if(livePos&&livePos.lat!=null&&livePos.lon!=null){
+      markerCoord=[livePos.lat,livePos.lon];
+      hasLive=true;
+    }
+
     const isAtSea=pos?pos.isAtSea:true;
     const portLabel=pos?pos.portName:'At sea (interpolated)';
     const dayTypeLbl=pos?pos.dayType:'~';
@@ -4799,12 +4900,13 @@ function deployRefresh(){
 
     const icon=L.divIcon({
       className:'',
-      html:`<div style="position:relative;width:${sz+22}px;">
+      html:`<div style="position:relative;width:${sz+26}px;">
         <div style="font-size:${sz}px;line-height:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,.9));">${shipEmoji}</div>
         <div style="position:absolute;top:-4px;right:0;background:${color};color:#fff;font-size:${isSelected?10:8}px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;line-height:1.5;">${sc}</div>
+        ${hasLive?`<div style="position:absolute;top:-4px;left:-6px;background:#00ff88;color:#000;font-size:7px;font-weight:800;padding:1px 3px;border-radius:2px;line-height:1.4;animation:livePulse 1.5s ease-in-out infinite;">LIVE</div>`:''}
         ${isSelected?`<div style="position:absolute;top:${sz-2}px;left:0;width:${sz}px;height:2px;background:${color};border-radius:1px;"></div>`:''}
       </div>`,
-      iconSize:[sz+22,sz+6],iconAnchor:[4,sz],
+      iconSize:[sz+26,sz+6],iconAnchor:[4,sz],
     });
 
     // Build popup
@@ -4814,15 +4916,18 @@ function deployRefresh(){
     const pct=voyageLen>0?Math.round(dayInVoyage/voyageLen*100):0;
     const typeColor={T:'#299BE1',X:'#4dd4a0',S:'#A4A4A7',A:'#E87435','~':'#A4A4A7'}[dayTypeLbl]||'#A4A4A7';
     const nextT=rows.find(r=>r.date>dateStr&&r.dayType==='T');
+    const liveUpdatedAgo=livePos?Math.round((Date.now()-new Date(livePos.ts).getTime())/60000):null;
 
     const popupHtml=`
       <div style="font-size:13px;font-weight:600;margin-bottom:2px;">${sc}
         <span style="background:${color};color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;margin-left:4px;">${cls.split(' ')[0]}</span>
+        ${hasLive?`<span style="background:#00ff88;color:#000;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:800;margin-left:4px;">● LIVE</span>`:''}
       </div>
       <div style="font-size:11px;color:${typeColor};font-weight:500;margin-bottom:5px;">${dayTypeLabels[dayTypeLbl]||dayTypeLbl}</div>
       <div style="font-size:12px;margin-bottom:2px;">${dayTypeLbl==='S'?'🌊 At sea':portLabel.split(',')[0]}</div>
       ${pos&&pos.country&&pos.dayType!=='S'?`<div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:6px;">${pos.country}</div>`:''}
       ${pos&&pos.arrival&&pos.dayType!=='S'?`<div style="font-size:10px;color:rgba(255,255,255,.5);">Arrival ${pos.arrival} · Dep. ${pos.dep}</div>`:''}
+      ${hasLive?`<div style="font-size:10px;color:#00ff88;margin-top:4px;margin-bottom:2px;">📡 AIS: ${livePos.lat.toFixed(4)}°, ${livePos.lon.toFixed(4)}°${livePos.speed!=null?' · '+livePos.speed+' kn':''}</div><div style="font-size:9px;color:rgba(255,255,255,.35);">Updated ${liveUpdatedAgo!=null?liveUpdatedAgo+' min ago':'recently'}</div>`:''}
       <div style="margin-top:8px;margin-bottom:3px;">
         <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px;">
           <span>Voyage progress</span><span>${dayInVoyage}/${voyageLen} days · ${pct}%</span>
@@ -4854,6 +4959,18 @@ function deployRefresh(){
   });
 
   document.getElementById('deploy-chips').innerHTML=chipsHtml;
+
+  // Update live status indicator
+  const liveEl=document.getElementById('deploy-live-status');
+  if(liveEl){
+    if(_livePositions&&_livePositions.updated&&isToday){
+      const minsAgo=Math.round((Date.now()-new Date(_livePositions.updated).getTime())/60000);
+      const shipCount=Object.keys(_livePositions.ships||{}).length;
+      liveEl.innerHTML=`<span style="color:#00ff88;font-weight:700;">● LIVE</span> ${shipCount} ships · ${minsAgo}m ago`;
+    } else {
+      liveEl.innerHTML='';
+    }
+  }
 
   // Update date label in subtitle
   const d=new Date(dateStr+'T12:00:00');

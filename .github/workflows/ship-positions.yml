@@ -1,0 +1,119 @@
+name: Update Ship Positions
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-positions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install ws
+        run: npm install ws
+
+      - name: Fetch AIS positions
+        env:
+          AISSTREAM_API_KEY: ${{ secrets.AISSTREAM_API_KEY }}
+        run: |
+          cat > fetch_positions.js << 'JSEOF'
+          const WebSocket = require('ws');
+          const fs = require('fs');
+
+          const API_KEY = process.env.AISSTREAM_API_KEY;
+          if (!API_KEY) { console.error('No API key'); process.exit(1); }
+
+          // MMSI → ship code (Celebrity fleet)
+          const MMSI_MAP = {
+            '249055000': 'ML',  // Millennium
+            '249048000': 'IN',  // Infinity
+            '249047000': 'SM',  // Summit
+            '249046000': 'CS',  // Constellation
+            '249409000': 'SL',  // Solstice
+            '249667000': 'EQ',  // Equinox
+            '249666000': 'EC',  // Eclipse
+            '248939000': 'SI',  // Silhouette
+            '229074000': 'RF',  // Reflection
+            '248325000': 'EG',  // Edge
+            '215105000': 'AX',  // Apex
+            '215808000': 'BY',  // Beyond
+            '256191000': 'AT',  // Ascent
+            '249457000': 'XC',  // Xcel
+          };
+
+          const positions = {};
+          let done = false;
+
+          const ws = new WebSocket('wss://stream.aisstream.io/v0/stream');
+
+          ws.on('open', () => {
+            console.log('Connected to aisstream.io');
+            ws.send(JSON.stringify({
+              APIKey: API_KEY,
+              BoundingBoxes: [[[-90, -180], [90, 180]]],
+              FilterMMSI: Object.keys(MMSI_MAP).map(Number)
+            }));
+          });
+
+          ws.on('message', (data) => {
+            try {
+              const msg = JSON.parse(data.toString());
+              if (msg.MessageType === 'PositionReport' || msg.MessageType === 'StandardClassBPositionReport') {
+                const mmsi = String(msg.MetaData?.MMSI);
+                const code = MMSI_MAP[mmsi];
+                if (code) {
+                  const report = msg.Message?.PositionReport || msg.Message?.StandardClassBPositionReport || {};
+                  const lat = report.Latitude ?? msg.MetaData?.latitude;
+                  const lon = report.Longitude ?? msg.MetaData?.longitude;
+                  if (lat != null && lon != null && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    positions[code] = {
+                      lat: Math.round(lat * 100000) / 100000,
+                      lon: Math.round(lon * 100000) / 100000,
+                      speed: report.SpeedOverGround ?? null,
+                      heading: report.TrueHeading ?? report.CourseOverGround ?? null,
+                      ts: msg.MetaData?.time_utc || new Date().toISOString(),
+                      mmsi
+                    };
+                    console.log(`${code} (${mmsi}): ${lat.toFixed(4)}, ${lon.toFixed(4)} @ ${positions[code].speed ?? '?'} kn`);
+                  }
+                }
+              }
+            } catch(e) { console.error('Parse error:', e.message); }
+          });
+
+          ws.on('error', (e) => { console.error('WS error:', e.message); });
+
+          // Collect for 25 seconds then write output
+          setTimeout(() => {
+            done = true;
+            ws.close();
+            const output = {
+              updated: new Date().toISOString(),
+              ships: positions
+            };
+            fs.writeFileSync('ship-positions.json', JSON.stringify(output, null, 2));
+            const count = Object.keys(positions).length;
+            console.log(`Done: ${count}/14 ships found`);
+            process.exit(0);
+          }, 25000);
+          JSEOF
+          node fetch_positions.js
+
+      - name: Commit positions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ship-positions.json
+          git diff --staged --quiet || git commit -m "Update ship positions [skip ci]"
+          git push
