@@ -3490,7 +3490,7 @@ function getCrewEmail(crewId){
 
 function saveCrewEmail(crewId, email){
   const c=state.crew.find(x=>x.id==crewId);
-  if(c) c.email=email.trim();
+  if(c){c.email=email.trim();saveState();}
 }
 
 function buildOfferEmailBody(o){
