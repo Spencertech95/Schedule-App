@@ -729,6 +729,55 @@ textarea{resize:vertical;min-height:65px;}
 
 @keyframes livePulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.65;transform:scale(1.1);}}
 
+/* ── DOCUMENT WALLET ─────────────────────────────────────────────────────── */
+.dw-shell{display:flex;gap:0;height:calc(100vh - 130px);min-height:400px;border:.5px solid var(--border);border-radius:var(--rl);overflow:hidden;background:var(--bg);}
+.dw-list{width:240px;flex-shrink:0;border-right:.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.dw-list-search{padding:10px 10px 8px;border-bottom:.5px solid var(--border);}
+.dw-list-search input{width:100%;background:rgba(0,0,0,.25);border:.5px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);outline:none;}
+.dw-list-search input:focus{border-color:var(--highlight);}
+.dw-list-items{flex:1;overflow-y:auto;padding:6px 6px;}
+.dw-crew-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;transition:all .15s;}
+.dw-crew-row:hover{background:rgba(255,255,255,.05);}
+.dw-crew-row.active{background:rgba(255,127,69,.12);border:.5px solid rgba(255,127,69,.25);}
+.dw-crew-name{font-size:12.5px;font-weight:500;line-height:1.3;}
+.dw-crew-sub{font-size:10px;color:var(--text2);margin-top:1px;}
+.dw-status-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.dw-status-dot.ds-red{background:var(--red-t);}
+.dw-status-dot.ds-amber{background:var(--amber-t);}
+.dw-status-dot.ds-green{background:var(--green-t);}
+.dw-status-dot.ds-gray{background:var(--gray-t);}
+.dw-detail{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;}
+.dw-detail-hdr{padding:1.1rem 1.25rem .9rem;border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:12px;}
+.dw-detail-name{font-size:15px;font-weight:600;}
+.dw-detail-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+.dw-detail-body{flex:1;overflow-y:auto;padding:1rem 1.25rem;}
+.dw-empty-state{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:13px;}
+.dw-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(136,150,184,.6);margin:1.1rem 0 .5rem;}
+.dw-doc-cards{display:flex;flex-direction:column;gap:8px;}
+.dw-doc-card{border:.5px solid var(--border2);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.025);}
+.dw-doc-card.dw-expired{border-color:rgba(255,107,122,.45);background:rgba(255,107,122,.07);}
+.dw-doc-card.dw-warn-amber{border-color:rgba(255,159,80,.4);background:rgba(255,159,80,.07);}
+.dw-doc-card.dw-ok{border-color:rgba(61,232,160,.3);background:rgba(61,232,160,.05);}
+.dw-doc-card.dw-no-date{border-color:var(--border);background:rgba(255,255,255,.018);}
+.dw-doc-icon{font-size:20px;flex-shrink:0;width:32px;text-align:center;}
+.dw-doc-info{flex:1;min-width:0;}
+.dw-doc-type{font-size:12.5px;font-weight:500;}
+.dw-doc-expiry{font-size:11px;color:var(--text2);margin-top:2px;}
+.dw-doc-badge{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:600;}
+.dw-doc-badge.exp-red{background:var(--red-bg);color:var(--red-t);}
+.dw-doc-badge.exp-amber{background:var(--amber-bg);color:var(--amber-t);}
+.dw-doc-badge.exp-green{background:var(--green-bg);color:var(--green-t);}
+.dw-doc-badge.exp-gray{background:var(--gray-bg);color:var(--gray-t);}
+.dw-doc-actions{display:flex;gap:5px;flex-shrink:0;}
+.dw-add-row{margin-top:1rem;padding-top:1rem;border-top:.5px solid var(--border);}
+.dw-add-form{background:rgba(0,0,0,.2);border:.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-top:8px;display:flex;flex-direction:column;gap:8px;}
+.dw-add-form select,.dw-add-form input{background:rgba(0,0,0,.3);border:.5px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);outline:none;}
+.dw-add-form select:focus,.dw-add-form input:focus{border-color:var(--highlight);}
+.dw-add-form-row{display:flex;gap:8px;flex-wrap:wrap;}
+.dw-inline-edit{display:flex;align-items:center;gap:6px;}
+.dw-inline-edit input{background:rgba(0,0,0,.3);border:.5px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--text);outline:none;width:130px;}
+.dw-inline-edit input:focus{border-color:var(--highlight);}
+
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -761,6 +810,7 @@ textarea{resize:vertical;min-height:65px;}
     <div id="ship-nav-items"></div>
     <div class="nav-section">Crew</div>
     <button class="nav-item" onclick="showPage('crew',this)"><span class="nav-icon">◉</span><span>Crew roster</span></button>
+    <button class="nav-item" onclick="showPage('docwallet',this)"><span class="nav-icon">📋</span><span>Document wallet</span></button>
     <button class="nav-item" onclick="showPage('contracts',this)"><span class="nav-icon">◎</span><span>Contracts &amp; offers</span></button>
     <button class="nav-item" onclick="showPage('reports',this)"><span class="nav-icon">▤</span><span>Reports</span></button>
     <button class="nav-item" onclick="showPage('placement',this)"><span class="nav-icon">⇄</span><span>Placement finder</span></button>
@@ -985,10 +1035,34 @@ textarea{resize:vertical;min-height:65px;}
           <th>Contract end</th>
           <th>Days left</th>
           <th>Medical exp.</th>
+          <th>Docs</th>
           <th></th>
         </tr></thead>
         <tbody id="crew-tbody"></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- DOCUMENT WALLET PAGE -->
+<div id="page-docwallet" class="page">
+  <div class="page-title">Document wallet</div>
+  <div class="page-sub">Per-crew document hub — passports, visas, medicals, STCW certs with expiry tracking</div>
+  <div class="dw-shell">
+    <!-- Left: crew list -->
+    <div class="dw-list">
+      <div class="dw-list-search">
+        <input id="dw-search" placeholder="Search crew…" oninput="renderDWList()"/>
+      </div>
+      <div class="dw-list-items" id="dw-list-items"></div>
+    </div>
+    <!-- Right: detail panel -->
+    <div class="dw-detail" id="dw-detail">
+      <div class="dw-empty-state" id="dw-empty">Select a crew member to view their documents</div>
+      <div id="dw-detail-content" style="display:none;flex-direction:column;overflow:hidden;height:100%;width:100%;">
+        <div class="dw-detail-hdr" id="dw-detail-hdr"></div>
+        <div class="dw-detail-body" id="dw-detail-body"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1458,6 +1532,7 @@ function showPage(name,el){
   if(name==='placement'){initPlacement();}
   if(name==='dashboard'){initDashboard();}
   if(name==='deployment'){initDeployment();}
+  if(name==='docwallet'){initDocWallet();}
   if(name==='ship'){/* rendered via showShip */}
 }
 function toggleForm(id){document.getElementById(id).classList.toggle('open');}
@@ -1781,7 +1856,7 @@ function renderCrew(){
   });
   document.getElementById('crew-count-label').textContent=`${filtered.length} crew member${filtered.length!==1?'s':''} shown`;
   const tbody=document.getElementById('crew-tbody');
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="10" style="padding:1rem 9px;color:var(--text2);font-size:12px;">No crew match the current filters.</td></tr>`;return;}
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="11" style="padding:1rem 9px;color:var(--text2);font-size:12px;">No crew match the current filters.</td></tr>`;return;}
   tbody.innerHTML=filtered.map(c=>{
     const pos=state.positions.find(p=>p.id==c.posId);const ship=state.ships.find(s=>s.id==c.shipId);
     const daysLeft=Math.round((new Date(c.end)-now)/86400000);
@@ -1805,6 +1880,7 @@ function renderCrew(){
       <td style="white-space:nowrap;color:var(--text2);font-size:11px;">${c.end||'—'}</td>
       <td><span class="badge ${dc}">${c.end?(daysLeft>0?daysLeft+'d':'Exp.'):'—'}</span></td>
       <td>${mc?`<span class="badge ${mc}">${c.medical}</span>`:`<span style="font-size:11px;color:var(--text2);">${c.medical||'—'}</span>`}</td>
+      <td><button class="btn btn-sm" style="font-size:10px;" onclick="openDocWallet(${c.id},event)" title="Open document wallet">📋 Docs</button></td>
       <td><button class="btn btn-sm btn-danger" onclick="deleteCrew(${c.id})">✕</button></td>
     </tr>`;
   }).join('');
@@ -1850,7 +1926,8 @@ function saveCrew(){
     airport:document.getElementById('crew-airport').value.trim(),
     email:emailVal,
     certs:document.getElementById('crew-certs').value.split(',').map(s=>s.trim()).filter(Boolean),
-    notes:document.getElementById('crew-notes').value.trim()
+    notes:document.getElementById('crew-notes').value.trim(),
+    docs:[]
   });
   ['crew-name','crew-nat','crew-airport','crew-email','crew-certs','crew-notes','crew-start','crew-end','crew-passport','crew-medical'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   toggleForm('crew-form');renderCrew();saveState();
@@ -5513,6 +5590,266 @@ function showToast(msg, dur=2800){
   - scheduler : view all + create/edit contracts & offers only
   - readonly  : view everything, no mutations
 */
+
+// ── DOCUMENT WALLET ──────────────────────────────────────────────────────────
+const DW_DOC_TYPES=[
+  {id:'passport',        label:'Passport',                     icon:'🛂',pinned:true},
+  {id:'medical',         label:'Medical Certificate',          icon:'🏥',pinned:true},
+  {id:'usc1d',           label:'US C1/D Visa',                 icon:'🇺🇸'},
+  {id:'schengen',        label:'Schengen Visa',                icon:'🇪🇺'},
+  {id:'uk',              label:'UK Visa',                      icon:'🇬🇧'},
+  {id:'canada',          label:'Canadian Visa',                icon:'🇨🇦'},
+  {id:'australia',       label:'Australian Visa',              icon:'🇦🇺'},
+  {id:'stcw_basic',      label:'STCW Basic Safety',            icon:'⚓'},
+  {id:'stcw_psc',        label:'STCW Proficiency Survival Craft',icon:'🛟'},
+  {id:'stcw_aff',        label:'STCW Advanced Firefighting',   icon:'🔥'},
+  {id:'stcw_mfa',        label:'STCW Medical First Aid',       icon:'🩺'},
+  {id:'stcw_sec',        label:'STCW Security Awareness',      icon:'🛡'},
+  {id:'gmdss',           label:'GMDSS',                        icon:'📡'},
+  {id:'yellow_fever',    label:'Yellow Fever Vaccination',     icon:'💉'},
+  {id:'other',           label:'Other',                        icon:'📄'},
+];
+const DW_PINNED=['passport','medical'];
+const DW_ICONS=Object.fromEntries(DW_DOC_TYPES.map(d=>[d.id,d.icon]));
+const DW_LABELS=Object.fromEntries(DW_DOC_TYPES.map(d=>[d.id,d.label]));
+
+let _dwSelectedId=null;
+let _dwAddOpen=false;
+
+// Returns {cls, label, days} for a doc expiry date string
+function dwDocStatus(expiry){
+  if(!expiry) return{cls:'dw-no-date',badge:'exp-gray',label:'No date',dotCls:'ds-gray'};
+  const days=Math.round((new Date(expiry)-new Date())/86400000);
+  if(days<0)  return{cls:'dw-expired',    badge:'exp-red',  label:'Expired',       dotCls:'ds-red',  days};
+  if(days<=30)return{cls:'dw-expired',    badge:'exp-red',  label:`Exp. in ${days}d`,dotCls:'ds-red', days};
+  if(days<=90)return{cls:'dw-warn-amber', badge:'exp-amber',label:`${days}d left`,  dotCls:'ds-amber',days};
+  return       {cls:'dw-ok',             badge:'exp-green',label:`${days}d left`,  dotCls:'ds-green',days};
+}
+
+// Worst status across all docs for a crew member
+function dwCrewWorstStatus(c){
+  const allExpiries=[];
+  if(c.passport) allExpiries.push(c.passport);
+  if(c.medical)  allExpiries.push(c.medical);
+  (c.docs||[]).forEach(d=>{if(d.expiry)allExpiries.push(d.expiry);});
+  if(!allExpiries.length) return 'ds-gray';
+  const statuses=allExpiries.map(e=>dwDocStatus(e));
+  if(statuses.some(s=>s.dotCls==='ds-red'))   return 'ds-red';
+  if(statuses.some(s=>s.dotCls==='ds-amber')) return 'ds-amber';
+  return 'ds-green';
+}
+
+function initDocWallet(){
+  _dwSelectedId=null;
+  _dwAddOpen=false;
+  renderDWList();
+  document.getElementById('dw-empty').style.display='flex';
+  document.getElementById('dw-detail-content').style.display='none';
+}
+
+function openDocWallet(crewId, evt){
+  if(evt){evt.stopPropagation();}
+  // Navigate to the docwallet page
+  const navBtn=document.querySelector('.nav-item[onclick*="docwallet"]');
+  showPage('docwallet', navBtn||document.createElement('button'));
+  // After a tick, select this crew
+  setTimeout(()=>selectDWCrew(crewId), 30);
+}
+
+function renderDWList(){
+  const q=(document.getElementById('dw-search')?.value||'').toLowerCase().trim();
+  let crew=[...state.crew];
+  if(q) crew=crew.filter(c=>c.name.toLowerCase().includes(q)||(c.nat||'').toLowerCase().includes(q));
+  crew.sort((a,b)=>a.name.localeCompare(b.name));
+  const pos=state.positions;
+  document.getElementById('dw-list-items').innerHTML=crew.map(c=>{
+    const p=pos.find(x=>x.id==c.posId);
+    const dotCls=dwCrewWorstStatus(c);
+    const isActive=c.id===_dwSelectedId;
+    return`<div class="dw-crew-row${isActive?' active':''}" onclick="selectDWCrew(${c.id})">
+      <div class="dw-status-dot ${dotCls}"></div>
+      <div style="flex:1;min-width:0;">
+        <div class="dw-crew-name">${c.name}</div>
+        <div class="dw-crew-sub">${p?p.abbr:'—'} · ${c.nat||'—'}</div>
+      </div>
+    </div>`;
+  }).join('')||'<div style="padding:1rem;font-size:12px;color:var(--text2);">No crew found</div>';
+}
+
+function selectDWCrew(crewId){
+  _dwSelectedId=crewId;
+  _dwAddOpen=false;
+  renderDWList();
+  renderDWDetail();
+}
+
+function renderDWDetail(){
+  const c=state.crew.find(x=>x.id===_dwSelectedId);
+  if(!c){
+    document.getElementById('dw-empty').style.display='flex';
+    document.getElementById('dw-detail-content').style.display='none';
+    return;
+  }
+  document.getElementById('dw-empty').style.display='none';
+  const content=document.getElementById('dw-detail-content');
+  content.style.cssText='display:flex;flex-direction:column;overflow:hidden;height:100%;width:100%;';
+
+  // Header
+  const pos=state.positions.find(p=>p.id==c.posId);
+  const ship=state.ships.find(s=>s.id==c.shipId);
+  document.getElementById('dw-detail-hdr').innerHTML=`
+    <div style="width:38px;height:38px;border-radius:50%;background:${profColor(c.name)};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;">${profInitials(c.name)}</div>
+    <div>
+      <div class="dw-detail-name">${c.name}</div>
+      <div class="dw-detail-meta">${pos?pos.abbr:'—'} · ${ship?ship.name:'—'} · ${c.nat||'—'}</div>
+    </div>`;
+
+  // Body
+  const docs=c.docs||[];
+  const existingTypeIds=new Set(docs.map(d=>d.typeId));
+
+  // Pinned docs (passport, medical)
+  const pinnedHtml=DW_DOC_TYPES.filter(t=>t.pinned).map(t=>{
+    const expiry=c[t.id]||'';
+    const st=dwDocStatus(expiry);
+    const editId=`dw-edit-pinned-${t.id}`;
+    return`<div class="dw-doc-card ${st.cls}" id="dwcard-pinned-${t.id}">
+      <div class="dw-doc-icon">${t.icon}</div>
+      <div class="dw-doc-info">
+        <div class="dw-doc-type">${t.label}</div>
+        <div id="dw-exp-view-${t.id}" style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+          <span class="dw-doc-expiry">${expiry?'Expires '+expiry:'No expiry date'}</span>
+          <span class="dw-doc-badge ${st.badge}">${st.label}</span>
+        </div>
+        <div id="dw-exp-edit-${t.id}" style="display:none;" class="dw-inline-edit">
+          <input type="date" id="dw-input-${t.id}" value="${expiry}" placeholder="yyyy-mm-dd"/>
+          <button class="btn btn-sm btn-primary" style="font-size:10px;padding:3px 8px;" onclick="savePinnedDoc('${t.id}')">Save</button>
+          <button class="btn btn-sm" style="font-size:10px;padding:3px 8px;" onclick="cancelPinnedDocEdit('${t.id}')">✕</button>
+        </div>
+      </div>
+      <div class="dw-doc-actions">
+        <button class="btn btn-sm" style="font-size:10px;" onclick="editPinnedDoc('${t.id}')" title="Edit expiry">✎ Edit</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Additional docs
+  const addHtml=docs.map((d,i)=>{
+    const tDef=DW_DOC_TYPES.find(x=>x.id===d.typeId)||{label:d.typeId,icon:'📄'};
+    const st=dwDocStatus(d.expiry);
+    const editId=`dwcard-doc-${i}`;
+    return`<div class="dw-doc-card ${st.cls}" id="${editId}">
+      <div class="dw-doc-icon">${tDef.icon}</div>
+      <div class="dw-doc-info">
+        <div class="dw-doc-type">${tDef.label}${d.label?` — <span style="font-weight:400;font-size:11px;">${d.label}</span>`:''}</div>
+        <div id="dw-adoc-view-${i}" style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+          <span class="dw-doc-expiry">${d.expiry?'Expires '+d.expiry:'No expiry date'}</span>
+          <span class="dw-doc-badge ${st.badge}">${st.label}</span>
+        </div>
+        <div id="dw-adoc-edit-${i}" style="display:none;" class="dw-inline-edit">
+          <input type="date" id="dw-adoc-input-${i}" value="${d.expiry||''}" placeholder="yyyy-mm-dd"/>
+          <button class="btn btn-sm btn-primary" style="font-size:10px;padding:3px 8px;" onclick="saveAdditionalDoc(${i})">Save</button>
+          <button class="btn btn-sm" style="font-size:10px;padding:3px 8px;" onclick="cancelAdditionalDocEdit(${i})">✕</button>
+        </div>
+      </div>
+      <div class="dw-doc-actions">
+        <button class="btn btn-sm" style="font-size:10px;" onclick="editAdditionalDoc(${i})" title="Edit expiry">✎</button>
+        <button class="btn btn-sm btn-danger" style="font-size:10px;" onclick="deleteDoc(${i})" title="Delete">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Add doc button/form
+  const addableTypes=DW_DOC_TYPES.filter(t=>!t.pinned);
+  const addFormHtml=_dwAddOpen?`
+    <div class="dw-add-form" id="dw-add-form">
+      <div class="dw-add-form-row">
+        <select id="dw-new-type" style="flex:1;">
+          ${addableTypes.map(t=>`<option value="${t.id}">${t.icon} ${t.label}</option>`).join('')}
+        </select>
+        <input type="date" id="dw-new-expiry" placeholder="Expiry date (optional)" style="flex:1;"/>
+      </div>
+      <input id="dw-new-label" placeholder="Custom label (optional, e.g. B1/B2, EU Visa)" style="width:100%;"/>
+      <div style="display:flex;gap:7px;">
+        <button class="btn btn-primary btn-sm" onclick="saveNewDoc()">Add document</button>
+        <button class="btn btn-sm" onclick="_dwAddOpen=false;renderDWDetail();">Cancel</button>
+      </div>
+    </div>`:'';
+
+  document.getElementById('dw-detail-body').innerHTML=`
+    <div class="dw-section-label">Identity &amp; Medical</div>
+    <div class="dw-doc-cards">${pinnedHtml}</div>
+    ${docs.length?`<div class="dw-section-label">Visas &amp; Certificates</div><div class="dw-doc-cards">${addHtml}</div>`:''}
+    <div class="dw-add-row">
+      ${!_dwAddOpen?`<button class="btn btn-primary btn-sm" onclick="_dwAddOpen=true;renderDWDetail();">+ Add document</button>`:''}
+      ${addFormHtml}
+    </div>`;
+}
+
+function editPinnedDoc(typeId){
+  document.getElementById('dw-exp-view-'+typeId).style.display='none';
+  document.getElementById('dw-exp-edit-'+typeId).style.display='flex';
+  document.getElementById('dw-input-'+typeId)?.focus();
+}
+function cancelPinnedDocEdit(typeId){
+  document.getElementById('dw-exp-view-'+typeId).style.display='flex';
+  document.getElementById('dw-exp-edit-'+typeId).style.display='none';
+}
+function savePinnedDoc(typeId){
+  const c=state.crew.find(x=>x.id===_dwSelectedId);
+  if(!c) return;
+  c[typeId]=document.getElementById('dw-input-'+typeId).value;
+  saveState();
+  renderDWList();
+  renderDWDetail();
+  showToast('Saved');
+}
+
+function editAdditionalDoc(idx){
+  document.getElementById('dw-adoc-view-'+idx).style.display='none';
+  document.getElementById('dw-adoc-edit-'+idx).style.display='flex';
+  document.getElementById('dw-adoc-input-'+idx)?.focus();
+}
+function cancelAdditionalDocEdit(idx){
+  document.getElementById('dw-adoc-view-'+idx).style.display='flex';
+  document.getElementById('dw-adoc-edit-'+idx).style.display='none';
+}
+function saveAdditionalDoc(idx){
+  const c=state.crew.find(x=>x.id===_dwSelectedId);
+  if(!c||!c.docs) return;
+  c.docs[idx].expiry=document.getElementById('dw-adoc-input-'+idx).value;
+  saveState();
+  renderDWList();
+  renderDWDetail();
+  showToast('Saved');
+}
+
+function saveNewDoc(){
+  const c=state.crew.find(x=>x.id===_dwSelectedId);
+  if(!c) return;
+  if(!c.docs) c.docs=[];
+  const typeId=document.getElementById('dw-new-type').value;
+  const expiry=document.getElementById('dw-new-expiry').value;
+  const label=(document.getElementById('dw-new-label').value||'').trim();
+  c.docs.push({typeId,expiry,label});
+  _dwAddOpen=false;
+  saveState();
+  renderDWList();
+  renderDWDetail();
+  showToast('Document added');
+}
+
+function deleteDoc(idx){
+  const c=state.crew.find(x=>x.id===_dwSelectedId);
+  if(!c||!c.docs) return;
+  const d=c.docs[idx];
+  const label=DW_LABELS[d.typeId]||d.typeId;
+  if(!confirm(`Remove "${label}" from ${c.name}'s wallet?`)) return;
+  c.docs.splice(idx,1);
+  saveState();
+  renderDWList();
+  renderDWDetail();
+}
 
 
 </script>
