@@ -1,7 +1,7 @@
 // ── import.js — bulk roster import (XLSX) ─────────────────────────────────────
 import { state, uid } from './state.js';
 import { showToast } from './utils.js';
-import { replaceAllCrew, upsertCrew } from './db.js';
+import { replaceAllCrew, upsertManyCrew } from './db.js';
 
 let _importParsed = [];
 let _importDiff   = null;
@@ -327,10 +327,14 @@ function renderDiffTable(tab) {
       : '';
 }
 
-export function importConfirm() {
+export async function importConfirm() {
   if (!_importDiff) return;
   const mode = document.querySelector('input[name="import-mode"]:checked')?.value || 'merge';
-  const {newCrew, updated, unchanged, removed} = _importDiff;
+  const {newCrew, updated, removed} = _importDiff;
+
+  // Disable confirm button while saving
+  const btn = document.getElementById('import-confirm-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
   let finalRoster;
   if (mode === 'replace') {
@@ -365,13 +369,23 @@ export function importConfirm() {
   state.crew = finalRoster;
   if (state.crew.length > state.nextId) state.nextId = Math.max(...state.crew.map(c => c.id)) + 1;
 
-  // Persist to Supabase
+  // Persist to Supabase and wait for result
+  let result;
   if (mode === 'replace') {
-    replaceAllCrew(finalRoster);
+    result = await replaceAllCrew(finalRoster);
   } else {
-    // Upsert only changed/new crew
-    updated.forEach(({existing}) => upsertCrew(existing));
-    newCrew.forEach(({incoming}) => upsertCrew({...incoming, id: incoming.id || uid()}));
+    const toSave = [
+      ...updated.map(({existing}) => existing),
+      ...newCrew.map(({incoming}) => ({...incoming, id: incoming.id || uid()})),
+    ];
+    result = await upsertManyCrew(toSave);
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Confirm Import'; }
+
+  if (!result?.ok) {
+    showToast(`Save failed: ${result?.message || 'unknown error'}`, 6000);
+    return;
   }
 
   const now2 = new Date().toLocaleString();
@@ -382,14 +396,14 @@ export function importConfirm() {
 
   // Refresh active page
   const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
-  if (activePage === 'crew')      { window.populateFilters?.(); window.renderCrew?.(); }
+  if (activePage === 'crew')           { window.populateFilters?.(); window.renderCrew?.(); }
   else if (activePage === 'dashboard') { window.initDashboard?.(); }
   else if (activePage === 'overview')  { window.renderOverview?.(); }
 
   const added = newCrew.length, upd = updated.length;
   const msg = mode === 'replace'
-    ? `✓ Full replace — ${finalRoster.length} crew loaded`
-    : `✓ Merged — ${added} added, ${upd} updated, ${removed.length} kept`;
+    ? `Saved — ${finalRoster.length} crew loaded`
+    : `Saved — ${added} added, ${upd} updated`;
   showToast(msg, 4000);
 }
 

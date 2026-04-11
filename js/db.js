@@ -106,12 +106,31 @@ export async function saveNextId() {
 }
 
 // ── BULK CREW REPLACE (import) ────────────────────────────────────────────────
+// Returns { ok: true } or { ok: false, message }
 export async function replaceAllCrew(crewArray) {
-  await supabase.from('crew').delete().neq('id', 0);
-  if (crewArray.length) {
-    const { error } = await supabase.from('crew').insert(crewArray.map(toDbCrew));
-    if (error) onError('replaceAllCrew', error);
+  // Delete all existing rows
+  const { error: delErr } = await supabase.from('crew').delete().neq('id', -1);
+  if (delErr) { onError('replaceAllCrew.delete', delErr); return { ok: false, message: delErr.message }; }
+
+  // Insert in batches of 50 to avoid request size limits
+  const BATCH = 50;
+  for (let i = 0; i < crewArray.length; i += BATCH) {
+    const rows = crewArray.slice(i, i + BATCH).map(toDbCrew);
+    const { error } = await supabase.from('crew').insert(rows);
+    if (error) { onError('replaceAllCrew.insert', error); return { ok: false, message: error.message }; }
   }
+  return { ok: true };
+}
+
+// ── BULK CREW UPSERT (merge import) ──────────────────────────────────────────
+export async function upsertManyCrew(crewArray) {
+  const BATCH = 50;
+  for (let i = 0; i < crewArray.length; i += BATCH) {
+    const rows = crewArray.slice(i, i + BATCH).map(toDbCrew);
+    const { error } = await supabase.from('crew').upsert(rows);
+    if (error) { onError('upsertManyCrew', error); return { ok: false, message: error.message }; }
+  }
+  return { ok: true };
 }
 
 // ── FIELD MAPPERS ─────────────────────────────────────────────────────────────
