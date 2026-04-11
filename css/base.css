@@ -1,0 +1,51 @@
+/* base.css — reset, CSS variables, body */
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  /* ── Dynamic palette ───────────────────────────────────────────
+     Deep space base with vivid accent colours
+  ─────────────────────────────────────────────────────────────── */
+  --bg:rgba(18,28,54,0.95);        /* card / sidebar bg — deep navy */
+  --bg2:rgba(30,42,76,0.9);        /* raised surface */
+  --bg3:#0b1120;                   /* page background — near-black */
+  --sidebar-bg:rgba(10,18,40,0.98);/* sidebar — darkest */
+  --text:#f0f4ff;
+  --text2:#8896b8;
+  --border:rgba(255,255,255,0.08);
+  --border2:rgba(255,255,255,0.16);
+  --r:10px;--rl:14px;
+  --sidebar:226px;
+
+  /* Vibrant semantic colours */
+  --blue-t:#4da8f7;       --blue-bg:rgba(77,168,247,0.14);
+  --green-t:#3de8a0;      --green-bg:rgba(61,232,160,0.13);
+  --amber-t:#ff9f50;      --amber-bg:rgba(255,159,80,0.14);
+  --red-t:#ff6b7a;        --red-bg:rgba(255,107,122,0.14);
+  --gray-t:#8896b8;       --gray-bg:rgba(136,150,184,0.12);
+  --teal-t:#2dcdc4;       --teal-bg:rgba(45,205,196,0.14);
+  --purple-t:#a78bfa;     --purple-bg:rgba(167,139,250,0.14);
+  --pink-t:#f472b6;       --pink-bg:rgba(244,114,182,0.13);
+
+  /* Primary CTA — vivid coral-orange gradient */
+  --highlight:#ff7f45;
+  --highlight2:#ff5fa0;
+  --highlight-dim:rgba(255,127,69,0.15);
+  --highlight-grad:linear-gradient(135deg,#ff7f45,#ff5fa0);
+
+  /* Card glow colours */
+  --glow-blue:rgba(77,168,247,0.12);
+  --glow-green:rgba(61,232,160,0.10);
+  --glow-amber:rgba(255,127,69,0.12);
+}
+
+body{
+  font-family:-apple-system,'Helvetica Neue',sans-serif;
+  background:var(--bg3);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(77,168,247,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(167,139,250,0.07) 0%, transparent 55%);
+  background-attachment:fixed;
+}

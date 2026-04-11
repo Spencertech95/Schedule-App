@@ -1,0 +1,50 @@
+/* rotations.css — rotation tabs, grids, and table styles */
+
+/* ── ROTATIONS ── */
+.rotation-year-tabs{display:flex;gap:4px;margin-bottom:1.25rem;border-bottom:0.5px solid var(--border);overflow-x:auto;}
+.year-tab{padding:6px 14px;font-size:13px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text2);margin-bottom:-1px;white-space:nowrap;}
+.year-tab.active{color:#fff;border-bottom-color:var(--highlight);font-weight:500;}
+.ship-rotation-tabs{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:1rem;}
+.ship-tab{padding:5px 11px;font-size:12px;background:rgba(255,255,255,0.07);border:0.5px solid var(--border);border-radius:var(--r);cursor:pointer;color:var(--text2);}
+.ship-tab.active{background:var(--highlight);color:#fff;border-color:var(--highlight);}
+.rotation-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:1.25rem;}
+.rotation-month{background:rgba(255,255,255,.05);border-radius:var(--r);padding:8px 10px;border:0.5px solid var(--border);transition:background .15s;} .rotation-month:hover{background:rgba(255,255,255,.08);}
+.rotation-month-name{font-size:10px;font-weight:500;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.03em;}
+.rotation-region{font-size:11px;font-weight:500;margin-bottom:3px;}
+.rotation-ports{font-size:10px;color:var(--text2);line-height:1.5;}
+.rotation-table{width:100%;border-collapse:collapse;}
+.rotation-table th{font-size:10px;font-weight:500;color:var(--text2);padding:5px 9px;border-bottom:0.5px solid var(--border);text-align:left;white-space:nowrap;}
+.rotation-table td{font-size:12px;padding:7px 9px;border-bottom:0.5px solid var(--border);vertical-align:top;}
+.rotation-table tr:last-child td{border-bottom:none;}
+.rotation-table tr:hover td{background:rgba(255,255,255,0.04);}
+.pos-block{margin-bottom:3px;}
+.pos-name{font-size:11px;font-weight:500;}
+.date-pair{font-size:11px;color:var(--text2);}
+.sign-on{color:var(--green-t);}
+.sign-off{color:var(--amber-t);}
+.rotation-overview-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+@media(max-width:1100px){
+  .fleet-grid{grid-template-columns:1fr 1fr;}
+  .rotation-grid,.rotation-overview-grid{grid-template-columns:1fr 1fr;}
+  .dash-stat-row{grid-template-columns:repeat(3,1fr);}
+  .metric-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:900px){
+  .fleet-grid,.rotation-grid,.rotation-overview-grid{grid-template-columns:1fr 1fr;}
+  .dash-stat-row{grid-template-columns:repeat(2,1fr);}
+  .metric-grid{grid-template-columns:repeat(2,1fr);}
+  .ship-kpi-row{grid-template-columns:repeat(3,1fr);}
+  .manifest-search{width:140px;}
+}
+@media(max-width:650px){
+  .ship-kpi-row{grid-template-columns:1fr 1fr;}
+  .pos-grid-row{grid-template-columns:1fr;}
+  .crew-slot{grid-template-columns:1fr 1fr;}
+  .fleet-grid,.rotation-grid,.rotation-overview-grid{grid-template-columns:1fr;}
+  .dash-stat-row{grid-template-columns:1fr 1fr;}
+  .metric-grid{grid-template-columns:1fr 1fr;}
+  .dash-controls{flex-direction:column;align-items:stretch;}
+  .dash-search{max-width:100%;width:100%;}
+  .manifest-section-header{flex-direction:column;align-items:flex-start;}
+  .manifest-search{width:100%;}
+}

@@ -1,0 +1,11 @@
+/* fleet.css — fleet grid and ship cards */
+
+/* FLEET GRID */
+.fleet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:1.25rem;}
+.fleet-class{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.2);transition:box-shadow .2s;}
+.fleet-class-header{padding:10px 14px;border-bottom:0.5px solid var(--border);}
+.fleet-ship{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-bottom:0.5px solid var(--border);font-size:12px;}
+.fleet-ship:last-child{border-bottom:none;}
+.fleet-ship:hover{background:rgba(255,255,255,0.05);}
+.fleet-ship-name{font-weight:500;}
+.fleet-ship-meta{font-size:10px;color:var(--text2);}

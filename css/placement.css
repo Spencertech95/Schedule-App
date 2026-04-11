@@ -1,0 +1,28 @@
+/* placement.css — placement finder and smart suggest */
+
+/* ── PLACEMENT FINDER ── */
+.pf-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1.25rem;}
+.pf-pill-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;}
+.pf-pill{padding:4px 12px;border-radius:999px;font-size:11px;font-weight:500;cursor:pointer;border:.5px solid var(--border);color:var(--text2);background:rgba(255,255,255,.06);}
+.pf-pill.active{background:var(--highlight);color:#fff;border-color:var(--highlight);}
+.pf-ship-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--rl);margin-bottom:10px;overflow:hidden;}
+.pf-ship-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:.5px solid var(--border);background:rgba(255,255,255,.03);}
+.pf-ship-name{font-size:14px;font-weight:500;}
+.pf-ship-meta{font-size:11px;color:var(--text2);}
+.pf-vacancy-score{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.pf-score-bar{width:80px;height:6px;border-radius:3px;background:rgba(255,255,255,.10);}
+.pf-score-fill{height:6px;border-radius:3px;}
+.pf-pos-rows{padding:0 0 4px 0;}
+.pf-pos-row{display:grid;grid-template-columns:100px 1fr auto;gap:8px;align-items:start;padding:8px 14px;border-bottom:.5px solid var(--border);}
+.pf-pos-row:last-child{border-bottom:none;}
+.pf-pos-label{font-size:11px;font-weight:500;padding-top:2px;}
+.pf-slots{display:flex;flex-direction:column;gap:3px;}
+.pf-vacancy{padding:4px 10px;border-radius:var(--r);font-size:11px;background:rgba(41,155,225,.12);border:.5px solid rgba(41,155,225,.3);color:#299BE1;}
+.pf-vacancy.gap{background:rgba(232,116,53,.12);border-color:rgba(232,116,53,.3);color:var(--highlight);}
+.pf-vacancy.overlap{background:rgba(77,212,160,.10);border-color:rgba(77,212,160,.25);color:#4dd4a0;}
+.pf-candidate{display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--r);font-size:11px;background:rgba(255,255,255,.04);}
+.pf-match-score{margin-left:auto;font-size:10px;font-weight:500;}
+.pf-legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem;}
+.pf-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
+.pf-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.pf-empty{font-size:13px;color:var(--text2);padding:1.5rem 0;text-align:center;}
