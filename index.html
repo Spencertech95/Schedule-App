@@ -668,6 +668,31 @@ textarea{resize:vertical;min-height:65px;}
 .vt-type.A{background:rgba(232,116,53,.15);color:var(--highlight);border:.5px solid rgba(232,116,53,.3);}
 .vt-today-badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;background:var(--highlight);color:#fff;margin-left:5px;}
 .vt-voyage-chip{display:inline-block;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:600;background:rgba(41,155,225,.15);color:#299BE1;border:.5px solid rgba(41,155,225,.3);margin-left:5px;}
+/* Voyage cards (next 4 voyages panel) */
+.voyage-card{border:.5px solid var(--border2);border-radius:var(--r);margin-bottom:8px;overflow:hidden;}
+.voyage-card.vc-current{border-color:var(--highlight);box-shadow:0 0 0 1px rgba(255,127,69,.1);}
+.voyage-card.vc-future{border-color:var(--border);}
+.voyage-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;background:rgba(255,255,255,.02);gap:10px;user-select:none;}
+.voyage-card.vc-current .voyage-card-hdr{background:rgba(255,127,69,.06);}
+.voyage-card-hdr:hover{background:rgba(255,255,255,.045);}
+.voyage-card-hdr-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.voyage-card-hdr-right{display:flex;align-items:center;gap:10px;flex-shrink:0;font-size:11px;color:var(--text2);}
+.vc-num{font-size:12px;font-weight:600;white-space:nowrap;}
+.vc-badge{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;}
+.vc-badge.current{background:var(--highlight);color:#fff;}
+.vc-badge.upcoming{background:rgba(41,155,225,.2);color:#299BE1;}
+.vc-homeport{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vc-dates{white-space:nowrap;}
+.vc-dur{white-space:nowrap;}
+.vc-region{background:rgba(255,255,255,.07);border:.5px solid var(--border2);border-radius:3px;padding:1px 6px;font-size:10px;white-space:nowrap;}
+.vc-chevron{font-size:10px;color:var(--text2);transition:transform .15s;}
+.vc-chevron.open{transform:rotate(180deg);}
+.voyage-card-body{padding:0 14px 12px;border-top:.5px solid var(--border);display:none;}
+.voyage-card-body.open{display:block;}
+.vc-port-chips{display:flex;flex-wrap:wrap;gap:4px;padding:10px 0 8px;}
+.vc-chip{font-size:10px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.06);border:.5px solid var(--border2);color:var(--text2);white-space:nowrap;}
+.vc-chip.turnaround{background:rgba(41,155,225,.12);border-color:rgba(41,155,225,.35);color:#299BE1;font-weight:600;}
+.vc-chip.today{background:rgba(232,116,53,.18);border-color:rgba(232,116,53,.5);color:var(--highlight);font-weight:600;}
 /* Leaflet dark overrides */
 .leaflet-container{background:#001428!important;font-family:inherit;}
 .leaflet-popup-content-wrapper{background:#001e42;border:.5px solid rgba(255,255,255,.2);border-radius:10px;color:#fff;box-shadow:0 12px 40px rgba(0,0,0,.6);}
@@ -900,22 +925,9 @@ textarea{resize:vertical;min-height:65px;}
     <div class="voyage-panel" id="voyage-panel" style="display:none;">
       <div class="voyage-panel-header">
         <div class="voyage-panel-title" id="voyage-panel-title"></div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <label style="font-size:11px;color:var(--text2);">Show</label>
-          <input type="number" id="voyage-window" value="28" min="7" max="365" onchange="renderVoyagePanel()"
-                 style="width:50px;font-size:12px;padding:3px 6px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);text-align:center;"/>
-          <label style="font-size:11px;color:var(--text2);">days</label>
-          <button class="btn btn-sm" onclick="closeVoyagePanel()" style="margin-left:4px;">✕ Close</button>
-        </div>
+        <button class="btn btn-sm" onclick="closeVoyagePanel()">✕ Close</button>
       </div>
-      <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
-        <table class="voyage-table">
-          <thead><tr>
-            <th>Date</th><th>Day</th><th>Type</th><th>Port</th><th>Country</th><th>Arrival</th><th>Dep.</th>
-          </tr></thead>
-          <tbody id="voyage-tbody"></tbody>
-        </table>
-      </div>
+      <div id="voyage-cards"></div>
     </div>
   </div>
 </div>
@@ -5003,72 +5015,195 @@ function closeVoyagePanel(){
   deployRefresh();
 }
 
+// Returns the next `count` voyage segments for ship `sc` starting from fromDate.
+// Each segment is an array of day rows from one T-day up to (not incl.) the next T-day.
+function getNextVoyages(sc, fromDate, count){
+  count=count||4;
+  if(!_depData||!_depData[sc])return[];
+  const rows=_depData[sc];
+  // Collect T-day indices
+  const tIdxs=[];
+  rows.forEach((r,i)=>{if(r.dayType==='T')tIdxs.push(i);});
+  if(!tIdxs.length)return[];
+  // Find which T segment contains fromDate (latest T at or before fromDate)
+  let segStart=0;
+  for(let i=tIdxs.length-1;i>=0;i--){
+    if(rows[tIdxs[i]].date<=fromDate){segStart=i;break;}
+  }
+  // Build up to `count` voyage arrays
+  const voyages=[];
+  for(let vi=segStart;vi<tIdxs.length&&voyages.length<count;vi++){
+    const vStart=tIdxs[vi];
+    const vEnd=vi+1<tIdxs.length?tIdxs[vi+1]-1:rows.length-1;
+    voyages.push(rows.slice(vStart,vEnd+1));
+  }
+  return voyages;
+}
+
+function toggleVoyageCard(idx){
+  const body=document.getElementById('vcb-'+idx);
+  const chev=document.getElementById('vcc-'+idx);
+  if(!body)return;
+  const open=body.classList.toggle('open');
+  if(chev)chev.classList.toggle('open',open);
+}
+
 function renderVoyagePanel(){
-  if(!_depSelectedShip||!_depCurrentVoyage)return;
+  if(!_depSelectedShip)return;
   const sc=_depSelectedShip;
   const dateStr=document.getElementById('deploy-date').value;
-  const windowDays=parseInt(document.getElementById('voyage-window').value)||28;
   const color=DEPLOY_SHIP_COLORS[sc]||'#A4A4A7';
   const shipName=SHIP_NAME_MAP[sc]||sc;
 
-  // Find T day for this voyage to label it
-  const tDay=_depCurrentVoyage.find(r=>r.dayType==='T');
-  const voyagePort=tDay?tDay.portName.split(',')[0]:'—';
-  const voyageStart=_depCurrentVoyage[0]?.date||'';
-  const voyageEnd=_depCurrentVoyage[_depCurrentVoyage.length-1]?.date||'';
+  const voyages=getNextVoyages(sc,dateStr,4);
 
   document.getElementById('voyage-panel-title').innerHTML=
     `<span style="font-size:14px;font-weight:600;">${shipName}</span>
      <span style="background:${color};color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:6px;">${sc}</span>
-     <span style="font-size:11px;color:var(--text2);margin-left:8px;">Voyage: ${voyageStart} → ${voyageEnd} · Homeport: ${voyagePort}</span>`;
+     <span style="font-size:11px;color:var(--text2);margin-left:8px;">Next ${voyages.length} voyage${voyages.length!==1?'s':''}</span>`;
 
-  // Determine rows to show
-  let rows=_depCurrentVoyage;
-  if(windowDays>0){
-    const today=new Date(dateStr+'T12:00:00');
-    const rangeStart=new Date(today);rangeStart.setDate(rangeStart.getDate()-2);
-    const rangeEnd=new Date(today);rangeEnd.setDate(rangeEnd.getDate()+windowDays-2);
-    rows=rows.filter(r=>{const d=new Date(r.date+'T12:00:00');return d>=rangeStart&&d<=rangeEnd;});
-    if(!rows.length)rows=_depCurrentVoyage; // fallback: show all
+  if(!voyages.length){
+    document.getElementById('voyage-cards').innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--text2);font-size:13px;">No voyage data available.</div>';
+    return;
   }
 
   const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const MONTH_ABB=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  let voyageNum=0;
-  let lastMonth='';
 
-  const tbody=rows.map(r=>{
-    const d=new Date(r.date+'T12:00:00');
-    const isToday=r.date===dateStr;
-    const monthLabel=`${MONTH_ABB[d.getMonth()]} ${d.getFullYear()}`;
-    let sep='';
-    if(monthLabel!==lastMonth){
-      lastMonth=monthLabel;
-      sep=`<tr><td colspan="7" style="padding:6px 8px;font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.03);border-bottom:.5px solid var(--border);">${monthLabel}</td></tr>`;
+  function fmtDateShort(ds){
+    const d=new Date(ds+'T12:00:00');
+    return`${MONTH_ABB[d.getMonth()]} ${d.getDate()}`;
+  }
+
+  const cardsHtml=voyages.map((vRows,vi)=>{
+    const isCurrent=vi===0;
+    const tDay=vRows.find(r=>r.dayType==='T');
+    const homeport=tDay?tDay.portName.split(',')[0]:'—';
+    const vStart=vRows[0].date;
+    const vEnd=vRows[vRows.length-1].date;
+    const dur=vRows.length;
+    const portCalls=vRows.filter(r=>r.dayType==='X'||r.dayType==='A');
+    const seaDays=vRows.filter(r=>r.dayType==='S').length;
+
+    // Region from port calls
+    const portNames=portCalls.map(r=>r.portName.toUpperCase());
+    let region='';
+    if(portNames.length){
+      const joined=portNames.join(' ');
+      if(/ALASKA|JUNEAU|SKAGWAY|KETCHIKAN|SITKA|GLACIER|SEWARD/.test(joined))region='Alaska';
+      else if(/ARCTIC|SVALBARD|LONGYEARBYEN|HONNINGSVAG/.test(joined))region='Arctic';
+      else if(/NORWAY|BERGEN|FLAM|STAVANGER|TRONDHEIM|GEIRANGER|ALESUND|HELLESYLT/.test(joined))region='Norway';
+      else if(/SWEDEN|FINLAND|DENMARK|ESTONIA|LATVIA|LITHUANIA|ICELAND|FAROE|VISBY|TALLINN/.test(joined))region='Northern Europe';
+      else if(/JAPAN|TOKYO|OSAKA|YOKOHAMA|NAGASAKI|HIROSHIMA|KOBE/.test(joined))region='Japan';
+      else if(/BALI|INDONESIA|LOMBOK|KOMODO|BENOA/.test(joined))region='Indonesia';
+      else if(/SINGAPORE|MALAYSIA|PENANG|VIETNAM|PHU MY|DA NANG/.test(joined))region='SE Asia';
+      else if(/AUSTRALIA|SYDNEY|MELBOURNE|BRISBANE|FREMANTLE|CAIRNS|HOBART/.test(joined))region='Australia';
+      else if(/NEW ZEALAND|AUCKLAND|WELLINGTON/.test(joined))region='New Zealand';
+      else if(/TURKEY|ISTANBUL|KUSADASI|BODRUM|ISRAEL|HAIFA/.test(joined))region='E. Mediterranean';
+      else if(/GREECE|ATHENS|SANTORINI|MYKONOS|PIRAEUS|RHODES|CRETE|CORFU/.test(joined))region='Greek Islands';
+      else if(/CROATIA|MONTENEGRO|KOTOR|DUBROVNIK|SPLIT/.test(joined))region='Adriatic';
+      else if(/ITALY|NAPLES|CIVITAVECCHIA|GENOA|VENICE|LIVORNO|SICILY|ROME/.test(joined))region='Italy';
+      else if(/BARCELONA|VALENCIA|MALAGA|CARTAGENA|PALMA|SPAIN/.test(joined))region='Spain';
+      else if(/MARSEILLE|NICE|TOULON|MONACO|FRANCE/.test(joined))region='French Riviera';
+      else if(/GIBRALTAR|LISBON|PORTUGAL|PORTO/.test(joined))region='Iberia';
+      else if(/MADEIRA|FUNCHAL/.test(joined))region='Madeira';
+      else if(/CANARY|GRAN CANARIA|TENERIFE|LANZAROTE|FUERTEVENTURA|LAS PALMAS/.test(joined))region='Canary Islands';
+      else if(/BERMUDA/.test(joined))region='Bermuda';
+      else if(/HAWAII|HONOLULU|MAUI|HILO|KAUAI/.test(joined))region='Hawaii';
+      else if(/PANAMA|CANAL/.test(joined))region='Panama Canal';
+      else if(/MEXICO|COZUMEL|CABO|MAZATLAN|PUERTO VALLARTA|ENSENADA/.test(joined))region='Mexico';
+      else if(/BAHAMAS|NASSAU|BIMINI|FREEPORT|COCOCAY|PERFECT DAY/.test(joined))region='Bahamas';
+      else if(/CARIBBEAN|PUERTO RICO|SAN JUAN|BARBADOS|MARTINIQUE|ANTIGUA|ARUBA|CURACAO|SAINT LUCIA|DOMINICA|GRENADA|MAARTEN|TORTOLA|CAYMAN|FALMOUTH|MONTEGO|LABADEE/.test(joined))region='Caribbean';
+      else if(/SOUTHAMPTON|ENGLAND|DOVER|EDINBURGH|GREENOCK/.test(joined))region='UK';
+      else if(/DUBAI|UAE|ABU DHABI|MUSCAT|OMAN|BAHRAIN/.test(joined))region='Middle East';
+      else if(/SOUTH AFRICA|CAPE TOWN|DURBAN/.test(joined))region='South Africa';
+      else region='Worldwide';
     }
-    if(r.dayType==='T')voyageNum++;
-    const typeCell=`<div class="vt-type ${r.dayType}">${r.dayType}</div>`;
-    const portDisp=r.dayType==='S'?`<span style="color:var(--text2);font-style:italic;">At sea</span>`
-      :`<span style="font-weight:${r.dayType==='T'?600:400};">${r.portName.split(',')[0]}</span>`;
-    const voyageChip=r.dayType==='T'?`<span class="vt-voyage-chip">Voyage ${voyageNum}</span>`:'';
-    const todayBadge=isToday?'<span class="vt-today-badge">TODAY</span>':'';
-    return`${sep}<tr class="${isToday?'vt-today':''}${r.dayType==='T'?' vt-turnaround':''}">
-      <td style="white-space:nowrap;font-size:11px;">${r.date}${todayBadge}</td>
-      <td style="font-size:11px;color:var(--text2);">${DAY_NAMES[d.getDay()]}</td>
-      <td style="text-align:center;">${typeCell}</td>
-      <td>${portDisp}${voyageChip}</td>
-      <td style="font-size:10px;color:var(--text2);">${r.country||''}</td>
-      <td style="font-size:10px;color:var(--text2);">${r.arrival&&r.dayType!=='S'?r.arrival:''}</td>
-      <td style="font-size:10px;color:var(--text2);">${r.dep&&r.dayType!=='S'?r.dep:''}</td>
-    </tr>`;
+
+    // Port call chips (deduplicated, T first)
+    const seenPorts=new Set();
+    const chips=[];
+    // Add homeport first as turnaround chip
+    chips.push(`<span class="vc-chip turnaround">🔄 ${homeport}</span>`);
+    seenPorts.add(homeport.toUpperCase());
+    portCalls.forEach(r=>{
+      const pn=r.portName.split(',')[0];
+      if(!seenPorts.has(pn.toUpperCase())){
+        const isRef=r.date===dateStr;
+        chips.push(`<span class="vc-chip${isRef?' today':''}">${pn}</span>`);
+        seenPorts.add(pn.toUpperCase());
+      }
+    });
+
+    // Full itinerary table (all days except pure at-sea with no port)
+    let lastMonth='';
+    const tableRows=vRows.map(r=>{
+      const d=new Date(r.date+'T12:00:00');
+      const isRef=r.date===dateStr;
+      const monthLabel=`${MONTH_ABB[d.getMonth()]} ${d.getFullYear()}`;
+      let sep='';
+      if(monthLabel!==lastMonth){
+        lastMonth=monthLabel;
+        sep=`<tr><td colspan="6" style="padding:4px 8px;font-size:9px;font-weight:600;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.03);border-bottom:.5px solid var(--border);">${monthLabel}</td></tr>`;
+      }
+      const typeCell=`<div class="vt-type ${r.dayType}" style="width:18px;height:18px;font-size:8px;">${r.dayType}</div>`;
+      const portDisp=r.dayType==='S'
+        ?`<span style="color:var(--text2);font-style:italic;font-size:11px;">At sea</span>`
+        :`<span style="font-weight:${r.dayType==='T'?600:400};font-size:12px;">${r.portName.split(',')[0]}</span>`;
+      const todayBadge=isRef?'<span class="vt-today-badge" style="margin-left:4px;">TODAY</span>':'';
+      const arrDep=(r.dayType!=='S'&&(r.arrival||r.dep))?`<span style="font-size:10px;color:var(--text2);">${r.arrival?r.arrival:''}${r.arrival&&r.dep?' / ':''}${r.dep?r.dep:''}</span>`:'';
+      return`${sep}<tr style="${isRef?'background:rgba(232,116,53,.08);':''}${r.dayType==='T'?'background:rgba(41,155,225,.05);':''}">
+        <td style="white-space:nowrap;font-size:10px;color:var(--text2);">${DAY_NAMES[d.getDay()]} ${fmtDateShort(r.date)}${todayBadge}</td>
+        <td style="text-align:center;">${typeCell}</td>
+        <td>${portDisp}</td>
+        <td style="font-size:10px;color:var(--text2);">${r.country&&r.dayType!=='S'?r.country:''}</td>
+        <td>${arrDep}</td>
+      </tr>`;
+    }).join('');
+
+    const vcClass=isCurrent?'vc-current':'vc-future';
+    const badge=isCurrent
+      ?`<span class="vc-badge current">CURRENT</span>`
+      :`<span class="vc-badge upcoming">Voyage ${vi+1}</span>`;
+
+    return`<div class="voyage-card ${vcClass}" id="vc-${vi}">
+      <div class="voyage-card-hdr" onclick="toggleVoyageCard(${vi})">
+        <div class="voyage-card-hdr-left">
+          ${badge}
+          <span class="vc-homeport">🔄 ${homeport}</span>
+          ${region?`<span class="vc-region">${region}</span>`:''}
+        </div>
+        <div class="voyage-card-hdr-right">
+          <span class="vc-dates">${fmtDateShort(vStart)} – ${fmtDateShort(vEnd)}</span>
+          <span class="vc-dur">${dur}d</span>
+          <span style="font-size:10px;">⚓${portCalls.length} 🌊${seaDays}</span>
+          <span class="vc-chevron${isCurrent?' open':''}" id="vcc-${vi}">▾</span>
+        </div>
+      </div>
+      <div class="voyage-card-body${isCurrent?' open':''}" id="vcb-${vi}">
+        <div class="vc-port-chips">${chips.join('')}</div>
+        <div style="overflow-x:auto;max-height:360px;overflow-y:auto;border-top:.5px solid var(--border);">
+          <table class="voyage-table" style="font-size:11px;">
+            <thead><tr>
+              <th style="min-width:100px;">Date</th>
+              <th style="width:28px;">Type</th>
+              <th>Port</th>
+              <th>Country</th>
+              <th>Arr / Dep</th>
+            </tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
   }).join('');
 
-  document.getElementById('voyage-tbody').innerHTML=tbody||'<tr><td colspan="7" style="padding:12px 8px;color:var(--text2);font-size:12px;text-align:center;">No data for this window</td></tr>';
+  document.getElementById('voyage-cards').innerHTML=cardsHtml;
 
-  // Scroll today row into view
+  // Scroll TODAY row into view in the current voyage card
   setTimeout(()=>{
-    const todayRow=document.querySelector('#voyage-tbody .vt-today');
-    if(todayRow)todayRow.scrollIntoView({behavior:'smooth',block:'nearest'});
+    const todayRow=document.querySelector('#vcb-0 .vt-today-badge');
+    if(todayRow)todayRow.closest('tr')?.scrollIntoView({behavior:'smooth',block:'nearest'});
   },80);
 }
 // ── END FLEET DEPLOYMENT ──────────────────────────────────────────────────
