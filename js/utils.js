@@ -11,7 +11,10 @@ export function showToast(msg, dur=2800) {
 }
 
 export function toggleForm(id) {
-  document.getElementById(id).classList.toggle('open');
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isOpen = el.classList.toggle('open');
+  el.style.display = isOpen ? 'block' : 'none';
 }
 
 export function classBadge(c) {

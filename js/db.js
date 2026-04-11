@@ -118,8 +118,10 @@ export async function replaceAllCrew(crewArray) {
 function toDbCrew(c) {
   return {
     id: c.id, name: c.name, nat: c.nat || '', airport: c.airport || '',
-    email: c.email || '', position: c.position || '', ship: c.ship || '',
-    status: c.status || 'Off', sign_on: c.signOn || '', sign_off: c.signOff || '',
+    email: c.email || '',
+    pos_id: c.posId || null, ship_id: c.shipId || null,
+    status: c.status || 'Off',
+    sign_on: c.start || c.signOn || '', sign_off: c.end || c.signOff || '',
     contract: c.contract || 6, certs: c.certs || [], notes: c.notes || '',
     passport: c.passport || '', medical: c.medical || '', docs: c.docs || [],
   };
@@ -127,8 +129,10 @@ function toDbCrew(c) {
 function fromDbCrew(r) {
   return {
     id: r.id, name: r.name, nat: r.nat || '', airport: r.airport || '',
-    email: r.email || '', position: r.position || '', ship: r.ship || '',
-    status: r.status || 'Off', signOn: r.sign_on || '', signOff: r.sign_off || '',
+    email: r.email || '',
+    posId: r.pos_id || null, shipId: r.ship_id || null,
+    status: r.status || 'Off',
+    start: r.sign_on || '', end: r.sign_off || '',
     contract: r.contract || 6, certs: r.certs || [], notes: r.notes || '',
     passport: r.passport || '', medical: r.medical || '', docs: r.docs || [],
   };
