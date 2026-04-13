@@ -5,9 +5,10 @@ import { supabase } from './supabase.js';
 import { state } from './state.js';
 
 function onError(op, err) {
-  console.error(`db.${op}:`, err.message);
-  // showToast imported lazily to avoid circular deps
-  try { window._showToast(`DB error: ${err.message}`, 'error'); } catch(_) {}
+  const msg = `DB error [${op}]: ${err.message}`;
+  console.error(msg, err);
+  // Show for 8 seconds with a numeric duration so the toast actually stays visible
+  try { window._showToast(msg, 8000); } catch(_) {}
 }
 
 // ── LOAD ALL ─────────────────────────────────────────────────────────────────

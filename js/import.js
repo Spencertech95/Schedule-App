@@ -371,20 +371,33 @@ export async function importConfirm() {
 
   // Persist to Supabase and wait for result
   let result;
-  if (mode === 'replace') {
-    result = await replaceAllCrew(finalRoster);
-  } else {
-    const toSave = [
-      ...updated.map(({existing}) => existing),
-      ...newCrew.map(({incoming}) => ({...incoming, id: incoming.id || uid()})),
-    ];
-    result = await upsertManyCrew(toSave);
+  try {
+    if (mode === 'replace') {
+      console.log(`[import] replace mode — sending ${finalRoster.length} crew to Supabase`);
+      console.log(`[import] sample row:`, finalRoster[0]);
+      result = await replaceAllCrew(finalRoster);
+    } else {
+      const toSave = [
+        ...updated.map(({existing}) => existing),
+        ...newCrew.map(({incoming}) => ({...incoming, id: incoming.id || uid()})),
+      ];
+      console.log(`[import] merge mode — upserting ${toSave.length} crew to Supabase`);
+      console.log(`[import] sample row:`, toSave[0]);
+      result = await upsertManyCrew(toSave);
+    }
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirm Import'; }
+    console.error('[import] unexpected error:', err);
+    showToast(`Import error: ${err.message}`, 8000);
+    return;
   }
 
   if (btn) { btn.disabled = false; btn.textContent = 'Confirm Import'; }
 
+  console.log('[import] Supabase result:', result);
+
   if (!result?.ok) {
-    showToast(`Save failed: ${result?.message || 'unknown error'}`, 6000);
+    showToast(`Save failed: ${result?.message || 'unknown error'}`, 8000);
     return;
   }
 
