@@ -1,2 +1,2 @@
 export const SUPABASE_URL = 'https://zqxfuwbiyjtvksxpskut.supabase.co';
-export const SUPABASE_KEY = 'sb_publishable_Ugb4vIkiY_zm5znKRJE4LQ_cT6eP';
+export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxeGZ1d2JpeWp0dmtzeHBza3V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MjY0MjIsImV4cCI6MjA5MTUwMjQyMn0.hHu80zNRnzSq68DfqwXjCCYm78E9KZao4GcLI6byl54';
