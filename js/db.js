@@ -137,24 +137,64 @@ export async function upsertManyCrew(crewArray) {
 // ── FIELD MAPPERS ─────────────────────────────────────────────────────────────
 function toDbCrew(c) {
   return {
+    // core
     id: c.id, name: c.name, nat: c.nat || '', airport: c.airport || '',
-    email: c.email || '',
+    email: c.email || '', phone: c.phone || '',
     pos_id: c.posId || null, ship_id: c.shipId || null,
     status: c.status || 'Off',
     sign_on: c.start || c.signOn || '', sign_off: c.end || c.signOff || '',
     contract: c.contract || 6, certs: c.certs || [], notes: c.notes || '',
-    passport: c.passport || '', medical: c.medical || '', docs: c.docs || [],
+    // documents
+    passport: c.passport || '', passport_no: c.passportNo || '',
+    medical: c.medical || '', visa: c.visa || '',
+    seaman_book: c.seamanBook || '', seaman_book_exp: c.seamanBookExp || '',
+    docs: c.docs || [],
+    // personal / medical
+    dob: c.dob || '', blood_type: c.bloodType || '',
+    allergies: c.allergies || '', med_notes: c.medNotes || '',
+    // emergency contact
+    ec_name: c.ecName || '', ec_rel: c.ecRel || '',
+    ec_phone: c.ecPhone || '', ec_email: c.ecEmail || '', ec_addr: c.ecAddr || '',
+    // skills & profile
+    training: c.training || '', rating: c.rating || 0, skills: c.skills || {},
+    // import / roster data
+    abbr: c.abbr || '', ship_code: c.shipCode || c.recentShipCode || '',
+    tenure: c.tenure || 0, category: c.category || '',
+    future_ship: c.futureShip || '', future_on: c.futureOn || '',
+    future_off: c.futureOff || '', future_name: c.futureName || '',
+    sign_on_reason: c.signOnReason || '', sign_off_reason: c.signOffReason || '',
+    ship_history: c.shipHistory || [],
   };
 }
 function fromDbCrew(r) {
   return {
+    // core
     id: r.id, name: r.name, nat: r.nat || '', airport: r.airport || '',
-    email: r.email || '',
+    email: r.email || '', phone: r.phone || '',
     posId: r.pos_id || null, shipId: r.ship_id || null,
     status: r.status || 'Off',
     start: r.sign_on || '', end: r.sign_off || '',
     contract: r.contract || 6, certs: r.certs || [], notes: r.notes || '',
-    passport: r.passport || '', medical: r.medical || '', docs: r.docs || [],
+    // documents
+    passport: r.passport || '', passportNo: r.passport_no || '',
+    medical: r.medical || '', visa: r.visa || '',
+    seamanBook: r.seaman_book || '', seamanBookExp: r.seaman_book_exp || '',
+    docs: r.docs || [],
+    // personal / medical
+    dob: r.dob || '', bloodType: r.blood_type || '',
+    allergies: r.allergies || '', medNotes: r.med_notes || '',
+    // emergency contact
+    ecName: r.ec_name || '', ecRel: r.ec_rel || '',
+    ecPhone: r.ec_phone || '', ecEmail: r.ec_email || '', ecAddr: r.ec_addr || '',
+    // skills & profile
+    training: r.training || '', rating: r.rating || 0, skills: r.skills || {},
+    // import / roster data
+    abbr: r.abbr || '', shipCode: r.ship_code || '', recentShipCode: r.ship_code || '',
+    tenure: r.tenure || 0, category: r.category || '',
+    futureShip: r.future_ship || '', futureOn: r.future_on || '',
+    futureOff: r.future_off || '', futureName: r.future_name || '',
+    signOnReason: r.sign_on_reason || '', signOffReason: r.sign_off_reason || '',
+    shipHistory: r.ship_history || [],
   };
 }
 
