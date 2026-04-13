@@ -3,7 +3,6 @@ import { state } from './state.js';
 import { showToast } from './utils.js';
 import { upsertCrew } from './db.js';
 import { upsertOffer } from './db.js';
-import { RESEND_API_KEY, RESEND_FROM } from './config.js';
 
 export function getCrewEmail(crewId) {
   const c = state.crew.find(x => x.id == crewId);
@@ -149,158 +148,10 @@ export function copyEmailToClipboard() {
   });
 }
 
-function buildOfferEmailHtml(o) {
-  const crew        = state.crew.find(c => c.id == o.crewId);
-  const SHIP_DISPLAY = window.SHIP_DISPLAY || {};
-  const SHIP_CLASS_MAP = window.SHIP_CLASS_MAP || {};
-  const shipDisplay = SHIP_DISPLAY[o.ship] || {name: o.ship || '—', cls: ''};
-  const cls         = SHIP_CLASS_MAP[o.ship] || '';
-  const typeLabel   = o.type === 'Extension' ? 'Contract Extension'
-    : o.type === 'Leave' ? `Leave Request — ${o.subtype || ''}`
-    : 'New Assignment Offer';
-  const firstName   = crew?.name?.split(' ')[0] || 'Crew Member';
-  const BASE_URL    = 'https://spencertech95.github.io/Schedule-App/';
-  const acceptLink  = `${BASE_URL}?offer=${o.id}&action=accept`;
-  const declineLink = `${BASE_URL}?offer=${o.id}&action=decline`;
-
-  const rows = [
-    ['Ship',      `${shipDisplay.name}${cls ? ' (' + cls + ' Class)' : ''}`],
-    ['Position',  crew?.posTitle || crew?.abbr || '—'],
-    o.dateFrom ? ['Start Date', o.dateFrom] : null,
-    o.dateTo   ? ['End Date',   o.dateTo]   : null,
-    ['Approver',  o.approver || 'Celebrity Cruises Technical Entertainment'],
-  ].filter(Boolean).map(([label, value]) => `
-    <tr>
-      <td style="padding:8px 12px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#888;white-space:nowrap;">${label}</td>
-      <td style="padding:8px 12px;font-size:14px;color:#1a1a1a;">${value}</td>
-    </tr>`).join('');
-
-  const notesSection = o.notes ? `
-    <p style="margin:0 0 24px;font-size:14px;color:#444;line-height:1.6;"><strong>Additional notes:</strong><br>${o.notes}</p>` : '';
-
-  return `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 16px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
-
-        <!-- Header -->
-        <tr><td style="background:#1a1a2e;padding:28px 32px;">
-          <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#ff7f45;">Celebrity Cruises</p>
-          <p style="margin:6px 0 0;font-size:20px;font-weight:700;color:#fff;">${typeLabel}</p>
-        </td></tr>
-
-        <!-- Body -->
-        <tr><td style="padding:32px;">
-          <p style="margin:0 0 24px;font-size:15px;color:#333;">Dear ${firstName},</p>
-          <p style="margin:0 0 24px;font-size:14px;color:#555;line-height:1.6;">
-            We are pleased to extend the following offer to you from Celebrity Cruises Technical Entertainment.
-          </p>
-
-          <!-- Details table -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f8f9;border-radius:8px;overflow:hidden;margin-bottom:28px;">
-            <tbody>${rows}</tbody>
-          </table>
-
-          ${notesSection}
-
-          <p style="margin:0 0 20px;font-size:14px;color:#555;">Please confirm your response using one of the buttons below:</p>
-
-          <!-- Buttons -->
-          <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-            <tr>
-              <td style="padding-right:12px;">
-                <a href="${acceptLink}" style="display:inline-block;padding:14px 28px;background:#22c55e;color:#fff;font-size:15px;font-weight:700;text-decoration:none;border-radius:8px;letter-spacing:.02em;">✅ Accept Offer</a>
-              </td>
-              <td>
-                <a href="${declineLink}" style="display:inline-block;padding:14px 28px;background:#ef4444;color:#fff;font-size:15px;font-weight:700;text-decoration:none;border-radius:8px;letter-spacing:.02em;">❌ Decline Offer</a>
-              </td>
-            </tr>
-          </table>
-
-          <p style="margin:0;font-size:12px;color:#999;line-height:1.6;">
-            Clicking either button will open a confirmation page — no login required. Your response will be recorded instantly.
-          </p>
-        </td></tr>
-
-        <!-- Footer -->
-        <tr><td style="background:#f8f8f9;padding:20px 32px;border-top:1px solid #ebebeb;">
-          <p style="margin:0;font-size:12px;color:#888;line-height:1.6;">
-            Warm regards,<br>
-            <strong>Celebrity Cruises Technical Entertainment Crew Scheduling</strong>
-          </p>
-          <p style="margin:8px 0 0;font-size:11px;color:#bbb;">This message contains confidential information.</p>
-        </td></tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-}
-
-export async function sendEmailViaResend() {
-  const to      = document.getElementById('email-to').value.trim();
-  const subject = document.getElementById('email-subject').value.trim();
-
-  if (!to) { showToast('Please enter a recipient email address.'); return; }
-
-  const id    = parseInt(document.getElementById('email-modal').dataset.offerId);
-  const offer = state.offers.find(x => x.id === id);
-
-  if (offer) saveCrewEmail(offer.crewId, to);
-
-  const btn = document.querySelector('#email-modal .btn-primary');
-  const orig = btn?.innerHTML;
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span>⏳</span> Sending…'; }
-
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: RESEND_FROM,
-        to: [to],
-        subject,
-        html: buildOfferEmailHtml(offer),
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || data.name || 'Send failed');
-    }
-
-    // Advance offer stage Draft → Sent
-    if (offer && offer.stage === 'Draft') {
-      offer.stage = 'Sent';
-      offer.history = offer.history || [];
-      offer.history.push({ date: new Date().toISOString().slice(0, 10), note: 'Offer emailed to crew member — stage advanced to Sent' });
-      upsertOffer(offer);
-      if (typeof window.renderContracts === 'function') window.renderContracts();
-      if (typeof window.renderCoSummary === 'function') window.renderCoSummary();
-    }
-
-    closeEmailModal();
-    showToast('Email sent successfully ✓');
-  } catch (err) {
-    showToast(`Send failed: ${err.message}`, 6000);
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = orig; }
-  }
-}
-
 window.openEmailCompose    = openEmailCompose;
 window.closeEmailModal     = closeEmailModal;
 window.closeEmailIfOutside = closeEmailIfOutside;
 window.sendEmailViaMailto  = sendEmailViaMailto;
-window.sendEmailViaResend  = sendEmailViaResend;
 window.copyEmailToClipboard = copyEmailToClipboard;
 // also expose so contracts.js renderCoDetailModal inline `saveCrewEmail(...)` works
 window.saveCrewEmail       = saveCrewEmail;
