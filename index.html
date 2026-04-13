@@ -765,8 +765,11 @@
       <textarea class="email-body" id="email-body" spellcheck="true"></textarea>
     </div>
     <div class="email-footer">
-      <button class="btn btn-primary" onclick="sendEmailViaMailto()">
-        <span>✉</span> Open in email client
+      <button class="btn btn-primary" onclick="sendEmailViaResend()">
+        <span>✉</span> Send email
+      </button>
+      <button class="btn" onclick="sendEmailViaMailto()">
+        <span>⎘</span> Open in email client
       </button>
       <button class="btn" onclick="copyEmailToClipboard()">
         <span>⎘</span> Copy to clipboard
