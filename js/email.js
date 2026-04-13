@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { showToast } from './utils.js';
 import { upsertCrew } from './db.js';
 import { upsertOffer } from './db.js';
+import { getEssShipOptions } from './placement.js';
 
 export function getCrewEmail(crewId) {
   const c = state.crew.find(x => x.id == crewId);
@@ -33,6 +34,36 @@ function buildOfferEmailBody(o) {
   const acceptLink  = `${BASE_URL}?offer=${o.id}&action=accept`;
   const declineLink = `${BASE_URL}?offer=${o.id}&action=decline`;
 
+  // ESS: append 3 ship options
+  let essSection = '';
+  if (crew?.abbr === 'ESS' && crew?.end) {
+    const opts = getEssShipOptions(crew);
+    if (opts.length) {
+      const medals = ['🥇','🥈','🥉'];
+      const ranks  = ['1st Choice','2nd Choice','3rd Choice'];
+      const lines  = opts.map((opt, i) => {
+        const gap     = opt.timingGap < 999 ? ` · ${opt.timingGap}d timing gap` : '';
+        const sameShip = crew.recentShipCode === opt.sc ? ' · Familiar ship' : '';
+        const sameCls  = !sameShip && opt.cls && opt.cls === (window.SC2CLS?.[crew.recentShipCode] || '') ? ' · Same class' : '';
+        const avail    = opt.bestVac ? `Available ~${opt.bestVac.end}` : 'Vacancy available';
+        return `  ${medals[i]}  ${ranks[i]}: Celebrity ${opt.name} (${opt.sc})\n     ${avail}${gap}${sameShip}${sameCls}`;
+      }).join('\n\n');
+      essSection = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  YOUR NEXT SHIP OPTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Based on your sign-off date and current fleet needs, we have identified
+the following ship options for your next assignment:
+
+${lines}
+
+Please indicate your preferred ship when responding to this offer.
+
+`;
+    }
+  }
+
   return `Dear ${crew?.name?.split(' ')[0] || 'Crew Member'},
 
 We are pleased to extend the following offer to you from Celebrity Cruises Technical Entertainment.
@@ -46,7 +77,7 @@ Position:      ${crew?.posTitle || crew?.abbr || '—'}
 ${dateSection}
 Approver:      ${o.approver || 'Celebrity Cruises Technical Entertainment'}
 
-${o.notes ? 'Additional notes:\n' + o.notes + '\n\n' : ''}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${o.notes ? 'Additional notes:\n' + o.notes + '\n\n' : ''}${essSection}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   RESPOND TO THIS OFFER
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

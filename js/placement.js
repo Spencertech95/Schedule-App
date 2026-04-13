@@ -5,6 +5,39 @@ const SC2CLS   = {'ML':'MILLENNIUM CLASS','IN':'MILLENNIUM CLASS','SM':'MILLENNI
 const SC2NAME  = {'ML':'Millennium','IN':'Infinity','SM':'Summit','CS':'Constellation','SL':'Solstice','EQ':'Equinox','EC':'Eclipse','SI':'Silhouette','RF':'Reflection','EG':'Edge','AX':'Apex','BY':'Beyond','AT':'Ascent','XC':'Xcel'};
 const CLS2BADGE = {'MILLENNIUM CLASS':'badge-teal','SOLSTICE CLASS':'badge-blue','EDGE CLASS':'badge-purple'};
 
+// ── Exported: compute top-3 ship options for an ESS crew member ──────────────
+export function getEssShipOptions(crewMember, windowDays = 60) {
+  const now         = new Date();
+  const signOffDate = new Date(crewMember.end);
+  const SHIP_CODES  = ['ML','IN','SM','CS','SL','EQ','EC','SI','RF','EG','AX','BY','AT','XC'];
+
+  return SHIP_CODES
+    .filter(sc => state.crew.some(c => {
+      if (c.recentShipCode !== sc || c.abbr !== 'ESS' || c.id === crewMember.id) return false;
+      if (!c.end) return false;
+      const d = (new Date(c.end) - now) / 864e5;
+      return d >= 0 && d <= windowDays;
+    }))
+    .map(sc => {
+      const cls      = SC2CLS[sc] || '';
+      const vacancies = state.crew.filter(c =>
+        c.recentShipCode === sc && c.abbr === 'ESS' && c.id !== crewMember.id && c.end &&
+        (new Date(c.end) - now) / 864e5 >= 0 && (new Date(c.end) - now) / 864e5 <= windowDays
+      );
+      const bestVac   = vacancies.reduce((best, v) =>
+        !best || Math.abs(new Date(v.end) - signOffDate) < Math.abs(new Date(best.end) - signOffDate) ? v : best
+      , null);
+      const timingGap = bestVac ? Math.round(Math.abs((new Date(bestVac.end) - signOffDate) / 864e5)) : 999;
+      let score = timingGap;
+      if (crewMember.recentShipCode === sc)                        score -= 50;
+      else if (SC2CLS[crewMember.recentShipCode] === cls)          score -= 25;
+      if (state.crew.some(c => c.futureShip === sc && c.abbr === 'ESS')) score += 20;
+      return { sc, name: SC2NAME[sc] || sc, cls, score, timingGap, bestVac };
+    })
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3);
+}
+
 export function initPlacement() {
   const posEl = document.getElementById('pf-pos-filter');
   if (posEl) posEl.innerHTML = '<option value="">All positions</option>' + state.positions.map(p => `<option value="${p.abbr}">${p.abbr} — ${p.title}</option>`).join('');
