@@ -50,13 +50,13 @@ ${o.notes ? 'Additional notes:\n' + o.notes + '\n\n' : ''}━━━━━━━�
   RESPOND TO THIS OFFER
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Please click one of the links below to record your response:
+To respond, click the link that matches your decision:
 
-✅ ACCEPT this offer:
-${acceptLink}
+  ✅  ACCEPT — click here to accept this offer:
+  → ${acceptLink}
 
-❌ DECLINE this offer:
-${declineLink}
+  ❌  DECLINE — click here to decline this offer:
+  → ${declineLink}
 
 Clicking either link will open a confirmation page — no login required.
 Your response will be recorded instantly.
