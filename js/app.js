@@ -1,7 +1,7 @@
 // ── app.js — application entry point ─────────────────────────────────────────
 // Imports all modules (which registers their window.* handlers), then boots.
 
-import { loadAll } from './db.js';
+import { loadAll, upsertOffer } from './db.js';
 import { state }   from './state.js';
 import { showToast } from './utils.js';
 
@@ -43,6 +43,12 @@ async function boot() {
 
   if (loadingEl) loadingEl.style.display = 'none';
 
+  // Check for offer response link (?offer=X&action=accept|decline)
+  if (window.location.search.includes('offer=') && window.location.search.includes('action=')) {
+    showOfferResponseOverlay();
+    return; // don't render the normal app
+  }
+
   // Initialise ship nav buttons
   window.initShipNav?.();
 
@@ -58,3 +64,124 @@ async function boot() {
 }
 
 boot();
+
+// ── OFFER RESPONSE HANDLER ────────────────────────────────────────────────────
+// Called after data loads if ?offer=X&action=accept|decline is in the URL.
+
+const SHIP_NAMES = {'ML':'Millennium','IN':'Infinity','SM':'Summit','CS':'Constellation','SL':'Solstice','EQ':'Equinox','EC':'Eclipse','SI':'Silhouette','RF':'Reflection','EG':'Edge','AX':'Apex','BY':'Beyond','AT':'Ascent','XC':'Xcel'};
+
+let _ofrAction = null;
+let _ofrOffer  = null;
+
+function showOfferResponseOverlay() {
+  const params   = new URLSearchParams(window.location.search);
+  const offerId  = parseInt(params.get('offer'));
+  const action   = params.get('action'); // 'accept' or 'decline'
+  if (!offerId || !['accept','decline'].includes(action)) return;
+
+  const overlay = document.getElementById('offer-response-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+
+  // Hide the main app shell so crew only see the response screen
+  const shell = document.getElementById('app-shell');
+  if (shell) shell.style.display = 'none';
+
+  const offer = state.offers.find(o => o.id === offerId);
+
+  if (!offer) {
+    document.getElementById('ofr-title').textContent = 'Offer not found';
+    document.getElementById('ofr-sub').textContent   = `Offer #${offerId} could not be found. It may have already been processed.`;
+    document.getElementById('ofr-details').innerHTML = '';
+    document.getElementById('ofr-actions').style.display = 'none';
+    return;
+  }
+
+  // Already responded
+  if (['Accepted','Declined','Confirmed'].includes(offer.stage)) {
+    showOfrResult(
+      offer.stage === 'Declined' ? 'declined' : 'already',
+      offer
+    );
+    return;
+  }
+
+  _ofrAction = action;
+  _ofrOffer  = offer;
+
+  const crew      = state.crew.find(c => c.id == offer.crewId);
+  const shipName  = SHIP_NAMES[offer.ship] || offer.ship || '—';
+  const typeLabel = offer.type === 'Extension' ? 'Contract Extension' : offer.type === 'Leave' ? 'Leave Request' : 'New Assignment Offer';
+
+  document.getElementById('ofr-title').textContent = typeLabel;
+  document.getElementById('ofr-sub').textContent   = `For ${crew?.name || 'Crew Member'} · ${shipName}`;
+
+  document.getElementById('ofr-details').innerHTML = [
+    ['Ship',      shipName],
+    ['Position',  crew?.abbr || crew?.posTitle || '—'],
+    ['Start date',offer.startDate || offer.dateFrom || '—'],
+    ['End date',  offer.endDate   || offer.dateTo   || '—'],
+    ['Type',      offer.type || '—'],
+    ['Status',    offer.stage],
+  ].map(([label, value]) => `
+    <div>
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:2px;">${label}</div>
+      <div style="font-size:13px;color:#fff;">${value}</div>
+    </div>`).join('');
+
+  const actionLabel = action === 'accept' ? 'accept' : 'decline';
+  document.getElementById('ofr-prompt').textContent = `Please confirm your response below. This will update your offer status immediately.`;
+
+  // Pre-highlight the relevant button
+  if (action === 'accept') {
+    document.getElementById('ofr-accept-btn').style.boxShadow  = '0 0 0 3px rgba(255,127,69,.4)';
+  } else {
+    document.getElementById('ofr-decline-btn').style.boxShadow = '0 0 0 3px rgba(255,107,122,.4)';
+  }
+}
+
+async function confirmOfferResponse(action) {
+  const offer = _ofrOffer;
+  if (!offer) return;
+
+  const acceptBtn  = document.getElementById('ofr-accept-btn');
+  const declineBtn = document.getElementById('ofr-decline-btn');
+  if (acceptBtn)  acceptBtn.disabled  = true;
+  if (declineBtn) declineBtn.disabled = true;
+
+  offer.stage = action === 'accept' ? 'Accepted' : 'Declined';
+  offer.history = offer.history || [];
+  offer.history.push({
+    date: new Date().toISOString().slice(0, 10),
+    note: `Crew member ${action === 'accept' ? 'accepted' : 'declined'} offer via email link`,
+  });
+
+  const { error } = await upsertOffer(offer);
+  showOfrResult(action, offer);
+}
+
+function showOfrResult(type, offer) {
+  document.getElementById('ofr-actions').style.display = 'none';
+  const result = document.getElementById('ofr-result');
+  result.style.display = 'block';
+
+  const crew     = state.crew.find(c => c.id == offer?.crewId);
+  const shipName = SHIP_NAMES[offer?.ship] || offer?.ship || '—';
+  const name     = crew?.name?.split(' ')[0] || 'Crew Member';
+
+  if (type === 'accept') {
+    document.getElementById('ofr-result-icon').textContent  = '✅';
+    document.getElementById('ofr-result-title').textContent = `Thank you, ${name}!`;
+    document.getElementById('ofr-result-sub').textContent   = `Your acceptance of the ${shipName} offer has been recorded. Your scheduling team will be in touch shortly with next steps.`;
+  } else if (type === 'decline') {
+    document.getElementById('ofr-result-icon').textContent  = '👍';
+    document.getElementById('ofr-result-title').textContent = `Response recorded`;
+    document.getElementById('ofr-result-sub').textContent   = `Your decline of the ${shipName} offer has been noted. Your scheduling team will follow up with alternative options.`;
+  } else if (type === 'already') {
+    document.getElementById('ofr-result-icon').textContent  = 'ℹ️';
+    document.getElementById('ofr-result-title').textContent = `Already responded`;
+    document.getElementById('ofr-result-sub').textContent   = `This offer has already been ${offer?.stage?.toLowerCase()}. No further action is needed.`;
+  }
+}
+
+window.confirmOfferResponse = confirmOfferResponse;

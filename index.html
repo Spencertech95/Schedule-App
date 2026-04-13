@@ -779,6 +779,39 @@
 
 </div><!-- /app-shell -->
 
+<!-- OFFER RESPONSE OVERLAY — shown when crew clicks accept/decline link -->
+<div id="offer-response-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg3);align-items:center;justify-content:center;padding:1.5rem;">
+  <div style="background:var(--bg);border:.5px solid var(--border2);border-radius:var(--rl);width:min(520px,100%);box-shadow:0 32px 80px rgba(0,0,0,.6);overflow:hidden;">
+
+    <!-- header -->
+    <div id="ofr-header" style="padding:1.5rem 1.75rem 1.25rem;border-bottom:.5px solid var(--border);background:linear-gradient(135deg,rgba(77,168,247,.07),rgba(167,139,250,.05));">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:6px;">Celebrity Cruises — Technical Entertainment</div>
+      <div id="ofr-title" style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;"></div>
+      <div id="ofr-sub"   style="font-size:13px;color:var(--text2);"></div>
+    </div>
+
+    <!-- offer details -->
+    <div id="ofr-details" style="padding:1.25rem 1.75rem;border-bottom:.5px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;"></div>
+
+    <!-- action area -->
+    <div id="ofr-actions" style="padding:1.25rem 1.75rem;display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:4px;" id="ofr-prompt"></div>
+      <div style="display:flex;gap:10px;">
+        <button id="ofr-accept-btn"  class="btn btn-primary" style="flex:1;justify-content:center;font-size:14px;padding:10px;" onclick="confirmOfferResponse('accept')">✓ Accept offer</button>
+        <button id="ofr-decline-btn" class="btn btn-danger"  style="flex:1;justify-content:center;font-size:14px;padding:10px;" onclick="confirmOfferResponse('decline')">✕ Decline offer</button>
+      </div>
+    </div>
+
+    <!-- result area (shown after response) -->
+    <div id="ofr-result" style="display:none;padding:1.5rem 1.75rem;text-align:center;">
+      <div id="ofr-result-icon"  style="font-size:40px;margin-bottom:12px;"></div>
+      <div id="ofr-result-title" style="font-size:18px;font-weight:700;color:#fff;margin-bottom:6px;"></div>
+      <div id="ofr-result-sub"   style="font-size:13px;color:var(--text2);"></div>
+    </div>
+
+  </div>
+</div>
+
 <!-- App entry point (ES module) -->
 <script type="module" src="js/app.js"></script>
 </body>

@@ -87,6 +87,7 @@ export async function saveRotations(ship) {
 export async function upsertOffer(o) {
   const { error } = await supabase.from('offers').upsert(toDbOffer(o));
   if (error) onError('upsertOffer', error);
+  return { error };
 }
 export async function dbDeleteOffer(id) {
   const { error } = await supabase.from('offers').delete().eq('id', id);

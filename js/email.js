@@ -29,6 +29,10 @@ function buildOfferEmailBody(o) {
   const dateSection = o.dateFrom
     ? `Start date:    ${o.dateFrom}${o.dateTo ? '\nEnd date:      ' + o.dateTo : ''}`
     : '';
+  const BASE_URL    = 'https://spencertech95.github.io/Schedule-App/';
+  const acceptLink  = `${BASE_URL}?offer=${o.id}&action=accept`;
+  const declineLink = `${BASE_URL}?offer=${o.id}&action=decline`;
+
   return `Dear ${crew?.name?.split(' ')[0] || 'Crew Member'},
 
 We are pleased to extend the following offer to you from Celebrity Cruises Technical Entertainment.
@@ -42,9 +46,22 @@ Position:      ${crew?.posTitle || crew?.abbr || '—'}
 ${dateSection}
 Approver:      ${o.approver || 'Celebrity Cruises Technical Entertainment'}
 
-${o.notes ? 'Additional notes:\n' + o.notes + '\n\n' : ''}Please review this offer and respond at your earliest convenience. To accept or discuss further, please reply to this email or contact your Entertainment Manager directly.
+${o.notes ? 'Additional notes:\n' + o.notes + '\n\n' : ''}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  RESPOND TO THIS OFFER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-To confirm your acceptance, simply reply with "ACCEPTED" along with any questions you may have.
+Please click one of the links below to record your response:
+
+✅ ACCEPT this offer:
+${acceptLink}
+
+❌ DECLINE this offer:
+${declineLink}
+
+Clicking either link will open a confirmation page — no login required.
+Your response will be recorded instantly.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 We value your continued contribution to the Celebrity Cruises fleet and look forward to your response.
 
