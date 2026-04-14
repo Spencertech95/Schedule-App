@@ -34,5 +34,6 @@ export function deleteCompliance(id) {
   renderCompliance();
 }
 
+window.renderCompliance = renderCompliance;
 window.saveCompliance   = saveCompliance;
 window.deleteCompliance = deleteCompliance;

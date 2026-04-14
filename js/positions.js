@@ -108,6 +108,7 @@ export function deletePosition(id) {
   dbDeletePosition(id);
 }
 
+window.renderPositions     = renderPositions;
 window.editPosition        = editPosition;
 window.cancelPositionEdit  = cancelPositionEdit;
 window.savePositionEdit    = savePositionEdit;
