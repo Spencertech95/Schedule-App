@@ -19,6 +19,7 @@ export function showPage(name, el) {
   if (!pageEl) return;
   pageEl.classList.add('active');
   el.classList.add('active');
+  history.replaceState(null, '', '#' + name);
   if (name === 'overview')   renderOverview();
   if (name === 'fleet')      renderFleet();
   if (name === 'rotations')  initRotations();

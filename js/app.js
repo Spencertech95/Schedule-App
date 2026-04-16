@@ -56,11 +56,31 @@ async function boot() {
   window.renderPositions?.();
   window.renderCompliance?.();
 
-  // Navigate to the default page (overview)
-  const defaultNav = document.querySelector('.nav-item[data-page="overview"]')
-    || document.querySelector('.nav-item[onclick*="overview"]');
-  window.showPage('overview', defaultNav || document.createElement('button'));
-  if (defaultNav) defaultNav.classList.add('active');
+  // Navigate to the page from the URL hash, or default to overview
+  const hash = window.location.hash.slice(1); // strip leading #
+  let navigated = false;
+  if (hash) {
+    if (hash.startsWith('ship-')) {
+      const sc = hash.slice(5);
+      const shipNavBtn = document.getElementById('shipnav-' + sc);
+      if (shipNavBtn && typeof window.showShip === 'function') {
+        window.showShip(sc, shipNavBtn);
+        navigated = true;
+      }
+    } else {
+      const navBtn = document.querySelector(`.nav-item[onclick*="'${hash}'"]`);
+      if (navBtn) {
+        window.showPage(hash, navBtn);
+        navigated = true;
+      }
+    }
+  }
+  if (!navigated) {
+    const defaultNav = document.querySelector('.nav-item[data-page="overview"]')
+      || document.querySelector('.nav-item[onclick*="overview"]');
+    window.showPage('overview', defaultNav || document.createElement('button'));
+    if (defaultNav) defaultNav.classList.add('active');
+  }
 }
 
 boot();

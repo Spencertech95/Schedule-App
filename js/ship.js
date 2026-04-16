@@ -56,6 +56,7 @@ export function showShip(shipCode, el) {
   document.getElementById('page-ship').classList.add('active');
   if (el) el.classList.add('active');
   currentShipCode = shipCode;
+  history.replaceState(null, '', '#ship-' + shipCode);
   renderShipPage(shipCode);
 }
 
