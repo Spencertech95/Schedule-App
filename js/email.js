@@ -33,24 +33,31 @@ function buildOfferEmailBody(o) {
   const BASE_URL    = 'https://spencertech95.github.io/Schedule-App/';
   const declineLink = `${BASE_URL}?offer=${o.id}&action=decline`;
 
-  // ESS: 3 ship options each with their own accept link
-  let essSection = '';
-  let hasEssOptions = false;
-  if (crew?.abbr === 'ESS' && crew?.end) {
-    const opts = getEssShipOptions(crew);
-    if (opts.length) {
-      hasEssOptions = true;
-      const medals = ['🥇','🥈','🥉'];
-      const ranks  = ['1st Choice','2nd Choice','3rd Choice'];
-      const lines  = opts.map((opt, i) => {
-        const gap      = opt.timingGap < 999 ? ` · ${opt.timingGap}d timing gap` : '';
-        const sameShip = crew.recentShipCode === opt.sc ? ' · Familiar ship' : '';
-        const sameCls  = !sameShip && opt.cls && opt.cls === (window.SC2CLS?.[crew.recentShipCode] || '') ? ' · Same class' : '';
-        const avail    = opt.bestVac ? `Available ~${opt.bestVac.end}` : 'Vacancy available';
-        const acceptLink = `${BASE_URL}?offer=${o.id}&action=accept&ship=${opt.sc}`;
-        return `  ${medals[i]}  ${ranks[i]}: Celebrity ${opt.name} (${opt.sc})\n     ${avail}${gap}${sameShip}${sameCls}\n\n     ✅ Accept this ship:\n     → ${acceptLink}`;
-      }).join('\n\n─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n\n');
-      essSection = `
+  // Build per-ship accept links from stored shipOptions (all positions) or ESS fallback
+  const SHIP_NAMES_LOCAL = {'ML':'Millennium','IN':'Infinity','SM':'Summit','CS':'Constellation','SL':'Solstice','EQ':'Equinox','EC':'Eclipse','SI':'Silhouette','RF':'Reflection','EG':'Edge','AX':'Apex','BY':'Beyond','AT':'Ascent','XC':'Xcel'};
+  let multiShipSection = '';
+  let hasMultiOptions  = false;
+
+  // Prefer stored shipOptions from the offer; fall back to ESS scoring for legacy offers
+  const storedOpts = o.shipOptions?.length ? o.shipOptions : null;
+  const rawOpts = storedOpts
+    ? storedOpts.map(sc => ({ sc, name: SHIP_NAMES_LOCAL[sc] || sc }))
+    : (crew?.abbr === 'ESS' && crew?.end ? getEssShipOptions(crew).map(opt => ({ sc: opt.sc, name: opt.name, timingGap: opt.timingGap, bestVac: opt.bestVac })) : []);
+
+  if (rawOpts.length) {
+    hasMultiOptions = true;
+    const medals = ['🥇','🥈','🥉'];
+    const ranks  = ['1st Choice','2nd Choice','3rd Choice'];
+    const SC2CLS = window.SC2CLS || {};
+    const lines  = rawOpts.map((opt, i) => {
+      const gap      = opt.timingGap != null && opt.timingGap < 999 ? ` · ${opt.timingGap}d timing gap` : '';
+      const sameShip = (crew?.recentShipCode || '') === opt.sc ? ' · Familiar ship' : '';
+      const sameCls  = !sameShip && opt.cls && opt.cls === (SC2CLS[crew?.recentShipCode] || '') ? ' · Same class' : '';
+      const avail    = opt.bestVac ? `Vacancy opens ~${opt.bestVac.end}` : 'Vacancy available';
+      const acceptLink = `${BASE_URL}?offer=${o.id}&action=accept&ship=${opt.sc}`;
+      return `  ${medals[i]}  ${ranks[i]}: Celebrity ${opt.name} (${opt.sc})\n     ${avail}${gap}${sameShip}${sameCls}\n\n     ✅ Accept this ship:\n     → ${acceptLink}`;
+    }).join('\n\n─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n\n');
+    multiShipSection = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   YOUR NEXT SHIP OPTIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -61,10 +68,9 @@ the following ship options for your next assignment:
 ${lines}
 
 `;
-    }
   }
 
-  const respondSection = hasEssOptions
+  const respondSection = hasMultiOptions
     ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   RESPOND TO THIS OFFER
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -104,7 +110,7 @@ Position:      ${crew?.posTitle || crew?.abbr || '—'}
 ${dateSection}
 Approver:      ${o.approver || 'Celebrity Cruises Technical Entertainment'}
 
-${o.notes ? 'Additional notes:\n' + o.notes + '\n\n' : ''}${essSection}${respondSection}
+${o.notes ? 'Additional notes:\n' + o.notes + '\n\n' : ''}${multiShipSection}${respondSection}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

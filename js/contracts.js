@@ -60,13 +60,12 @@ function initSSFilters() {
 }
 
 function renderSmartSuggest() {
-  const SCM  = SHIP_CLASS_MAP();
-  const CB   = CLASS_BADGE();
-  const SNM  = SHIP_NAME_MAP();
-  const SD   = SHIP_DISPLAY();
-  const SCO  = SHIP_CODES_ORDERED();
-  const PO   = POS_ORDER();
-  const PC   = POS_COLORS();
+  const SCM = SHIP_CLASS_MAP();
+  const CB  = CLASS_BADGE();
+  const SNM = SHIP_NAME_MAP();
+  const SD  = SHIP_DISPLAY();
+  const SCO = SHIP_CODES_ORDERED();
+  const PC  = POS_COLORS();
   initSSFilters();
   const now        = new Date();
   const windowDays = _ssWindow;
@@ -76,258 +75,239 @@ function renderSmartSuggest() {
   const clsF       = document.getElementById('ss-class-filter')?.value || '';
   const viewMode   = document.getElementById('ss-view-mode')?.value    || 'by-crew';
 
-  const openings = [];
-  SCO.forEach(sc => {
-    const shipCls = SCM[sc] || '';
-    if (clsF && shipCls !== clsF) return;
-    PO.forEach(abbr => {
-      if (posF && abbr !== posF) return;
-      const vacating = state.crew.filter(c =>
-        (c.recentShipCode === sc || c.shipCode === sc) &&
-        c.abbr === abbr && c.status === 'Onboard' && c.end &&
-        (new Date(c.end) - now) / 864e5 >= 0 &&
-        (new Date(c.end) - now) / 864e5 <= windowDays
+  // Build one entry per crew member signing off — find destination ships for each
+  const crewOffers = state.crew
+    .filter(c => {
+      if (!c.end) return false;
+      if (posF && c.abbr !== posF) return false;
+      if (clsF && (SCM[c.recentShipCode || c.shipCode] !== clsF)) return false;
+      const d = (new Date(c.end) - now) / 864e5;
+      return d >= 0 && d <= windowDays;
+    })
+    .map(crewMember => {
+      const daysUntil     = Math.round((new Date(crewMember.end) - now) / 864e5);
+      const shipOptions   = ssBuildShipOptions(crewMember, windowDays, vacDays, SCM, SNM, CB, SCO);
+      const existingOffer = state.offers.find(o =>
+        o.crewId == crewMember.id && !['Confirmed','Declined'].includes(o.stage)
       );
-      vacating.forEach(vacCrew => {
-        const openDate   = new Date(vacCrew.end);
-        const hasRelief  = state.crew.some(x =>
-          x.futureShip === sc && x.abbr === abbr && x.id !== vacCrew.id &&
-          x.futureOn && Math.abs((new Date(x.futureOn) - openDate) / 864e5) < 21
-        );
-        const candidates    = ssBuildCandidates(abbr, sc, shipCls, openDate, vacDays, vacCrew.id);
-        const existingOffer = state.offers.find(o =>
-          o.ship === sc && o.crewId &&
-          state.crew.find(c => c.id == o.crewId)?.abbr === abbr &&
-          !['Confirmed','Declined'].includes(o.stage)
-        );
-        openings.push({sc, shipCls, abbr, vacCrew, openDate,
-          daysUntil: Math.round((openDate - now) / 864e5),
-          hasRelief, candidates, existingOffer});
-      });
-    });
-  });
-  openings.sort((a, b) => a.daysUntil - b.daysUntil);
+      return { crewMember, daysUntil, shipOptions, existingOffer };
+    })
+    .sort((a, b) => a.daysUntil - b.daysUntil);
 
-  const urgent     = openings.filter(o => o.daysUntil <= 14 && !o.hasRelief).length;
-  const needsOffer = openings.filter(o => !o.hasRelief && !o.existingOffer).length;
-  const inProgress = openings.filter(o => o.existingOffer).length;
-  const covered    = openings.filter(o => o.hasRelief).length;
+  const urgent     = crewOffers.filter(o => o.daysUntil <= 14 && !o.existingOffer).length;
+  const needsOffer = crewOffers.filter(o => !o.existingOffer && o.shipOptions.length > 0).length;
+  const inProgress = crewOffers.filter(o => !!o.existingOffer).length;
+  const noOptions  = crewOffers.filter(o => !o.existingOffer && o.shipOptions.length === 0).length;
+
   document.getElementById('ss-kpi').innerHTML = `
-    <div class="co-stat"><div class="co-stat-label">Openings in ${windowDays}d</div><div class="co-stat-val">${openings.length}</div></div>
+    <div class="co-stat"><div class="co-stat-label">Signing off in ${windowDays}d</div><div class="co-stat-val">${crewOffers.length}</div></div>
     <div class="co-stat" style="border-color:rgba(255,107,122,.25)"><div class="co-stat-label" style="color:var(--red-t);">⚠ Urgent (≤14d)</div><div class="co-stat-val" style="color:var(--red-t);">${urgent}</div></div>
     <div class="co-stat" style="border-color:rgba(255,107,122,.2)"><div class="co-stat-label" style="color:var(--red-t);">Needs offer</div><div class="co-stat-val" style="color:var(--red-t);">${needsOffer}</div></div>
-    <div class="co-stat" style="border-color:rgba(77,168,247,.2)"><div class="co-stat-label" style="color:var(--blue-t);">In progress</div><div class="co-stat-val" style="color:var(--blue-t);">${inProgress}</div></div>
-    <div class="co-stat" style="border-color:rgba(61,232,160,.2)"><div class="co-stat-label" style="color:var(--green-t);">Covered</div><div class="co-stat-val" style="color:var(--green-t);">${covered}</div></div>`;
+    <div class="co-stat" style="border-color:rgba(77,168,247,.2)"><div class="co-stat-label" style="color:var(--blue-t);">Offer in progress</div><div class="co-stat-val" style="color:var(--blue-t);">${inProgress}</div></div>
+    <div class="co-stat" style="border-color:rgba(164,164,167,.2)"><div class="co-stat-label" style="color:var(--text2);">No options found</div><div class="co-stat-val" style="color:var(--text2);">${noOptions}</div></div>`;
 
   const badge = document.getElementById('cotab-suggest-count');
   if (badge) { badge.textContent = needsOffer || ''; badge.style.display = needsOffer ? '' : 'none'; }
   ssUpdateBulkBar();
 
   const body = document.getElementById('ss-body');
-  if (!openings.length) {
+  if (!crewOffers.length) {
     body.innerHTML = `<div class="card" style="padding:2.5rem;text-align:center;color:var(--text2);">
       <div style="font-size:28px;margin-bottom:10px;">✓</div>
-      <div style="font-size:14px;font-weight:500;color:#fff;">No openings in the next ${windowDays} days</div>
+      <div style="font-size:14px;font-weight:500;color:#fff;">No crew signing off in the next ${windowDays} days</div>
       <div style="font-size:12px;margin-top:6px;">All positions have crew signed on through this window.</div>
     </div>`;
     return;
   }
-  viewMode === 'by-ship' ? renderSSByShip(openings, SC, CB, SNM, SD, SCO, PO, PC) : renderSSByCrew(openings, vacWeeks, SCM, CB, SNM, SCO, PO, PC);
+  viewMode === 'by-ship'
+    ? renderSSByShip(crewOffers, SCM, CB, SNM, SD, SCO, PC)
+    : renderSSByCrew(crewOffers, SCM, CB, SNM, PC);
 }
 
-function ssBuildCandidates(abbr, targetSc, targetCls, openDate, vacDays, excludeId) {
-  const SCM = SHIP_CLASS_MAP();
-  const pool = state.crew.filter(c => {
-    if (c.abbr !== abbr) return false;
-    if (c.id === excludeId) return false;
-    if (c.futureShip && c.futureOn) return false;
-    if (c.status === 'Offboard') return true;
-    if (c.status === 'Onboard' && c.end) {
-      const avail = new Date(new Date(c.end).getTime() + vacDays * 864e5);
-      return Math.abs((avail - openDate) / 864e5) <= 60;
-    }
-    return false;
-  });
-  return pool.map(c => {
-    const crewCls  = SCM[c.recentShipCode || c.shipCode] || '';
-    const availDate = c.end ? new Date(new Date(c.end).getTime() + vacDays * 864e5) : new Date();
-    const dateDiff  = Math.abs((openDate - availDate) / 864e5);
-    let score = dateDiff * 0.8;
-    if (crewCls === targetCls)        score -= 40;
-    else if (c.hasClassExp === 'YES') score -= 20;
-    if (c.recentShipCode === targetSc) score -= 55;
-    if (c.hasShipExp === 'YES')        score -= 20;
-    if (c.readyToJoin === 'YES')       score -= 15;
-    score += (c.daysOffboard || 0) * 0.1;
-    const fitPct = Math.max(5, Math.min(100, Math.round(((score * -1) + 130) / 2.6)));
-    return {c, availDate, availStr: availDate.toISOString().slice(0, 10), dateDiff, score, fitPct, crewCls};
-  }).sort((a, b) => a.score - b.score).slice(0, 3);
+// Build up to 3 destination ship options for a signing-off crew member.
+// Looks for ships where the same position is also vacating around the same time.
+function ssBuildShipOptions(crewMember, windowDays, vacDays, SCM, SNM, CB, SCO) {
+  const now       = new Date();
+  const crewSc    = crewMember.recentShipCode || crewMember.shipCode;
+  const crewCls   = SCM[crewSc] || '';
+  const availDate = new Date(new Date(crewMember.end).getTime() + vacDays * 864e5);
+
+  return SCO
+    .map(sc => {
+      // Find crew in the same position on this ship who are vacating
+      const vacancies = state.crew.filter(c =>
+        (c.recentShipCode === sc || c.shipCode === sc) &&
+        c.abbr === crewMember.abbr &&
+        c.id !== crewMember.id &&
+        c.end
+      );
+      if (!vacancies.length) return null;
+
+      const cls      = SCM[sc] || '';
+      const clsBadge = CB[cls] || 'badge-gray';
+
+      // Pick the vacancy whose opening date best matches this crew member's availability
+      const bestVac = vacancies.reduce((best, v) => {
+        const vOpen = new Date(new Date(v.end).getTime() + vacDays * 864e5);
+        if (!best) return v;
+        const bOpen = new Date(new Date(best.end).getTime() + vacDays * 864e5);
+        return Math.abs(vOpen - availDate) < Math.abs(bOpen - availDate) ? v : best;
+      }, null);
+
+      const vacOpenDate = new Date(new Date(bestVac.end).getTime() + vacDays * 864e5);
+      const timingGap   = Math.round(Math.abs((vacOpenDate - availDate) / 864e5));
+      const openStr     = vacOpenDate.toISOString().slice(0, 10);
+
+      // Score: lower is better
+      let score = timingGap;
+      if (sc === crewSc)        score -= 50; // returning to familiar ship
+      else if (cls === crewCls) score -= 25; // same class
+      if (state.crew.some(c => c.futureShip === sc && c.abbr === crewMember.abbr && c.id !== crewMember.id)) score += 20;
+
+      const existingOffer = state.offers.find(o =>
+        o.crewId == crewMember.id && o.ship === sc && !['Confirmed','Declined'].includes(o.stage)
+      );
+
+      return { sc, name: SNM[sc] || sc, cls, clsBadge, score, timingGap, openStr, bestVac, existingOffer };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3);
 }
 
-function renderSSByCrew(openings, vacWeeks) {
-  const SCM = SHIP_CLASS_MAP(); const CB = CLASS_BADGE(); const SNM = SHIP_NAME_MAP(); const PC = POS_COLORS();
-  const byCrewId = {};
-  openings.forEach(o => {
-    const id = o.vacCrew.id;
-    if (!byCrewId[id]) byCrewId[id] = {crew: o.vacCrew, openings: []};
-    byCrewId[id].openings.push(o);
-  });
+function renderSSByCrew(crewOffers, SCM, CB, SNM, PC) {
   const groups = [
-    {label:'Next 30 days', color:'var(--red-t)',   items: Object.values(byCrewId).filter(g => g.openings[0].daysUntil <= 30)},
-    {label:'31–60 days',   color:'var(--amber-t)', items: Object.values(byCrewId).filter(g => g.openings[0].daysUntil > 30 && g.openings[0].daysUntil <= 60)},
-    {label:'61–90 days',   color:'var(--blue-t)',  items: Object.values(byCrewId).filter(g => g.openings[0].daysUntil > 60)},
+    {label:'Next 14 days', color:'var(--red-t)',   items: crewOffers.filter(o => o.daysUntil <= 14)},
+    {label:'15–30 days',   color:'var(--amber-t)', items: crewOffers.filter(o => o.daysUntil > 14 && o.daysUntil <= 30)},
+    {label:'31–60 days',   color:'var(--blue-t)',  items: crewOffers.filter(o => o.daysUntil > 30 && o.daysUntil <= 60)},
+    {label:'61+ days',     color:'var(--text2)',   items: crewOffers.filter(o => o.daysUntil > 60)},
   ];
   document.getElementById('ss-body').innerHTML = groups.filter(g => g.items.length).map(g => `
     <div class="ss-window-group">
       <div class="ss-window-header">
         <div class="ss-window-title" style="color:${g.color}">${g.label}</div>
-        <span class="badge" style="background:${g.color}22;color:${g.color};border:.5px solid ${g.color}55;font-size:10px;">${g.items.length} crew signing off</span>
+        <span class="badge" style="background:${g.color}22;color:${g.color};border:.5px solid ${g.color}55;font-size:10px;">${g.items.length} crew</span>
       </div>
-      ${g.items.map(g2 => ssRenderCrewCard(g2.crew, g2.openings, vacWeeks, SCM, CB, SNM, PC)).join('')}
+      ${g.items.map(o => ssRenderCrewCard(o, SCM, CB, SNM, PC)).join('')}
     </div>`).join('');
 }
 
-function ssRenderCrewCard(crew, openings, vacWeeks, SCM, CB, SNM, PC) {
-  const now       = new Date();
-  const daysUntil = Math.round((new Date(crew.end) - now) / 864e5);
-  const posColor  = PC[crew.abbr] || '#A4A4A7';
-  const crewCls   = SCM[crew.recentShipCode || crew.shipCode] || '';
+function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, SCM, CB, SNM, PC) {
+  const posColor     = PC[crewMember.abbr] || '#A4A4A7';
+  const crewSc       = crewMember.recentShipCode || crewMember.shipCode;
+  const crewCls      = SCM[crewSc] || '';
   const crewClsBadge = CB[crewCls] || 'badge-gray';
-  const isSelected = _ssSelections.has(crew.id);
-  const o = openings[0];
+  const isSelected   = _ssSelections.has(crewMember.id);
+
   const urgBadge = daysUntil <= 0  ? `<span class="badge badge-red">Signed off</span>`
     : daysUntil <= 7  ? `<span class="badge badge-red">🔴 ${daysUntil}d</span>`
     : daysUntil <= 14 ? `<span class="badge badge-red">${daysUntil}d</span>`
     : daysUntil <= 30 ? `<span class="badge badge-amber">${daysUntil}d</span>`
     : `<span class="badge badge-blue">${daysUntil}d</span>`;
-  const offerBadge = o.existingOffer
-    ? `<span class="pipe-badge pipe-${o.existingOffer.stage.toLowerCase()}">${o.existingOffer.stage}</span>
-       <button class="btn btn-sm" style="font-size:10px;margin-left:4px;" onclick="openEmailCompose(${o.existingOffer.id})">✉ Email</button>`
-    : o.hasRelief ? `<span style="font-size:10px;color:var(--green-t);">✓ Relief assigned</span>`
-    : `<span style="font-size:10px;color:var(--red-t);font-style:italic;">No offer yet</span>`;
-  const openStr = o.openDate.toISOString().slice(0, 10);
-  const shipCards = o.candidates.map((cand, i) => {
-    const ddColor  = cand.dateDiff <= 3 ? 'var(--green-t)' : cand.dateDiff <= 10 ? 'var(--amber-t)' : 'var(--text2)';
-    const ddLabel  = cand.dateDiff <= 1 ? 'Perfect' : cand.dateDiff <= 3 ? `${Math.round(cand.dateDiff)}d off` : `${Math.round(cand.dateDiff)}d gap`;
-    const fitColor = cand.fitPct >= 70 ? 'var(--highlight-grad)' : cand.fitPct >= 45 ? 'linear-gradient(90deg,#ff9f50,#f6a623)' : 'rgba(136,150,184,.4)';
-    const fitTxt   = cand.fitPct >= 70 ? 'var(--green-t)' : cand.fitPct >= 45 ? 'var(--amber-t)' : 'var(--text2)';
-    const rankBadge = i === 0 ? `<span style="background:var(--highlight-grad);color:#fff;font-size:9px;font-weight:700;padding:1px 7px;border-radius:999px;">BEST FIT</span>`
-      : i === 1 ? `<span style="font-size:10px;color:var(--blue-t);font-weight:600;">2nd</span>`
-      : `<span style="font-size:10px;color:var(--text2);">3rd</span>`;
-    const sameShip  = o.sc === (cand.c.recentShipCode || cand.c.shipCode);
-    const sameClass = o.shipCls === cand.crewCls;
-    const expTag = sameShip  ? `<span style="color:var(--green-t);font-size:10px;font-weight:600;">✓ Same ship</span>`
-      : sameClass ? `<span style="color:var(--teal-t);font-size:10px;">✓ Same class</span>`
-      : `<span style="font-size:10px;color:var(--text2);">Diff. class</span>`;
-    const candOffer = state.offers.find(oo => oo.crewId == cand.c.id && oo.ship === o.sc && !['Confirmed','Declined'].includes(oo.stage));
-    const actionBtn = candOffer
-      ? `<button class="btn btn-sm" style="width:100%;justify-content:center;font-size:10px;color:var(--green-t);border-color:rgba(61,232,160,.3);" onclick="openEmailCompose(${candOffer.id})">✉ Offer exists — Email</button>`
-      : `<button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;font-size:11px;" onclick="ssCreateAndEmail(${cand.c.id},'${o.sc}','${cand.availStr}','${openStr}')">+ Create offer &amp; email</button>
-         <button class="btn btn-sm" style="width:100%;justify-content:center;font-size:10px;margin-top:4px;" onclick="ssCreateDraft(${cand.c.id},'${o.sc}','${cand.availStr}','${openStr}')">Draft only</button>`;
+
+  // One action button per crew card — sends an offer email with all ship options
+  const shipCodes = shipOptions.map(o => o.sc).join(',');
+  const actionBtn = existingOffer
+    ? `<span class="pipe-badge pipe-${existingOffer.stage.toLowerCase()}" style="font-size:10px;">${existingOffer.stage}</span>
+       <button class="btn btn-sm" style="font-size:10px;margin-left:6px;" onclick="openEmailCompose(${existingOffer.id})">✉ Re-send</button>`
+    : shipOptions.length
+      ? `<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="ssCreateAndEmail(${crewMember.id},'${shipCodes}')">✉ Send offer</button>
+         <button class="btn btn-sm" style="font-size:10px;" onclick="ssCreateDraft(${crewMember.id},'${shipCodes}')">Draft</button>`
+      : `<span style="font-size:10px;color:var(--text2);font-style:italic;">No vacancies found</span>`;
+
+  const optionCards = shipOptions.length ? shipOptions.map((opt, i) => {
+    const rankLabel = ['1st choice','2nd choice','3rd choice'][i];
+    const rankColor = ['var(--green-t)','var(--blue-t)','var(--text2)'][i];
+    const sameShip  = crewSc === opt.sc;
+    const sameCls   = !sameShip && crewCls === opt.cls;
+    const expTag    = sameShip ? `<span class="badge badge-green" style="font-size:9px;">Familiar ship</span>`
+      : sameCls     ? `<span class="badge badge-teal"  style="font-size:9px;">Same class</span>` : '';
+    const gapColor  = opt.timingGap <= 3 ? 'var(--green-t)' : opt.timingGap <= 14 ? 'var(--amber-t)' : 'var(--text2)';
+    const gapLabel  = opt.timingGap <= 1 ? 'Perfect timing' : `${opt.timingGap}d gap`;
     return `<div class="ss-ship-card rank-${i+1}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
-        <div style="font-size:13px;font-weight:600;">${esc(cand.c.name)}</div>${rankBadge}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:9px;font-weight:700;color:${rankColor};text-transform:uppercase;letter-spacing:.06em;">${rankLabel}</span>
+        <span class="badge ${opt.clsBadge}" style="font-size:9px;">${opt.sc}</span>
       </div>
-      <div style="margin-bottom:5px;">${expTag}</div>
-      <div style="font-size:11px;margin-bottom:2px;"><span style="color:var(--text2);">Available: </span><strong style="color:#fff;">${cand.availStr}</strong></div>
-      <div style="font-size:11px;margin-bottom:2px;"><span style="color:var(--text2);">Opening: </span><strong style="color:#fff;">${openStr}</strong></div>
-      <div style="font-size:11px;margin-bottom:6px;"><span style="color:var(--text2);">Date diff: </span><strong style="color:${ddColor};">${ddLabel}</strong></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-        <span style="font-size:10px;color:var(--text2);">Fit score</span>
-        <span style="font-size:11px;font-weight:700;color:${fitTxt};">${cand.fitPct}%</span>
-      </div>
-      <div class="ss-fit-bar"><div class="ss-fit-fill" style="width:${cand.fitPct}%;background:${fitColor};"></div></div>
-      <div style="display:flex;flex-direction:column;gap:0;">${actionBtn}</div>
+      <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:5px;">Celebrity ${esc(opt.name)}</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:2px;">Vacancy opens</div>
+      <div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:4px;">${opt.openStr}</div>
+      <div style="font-size:11px;font-weight:600;color:${gapColor};margin-bottom:6px;">${gapLabel}</div>
+      ${expTag ? `<div>${expTag}</div>` : ''}
     </div>`;
-  }).join('');
-  return `<div class="ss-crew-card ${o.existingOffer ? 'has-offer' : ''} ${isSelected ? 'ss-selected' : ''}" id="ss-card-${crew.id}">
+  }).join('') : '';
+
+  return `<div class="ss-crew-card ${existingOffer ? 'has-offer' : ''} ${isSelected ? 'ss-selected' : ''}" id="ss-card-${crewMember.id}">
     <div class="ss-crew-header">
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <input type="checkbox" style="width:15px;height:15px;cursor:pointer;accent-color:var(--highlight);" ${isSelected ? 'checked' : ''} onchange="ssToggleSelect(${crew.id},this)"/>
-          <div style="font-size:14px;font-weight:700;">${esc(crew.name)}</div>
-        </div>
-        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
-          <span class="badge" style="background:${posColor}22;color:${posColor};border:.5px solid ${posColor}55;font-size:10px;">${crew.abbr}</span>
-          <span class="badge ${crewClsBadge}" style="font-size:9px;">${crew.recentShipCode || '—'}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <input type="checkbox" style="width:15px;height:15px;cursor:pointer;accent-color:var(--highlight);" ${isSelected ? 'checked' : ''} onchange="ssToggleSelect(${crewMember.id},this)"/>
+          <div style="font-size:14px;font-weight:700;">${esc(crewMember.name)}</div>
+          <span class="badge" style="background:${posColor}22;color:${posColor};border:.5px solid ${posColor}55;font-size:10px;">${crewMember.abbr}</span>
+          <span class="badge ${crewClsBadge}" style="font-size:9px;">${crewSc || '—'}</span>
           ${urgBadge}
-          <span style="font-size:11px;color:var(--text2);">Signs off ${crew.end || '—'} on ${SNM[crew.recentShipCode] || crew.recentShipCode || '—'}</span>
-          ${crew.hasClassExp === 'YES' ? `<span style="font-size:10px;color:var(--teal-t);">Class exp.</span>` : ''}
-          ${crew.hasShipExp  === 'YES' ? `<span style="font-size:10px;color:var(--green-t);">Ship exp.</span>` : ''}
-          ${crew.readyToJoin === 'YES' ? `<span style="font-size:10px;color:var(--green-t);">Ready</span>` : ''}
         </div>
+        <div style="font-size:11px;color:var(--text2);">Signs off <strong style="color:#fff;">${crewMember.end || '—'}</strong> · Currently on ${SNM[crewSc] || crewSc || '—'}</div>
       </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <div style="font-size:10px;color:var(--text2);">Opening on</div>
-        <div style="font-size:15px;font-weight:700;color:var(--blue-t);">${SNM[o.sc] || o.sc}</div>
-        <div style="font-size:10px;color:var(--text2);">${openStr}</div>
-        <div style="margin-top:5px;">${offerBadge}</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:12px;">
+        ${actionBtn}
       </div>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">${shipCards}</div>
+    ${optionCards ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:2px;">${optionCards}</div>` : ''}
   </div>`;
 }
 
-function renderSSByShip(openings) {
-  const SCM = SHIP_CLASS_MAP(); const CB = CLASS_BADGE(); const SNM = SHIP_NAME_MAP();
-  const SD  = SHIP_DISPLAY();   const SCO = SHIP_CODES_ORDERED(); const PC = POS_COLORS();
+function renderSSByShip(crewOffers, SCM, CB, SNM, SD, SCO, PC) {
+  // Group by destination ship — each ship shows which crew members have it as an option
   const byShip = {};
-  openings.forEach(o => { if (!byShip[o.sc]) byShip[o.sc] = []; byShip[o.sc].push(o); });
-  document.getElementById('ss-body').innerHTML = SCO.filter(sc => byShip[sc]?.length).map(sc => {
-    const d   = SD[sc] || {name: sc, icon: '⛴'};
-    const cls = SCM[sc] || '';
+  crewOffers.forEach(co => {
+    co.shipOptions.forEach((opt, rank) => {
+      if (!byShip[opt.sc]) byShip[opt.sc] = [];
+      byShip[opt.sc].push({...co, opt, rank});
+    });
+  });
+  const shipsWithOffers = SCO.filter(sc => byShip[sc]?.length);
+  if (!shipsWithOffers.length) {
+    document.getElementById('ss-body').innerHTML = `<div style="padding:2rem;text-align:center;color:var(--text2);font-size:12px;">No destination ships found.</div>`;
+    return;
+  }
+  document.getElementById('ss-body').innerHTML = shipsWithOffers.map(sc => {
+    const d        = SD[sc] || {name: sc, icon: '⛴'};
+    const cls      = SCM[sc] || '';
     const clsBadge = CB[cls] || 'badge-gray';
-    const shipOpenings = byShip[sc];
-    const needsAction  = shipOpenings.filter(o => !o.hasRelief && !o.existingOffer).length;
+    const entries  = byShip[sc];
+    const needsOffer = entries.filter(e => !e.existingOffer).length;
     return `<div class="ss-ship-block">
       <div class="ss-ship-block-header">
         <span style="font-size:20px;">${d.icon}</span>
-        <div><div style="font-size:14px;font-weight:700;">${d.name}</div>
-        <span class="badge ${clsBadge}" style="font-size:9px;">${sc}</span></div>
+        <div>
+          <div style="font-size:14px;font-weight:700;">Celebrity ${d.name}</div>
+          <span class="badge ${clsBadge}" style="font-size:9px;">${sc}</span>
+        </div>
         <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-          ${needsAction ? `<span class="badge badge-red" style="font-size:10px;">${needsAction} need${needsAction===1?'s':''} offer</span>` : ''}
-          <span style="font-size:11px;color:var(--text2);">${shipOpenings.length} opening${shipOpenings.length!==1?'s':''}</span>
+          ${needsOffer ? `<span class="badge badge-red" style="font-size:10px;">${needsOffer} need${needsOffer===1?'s':''} offer</span>` : ''}
+          <span style="font-size:11px;color:var(--text2);">${entries.length} crew option${entries.length!==1?'s':''}</span>
         </div>
       </div>
       <div>
-        <div style="display:grid;grid-template-columns:90px 100px 1fr auto;">
-          <div class="ss-opening-cell-head">Position</div>
-          <div class="ss-opening-cell-head">Opens</div>
-          <div class="ss-opening-cell-head">Best candidates (click to create offer)</div>
-          <div class="ss-opening-cell-head">Quick action</div>
-        </div>
-        ${shipOpenings.map(o => {
-          const posColor = PC[o.abbr] || '#A4A4A7';
-          const openStr  = o.openDate.toISOString().slice(0, 10);
-          const statusTag = o.hasRelief ? `<span style="font-size:10px;color:var(--green-t);">✓ Covered</span>`
-            : o.existingOffer ? `<span class="pipe-badge pipe-${o.existingOffer.stage.toLowerCase()}">${o.existingOffer.stage}</span>`
-            : o.daysUntil <= 14 ? `<span style="font-size:10px;color:var(--red-t);font-weight:600;">⚠ Urgent</span>`
-            : `<span style="font-size:10px;color:var(--amber-t);">Open</span>`;
-          const chips = o.candidates.map((cand, i) => {
-            const fitTxt    = cand.fitPct >= 70 ? 'var(--green-t)' : cand.fitPct >= 45 ? 'var(--amber-t)' : 'var(--text2)';
-            const candOffer = state.offers.find(oo => oo.crewId == cand.c.id && oo.ship === sc && !['Confirmed','Declined'].includes(oo.stage));
-            return `<span class="ss-candidate-chip" onclick="${candOffer ? 'openEmailCompose('+candOffer.id+')' : `ssCreateAndEmail(${cand.c.id},'${sc}','${cand.availStr}','${openStr}')`}"
-              title="${cand.c.name} — avail ${cand.availStr} — fit ${cand.fitPct}%">
-              ${i===0?'🏆':''}
-              <span style="font-size:11px;font-weight:500;">${esc(cand.c.name)}</span>
-              <span style="font-size:10px;color:${fitTxt};">${cand.fitPct}%</span>
-              ${candOffer ? `<span style="font-size:9px;color:var(--green-t);">✉</span>` : `<span style="font-size:9px;opacity:.5;">+</span>`}
-            </span>`;
-          }).join('');
-          const actionBtn = o.hasRelief ? '' : o.candidates[0]
-            ? `<button class="btn btn-primary btn-sm" style="font-size:10px;white-space:nowrap;" onclick="ssCreateAndEmail(${o.candidates[0].c.id},'${sc}','${o.candidates[0].availStr}','${openStr}')">+ Best fit</button>`
-            : `<span style="font-size:10px;color:var(--text2);">No candidates</span>`;
-          return `<div style="display:grid;grid-template-columns:90px 100px 1fr auto;border-bottom:.5px solid rgba(255,255,255,.04);align-items:center;">
-            <div style="padding:8px 12px;">
-              <span class="badge" style="background:${posColor}22;color:${posColor};border:.5px solid ${posColor}55;font-size:9px;">${o.abbr}</span>
-              <div style="font-size:10px;color:var(--text2);margin-top:2px;">${esc(o.vacCrew.name)} off</div>
+        ${entries.map(e => {
+          const posColor  = PC[e.crewMember.abbr] || '#A4A4A7';
+          const rankLabel = ['1st','2nd','3rd'][e.rank] || '';
+          const rankColor = ['var(--green-t)','var(--blue-t)','var(--text2)'][e.rank] || 'var(--text2)';
+          const gapColor  = e.opt.timingGap <= 3 ? 'var(--green-t)' : e.opt.timingGap <= 14 ? 'var(--amber-t)' : 'var(--text2)';
+          const shipCodes = e.shipOptions.map(o => o.sc).join(',');
+          const btn = e.existingOffer
+            ? `<button class="btn btn-sm" style="font-size:10px;" onclick="openEmailCompose(${e.existingOffer.id})">✉ Email</button>`
+            : `<button class="btn btn-primary btn-sm" style="font-size:10px;" onclick="ssCreateAndEmail(${e.crewMember.id},'${shipCodes}')">✉ Offer</button>`;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:.5px solid rgba(255,255,255,.04);">
+            <span class="badge" style="background:${posColor}22;color:${posColor};border:.5px solid ${posColor}55;font-size:9px;flex-shrink:0;">${e.crewMember.abbr}</span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:600;">${esc(e.crewMember.name)}</div>
+              <div style="font-size:10px;color:var(--text2);">Signs off ${e.crewMember.end} · ${SNM[e.crewMember.recentShipCode] || e.crewMember.recentShipCode || '—'}</div>
             </div>
-            <div style="padding:8px 12px;font-size:11px;">
-              <div style="font-weight:600;color:#fff;">${openStr}</div>
-              <div style="margin-top:2px;">${statusTag}</div>
-            </div>
-            <div style="padding:8px 12px;display:flex;flex-wrap:wrap;gap:3px;">${chips || '<span style="font-size:11px;color:var(--text2);">No candidates</span>'}</div>
-            <div style="padding:8px 12px;">${actionBtn}</div>
+            <span style="font-size:10px;font-weight:700;color:${rankColor};">${rankLabel} choice</span>
+            <span style="font-size:10px;color:${gapColor};">${e.opt.timingGap <= 1 ? 'Perfect' : e.opt.timingGap+'d gap'}</span>
+            ${btn}
           </div>`;
         }).join('')}
       </div>
@@ -335,30 +315,36 @@ function renderSSByShip(openings) {
   }).join('');
 }
 
-export function ssCreateDraft(crewId, shipCode, availFrom, openingDate) {
-  const SNM = SHIP_NAME_MAP();
-  const crew = state.crew.find(c => c.id == crewId);
+// shipCodesArg: comma-separated string or array of ship codes (up to 3 options)
+export function ssCreateDraft(crewId, shipCodesArg) {
+  const SNM       = SHIP_NAME_MAP();
+  const crew      = state.crew.find(c => c.id == crewId);
   if (!crew) return null;
-  const d = new Date(openingDate); d.setMonth(d.getMonth() + 6);
+  const shipCodes = typeof shipCodesArg === 'string' ? shipCodesArg.split(',').filter(Boolean) : (shipCodesArg || []);
+  const primarySc = shipCodes[0] || '';
+  const today     = new Date().toISOString().slice(0, 10);
+  const endDate   = new Date(); endDate.setMonth(endDate.getMonth() + 6);
+  const shipLabel = shipCodes.map(sc => SNM[sc] || sc).join(', ') || '—';
   const offer = {
-    id: uid(), crewId, crewName: crew.name, ship: shipCode,
+    id: uid(), crewId, crewName: crew.name, ship: primarySc,
+    shipOptions: shipCodes,
     type: 'Offer', subtype: 'New assignment offer', stage: 'Draft',
-    dateFrom: openingDate, dateTo: d.toISOString().slice(0, 10), approver: '',
-    notes: `Smart suggest: ${crew.name} available from ${availFrom}. Opening on ${SNM[shipCode] || shipCode} from ${openingDate}.`,
-    created: new Date().toISOString().slice(0, 10),
-    history: [{date: new Date().toISOString().slice(0, 10), note: 'Created by Smart Suggest engine'}]
+    dateFrom: today, dateTo: endDate.toISOString().slice(0, 10), approver: '',
+    notes: `Smart suggest: ${crew.name} signs off ${crew.end || '—'}. Ship options: ${shipLabel}.`,
+    created: today,
+    history: [{date: today, note: 'Created by Smart Suggest engine'}]
   };
   state.offers.push(offer);
   renderCoSummary();
   updateCoPipelineTabCount();
-  showToast(`Draft offer — ${crew.name} → ${SNM[shipCode] || shipCode}`);
+  showToast(`Draft offer — ${crew.name} → ${shipLabel}`);
   renderSmartSuggest();
   upsertOffer(offer);
   return offer;
 }
 
-export function ssCreateAndEmail(crewId, shipCode, availFrom, openingDate) {
-  const offer = ssCreateDraft(crewId, shipCode, availFrom, openingDate);
+export function ssCreateAndEmail(crewId, shipCodesArg) {
+  const offer = ssCreateDraft(crewId, shipCodesArg);
   if (offer) openEmailCompose(offer.id);
 }
 
@@ -381,16 +367,16 @@ function ssUpdateBulkBar() {
 }
 
 export function ssBulkCreateOffers() {
-  const vacDays = (parseInt(document.getElementById('ss-vac-weeks')?.value) || 6) * 7;
+  const vacDays    = (parseInt(document.getElementById('ss-vac-weeks')?.value) || 6) * 7;
+  const SCM = SHIP_CLASS_MAP(); const SNM = SHIP_NAME_MAP(); const CB = CLASS_BADGE(); const SCO = SHIP_CODES_ORDERED();
   let created = 0;
   _ssSelections.forEach(crewId => {
     const c = state.crew.find(x => x.id == crewId);
     if (!c || !c.end) return;
     if (state.offers.find(o => o.crewId == crewId && !['Confirmed','Declined'].includes(o.stage))) return;
-    const openDate = new Date(new Date(c.end).getTime() + vacDays * 864e5);
-    const cands    = ssBuildCandidates(c.abbr, null, null, openDate, vacDays, c.id);
-    if (!cands.length) return;
-    ssCreateDraft(crewId, cands[0].c.recentShipCode || '', openDate.toISOString().slice(0, 10), openDate.toISOString().slice(0, 10));
+    const opts = ssBuildShipOptions(c, _ssWindow, vacDays, SCM, SNM, CB, SCO);
+    if (!opts.length) return;
+    ssCreateDraft(crewId, opts.map(o => o.sc));
     created++;
   });
   showToast(`${created} draft offer${created !== 1 ? 's' : ''} created`);
