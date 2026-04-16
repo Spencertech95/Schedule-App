@@ -31,23 +31,25 @@ function buildOfferEmailBody(o) {
     ? `Start date:    ${o.dateFrom}${o.dateTo ? '\nEnd date:      ' + o.dateTo : ''}`
     : '';
   const BASE_URL    = 'https://spencertech95.github.io/Schedule-App/';
-  const acceptLink  = `${BASE_URL}?offer=${o.id}&action=accept`;
   const declineLink = `${BASE_URL}?offer=${o.id}&action=decline`;
 
-  // ESS: append 3 ship options
+  // ESS: 3 ship options each with their own accept link
   let essSection = '';
+  let hasEssOptions = false;
   if (crew?.abbr === 'ESS' && crew?.end) {
     const opts = getEssShipOptions(crew);
     if (opts.length) {
+      hasEssOptions = true;
       const medals = ['🥇','🥈','🥉'];
       const ranks  = ['1st Choice','2nd Choice','3rd Choice'];
       const lines  = opts.map((opt, i) => {
-        const gap     = opt.timingGap < 999 ? ` · ${opt.timingGap}d timing gap` : '';
+        const gap      = opt.timingGap < 999 ? ` · ${opt.timingGap}d timing gap` : '';
         const sameShip = crew.recentShipCode === opt.sc ? ' · Familiar ship' : '';
         const sameCls  = !sameShip && opt.cls && opt.cls === (window.SC2CLS?.[crew.recentShipCode] || '') ? ' · Same class' : '';
         const avail    = opt.bestVac ? `Available ~${opt.bestVac.end}` : 'Vacancy available';
-        return `  ${medals[i]}  ${ranks[i]}: Celebrity ${opt.name} (${opt.sc})\n     ${avail}${gap}${sameShip}${sameCls}`;
-      }).join('\n\n');
+        const acceptLink = `${BASE_URL}?offer=${o.id}&action=accept&ship=${opt.sc}`;
+        return `  ${medals[i]}  ${ranks[i]}: Celebrity ${opt.name} (${opt.sc})\n     ${avail}${gap}${sameShip}${sameCls}\n\n     ✅ Accept this ship:\n     → ${acceptLink}`;
+      }).join('\n\n─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n\n');
       essSection = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   YOUR NEXT SHIP OPTIONS
@@ -58,11 +60,36 @@ the following ship options for your next assignment:
 
 ${lines}
 
-Please indicate your preferred ship when responding to this offer.
-
 `;
     }
   }
+
+  const respondSection = hasEssOptions
+    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  RESPOND TO THIS OFFER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+To accept, click the link next to your preferred ship above.
+
+  ❌  DECLINE ALL — click here to decline all options:
+  → ${declineLink}
+
+Clicking a link will open a confirmation page — no login required.
+Your response will be recorded instantly.`
+    : `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  RESPOND TO THIS OFFER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+To respond, click the link that matches your decision:
+
+  ✅  ACCEPT — click here to accept this offer:
+  → ${BASE_URL}?offer=${o.id}&action=accept
+
+  ❌  DECLINE — click here to decline this offer:
+  → ${declineLink}
+
+Clicking either link will open a confirmation page — no login required.
+Your response will be recorded instantly.`;
 
   return `Dear ${crew?.name?.split(' ')[0] || 'Crew Member'},
 
@@ -77,20 +104,7 @@ Position:      ${crew?.posTitle || crew?.abbr || '—'}
 ${dateSection}
 Approver:      ${o.approver || 'Celebrity Cruises Technical Entertainment'}
 
-${o.notes ? 'Additional notes:\n' + o.notes + '\n\n' : ''}${essSection}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  RESPOND TO THIS OFFER
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-To respond, click the link that matches your decision:
-
-  ✅  ACCEPT — click here to accept this offer:
-  → ${acceptLink}
-
-  ❌  DECLINE — click here to decline this offer:
-  → ${declineLink}
-
-Clicking either link will open a confirmation page — no login required.
-Your response will be recorded instantly.
+${o.notes ? 'Additional notes:\n' + o.notes + '\n\n' : ''}${essSection}${respondSection}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

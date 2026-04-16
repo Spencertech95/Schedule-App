@@ -72,11 +72,13 @@ const SHIP_NAMES = {'ML':'Millennium','IN':'Infinity','SM':'Summit','CS':'Conste
 
 let _ofrAction = null;
 let _ofrOffer  = null;
+let _ofrShip   = null;
 
 function showOfferResponseOverlay() {
   const params   = new URLSearchParams(window.location.search);
   const offerId  = parseInt(params.get('offer'));
   const action   = params.get('action'); // 'accept' or 'decline'
+  const ship     = params.get('ship')   || null; // specific ship chosen (ESS multi-ship)
   if (!offerId || !['accept','decline'].includes(action)) return;
 
   const overlay = document.getElementById('offer-response-overlay');
@@ -108,16 +110,19 @@ function showOfferResponseOverlay() {
 
   _ofrAction = action;
   _ofrOffer  = offer;
+  _ofrShip   = ship;
 
   const crew      = state.crew.find(c => c.id == offer.crewId);
-  const shipName  = SHIP_NAMES[offer.ship] || offer.ship || '—';
+  // For ESS per-ship accept, show the chosen ship; otherwise fall back to offer.ship
+  const resolvedShip = ship || offer.ship;
+  const shipName  = SHIP_NAMES[resolvedShip] || resolvedShip || '—';
   const typeLabel = offer.type === 'Extension' ? 'Contract Extension' : offer.type === 'Leave' ? 'Leave Request' : 'New Assignment Offer';
 
   document.getElementById('ofr-title').textContent = typeLabel;
-  document.getElementById('ofr-sub').textContent   = `For ${crew?.name || 'Crew Member'} · ${shipName}`;
+  document.getElementById('ofr-sub').textContent   = `For ${crew?.name || 'Crew Member'} · Celebrity ${shipName}`;
 
   document.getElementById('ofr-details').innerHTML = [
-    ['Ship',      shipName],
+    ['Ship',      `Celebrity ${shipName}`],
     ['Position',  crew?.abbr || crew?.posTitle || '—'],
     ['Start date',offer.startDate || offer.dateFrom || '—'],
     ['End date',  offer.endDate   || offer.dateTo   || '—'],
@@ -129,8 +134,9 @@ function showOfferResponseOverlay() {
       <div style="font-size:13px;color:#fff;">${value}</div>
     </div>`).join('');
 
-  const actionLabel = action === 'accept' ? 'accept' : 'decline';
-  document.getElementById('ofr-prompt').textContent = `Please confirm your response below. This will update your offer status immediately.`;
+  document.getElementById('ofr-prompt').textContent = action === 'accept' && ship
+    ? `You are accepting assignment to Celebrity ${shipName}. Please confirm below.`
+    : `Please confirm your response below. This will update your offer status immediately.`;
 
   // Pre-highlight the relevant button
   if (action === 'accept') {
@@ -150,13 +156,19 @@ async function confirmOfferResponse(action) {
   if (declineBtn) declineBtn.disabled = true;
 
   offer.stage = action === 'accept' ? 'Accepted' : 'Declined';
+  // If crew chose a specific ship (ESS multi-ship), record it on the offer
+  if (action === 'accept' && _ofrShip) {
+    offer.ship = _ofrShip;
+  }
   offer.history = offer.history || [];
   offer.history.push({
     date: new Date().toISOString().slice(0, 10),
-    note: `Crew member ${action === 'accept' ? 'accepted' : 'declined'} offer via email link`,
+    note: action === 'accept'
+      ? `Crew member accepted offer via email link${_ofrShip ? ' — chose Celebrity ' + (SHIP_NAMES[_ofrShip] || _ofrShip) : ''}`
+      : 'Crew member declined offer via email link',
   });
 
-  const { error } = await upsertOffer(offer);
+  await upsertOffer(offer);
   showOfrResult(action, offer);
 }
 
@@ -172,11 +184,11 @@ function showOfrResult(type, offer) {
   if (type === 'accept') {
     document.getElementById('ofr-result-icon').textContent  = '✅';
     document.getElementById('ofr-result-title').textContent = `Thank you, ${name}!`;
-    document.getElementById('ofr-result-sub').textContent   = `Your acceptance of the ${shipName} offer has been recorded. Your scheduling team will be in touch shortly with next steps.`;
+    document.getElementById('ofr-result-sub').textContent   = `Your acceptance of the Celebrity ${shipName} offer has been recorded. Your scheduling team will be in touch shortly with next steps.`;
   } else if (type === 'decline') {
     document.getElementById('ofr-result-icon').textContent  = '👍';
     document.getElementById('ofr-result-title').textContent = `Response recorded`;
-    document.getElementById('ofr-result-sub').textContent   = `Your decline of the ${shipName} offer has been noted. Your scheduling team will follow up with alternative options.`;
+    document.getElementById('ofr-result-sub').textContent   = `Your decline has been noted. Your scheduling team will follow up with alternative options.`;
   } else if (type === 'already') {
     document.getElementById('ofr-result-icon').textContent  = 'ℹ️';
     document.getElementById('ofr-result-title').textContent = `Already responded`;

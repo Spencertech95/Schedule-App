@@ -529,11 +529,33 @@ function renderCoTable() {
   const data  = coFilteredOffers();
   const tbody = document.getElementById('co-tbody');
   const empty = document.getElementById('co-table-empty');
-  const SCM   = SHIP_CLASS_MAP(); const CB = CLASS_BADGE();
+  const SCM   = SHIP_CLASS_MAP(); const CB = CLASS_BADGE(); const SNM = SHIP_NAME_MAP();
   ['crewName','type','ship','stage','dateFrom','approver','created'].forEach(k => {
     const el = document.getElementById('co-sa-' + k);
     if (el) el.textContent = k === coSortKey ? (coSortDir === 'asc' ? ' ↑' : ' ↓') : '';
   });
+
+  // Accepted notification banner
+  const acceptedOffers = state.offers.filter(o => o.stage === 'Accepted');
+  const bannerEl = document.getElementById('co-accepted-banner');
+  if (bannerEl) {
+    if (acceptedOffers.length) {
+      const names = acceptedOffers.map(o => {
+        const ship = SNM[o.ship] ? `Celebrity ${SNM[o.ship]}` : o.ship || '—';
+        return `<span style="font-weight:600;color:#fff;">${o.crewName||'—'}</span> → ${ship}`;
+      }).join(' &nbsp;·&nbsp; ');
+      bannerEl.style.display = 'flex';
+      bannerEl.innerHTML = `<span style="font-size:14px;margin-right:8px;">🔔</span>
+        <div style="flex:1;">
+          <span style="font-weight:600;font-size:12px;color:#fff;">${acceptedOffers.length} offer${acceptedOffers.length!==1?'s':''} awaiting confirmation</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.7);margin-left:10px;">${names}</span>
+        </div>
+        <button class="btn btn-sm" style="font-size:10px;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff;flex-shrink:0;" onclick="setCoStageFilter('Accepted',null)">View all</button>`;
+    } else {
+      bannerEl.style.display = 'none';
+    }
+  }
+
   if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = data.map(o => {
@@ -542,7 +564,14 @@ function renderCoTable() {
     const typeIcon  = CO_TYPE_ICONS[o.type] || '';
     const typeColor = o.type === 'Extension' ? 'var(--blue-t)' : o.type === 'Offer' ? 'var(--purple-t)' : 'var(--teal-t)';
     const dateDisplay = o.dateFrom ? (o.dateTo ? `${o.dateFrom} → ${o.dateTo}` : o.dateFrom) : '—';
-    return `<tr style="cursor:pointer;" onclick="openCoModal(${o.id})">
+    const isAccepted = o.stage === 'Accepted';
+    const rowStyle = isAccepted
+      ? 'cursor:pointer;background:rgba(61,232,160,.06);border-left:3px solid var(--green-t);'
+      : 'cursor:pointer;';
+    const confirmBtn = isAccepted
+      ? `<button class="btn btn-sm" style="font-size:10px;color:var(--green-t);border-color:rgba(61,232,160,.4);white-space:nowrap;" onclick="event.stopPropagation();advanceCoStage(${o.id},'Confirmed')" title="Confirm">✓ Confirm</button>`
+      : `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteCoOffer(${o.id})" title="Delete">✕</button>`;
+    return `<tr style="${rowStyle}" onclick="openCoModal(${o.id})">
       <td><div style="font-weight:600;font-size:12px;">${o.crewName||'—'}</div><div style="font-size:10px;color:var(--text2);">#${o.crewId||'—'}</div></td>
       <td><span style="font-size:11px;font-weight:600;color:${typeColor};">${typeIcon} ${o.type}</span>${o.subtype?`<div style="font-size:10px;color:var(--text2);">${o.subtype}</div>`:''}</td>
       <td>${o.ship?`<span class="badge ${clsBadge}" style="font-size:9px;">${o.ship}</span>`:'<span style="color:var(--text2);font-size:11px;">—</span>'}</td>
@@ -551,7 +580,7 @@ function renderCoTable() {
       <td style="font-size:11px;color:var(--text2);white-space:nowrap;">${dateDisplay}</td>
       <td style="font-size:11px;color:var(--text2);">${o.approver||'—'}</td>
       <td style="font-size:11px;color:var(--text2);">${o.created||'—'}</td>
-      <td><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteCoOffer(${o.id})" title="Delete">✕</button></td>
+      <td>${confirmBtn}</td>
     </tr>`;
   }).join('');
 }
