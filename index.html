@@ -526,7 +526,20 @@
     <div class="grid-3">
       <div class="field"><label>Title</label><input id="pos-title" placeholder="e.g. Entertainment Operator Sound"/></div>
       <div class="field"><label>Abbreviation</label><input id="pos-abbr" placeholder="e.g. EOS" maxlength="6"/></div>
+      <div class="field"><label>Rank</label>
+        <select id="pos-rank">
+          <option>Senior Management</option>
+          <option>Management</option>
+          <option>Technical Senior</option>
+          <option selected>Technical</option>
+          <option>Crew</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="field"><label>Contract (months)</label><input type="number" id="pos-contract" value="6" min="1"/></div>
       <div class="field"><label>Handover days</label><input type="number" id="pos-handover" value="7" min="0"/></div>
+      <div class="field"><label>Certifications <span style="font-weight:400;color:var(--text2);">(comma separated)</span></label><input id="pos-certs" placeholder="e.g. STCW Basic Safety, Rigging"/></div>
     </div>
     <div class="field"><label>Description</label><textarea id="pos-desc"></textarea></div>
     <div style="display:flex;gap:8px;margin-top:8px;">

@@ -3,6 +3,7 @@
 // in-memory before the async call, so the UI never waits).
 import { supabase } from './supabase.js';
 import { state } from './state.js';
+import { POSITIONS } from './data.js';
 
 function onError(op, err) {
   const msg = `DB error [${op}]: ${err.message}`;
@@ -26,7 +27,21 @@ export async function loadAll() {
   if (crewR.data?.length)       state.crew       = crewR.data.map(fromDbCrew);
   if (offersR.data?.length)     state.offers     = offersR.data.map(fromDbOffer);
   if (shipsR.data?.length)      state.ships      = shipsR.data.map(fromDbShip);
-  if (posR.data?.length)        state.positions  = posR.data.map(fromDbPosition);
+  if (posR.data?.length) {
+    state.positions = posR.data.map(fromDbPosition);
+    // Ensure all 7 canonical positions are present — re-seed any that are missing
+    POSITIONS.forEach(def => {
+      if (!state.positions.find(p => p.id === def.id)) {
+        const restored = { ...def };
+        state.positions.push(restored);
+        upsertPosition(restored);
+      }
+    });
+    state.positions.sort((a, b) => a.id - b.id);
+  } else {
+    // Nothing in DB — seed all defaults
+    POSITIONS.forEach(def => upsertPosition({ ...def }));
+  }
   if (compR.data?.length)       state.compliance = compR.data.map(fromDbCompliance);
 
   if (rotR.data?.length) {
