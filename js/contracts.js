@@ -526,8 +526,9 @@ function getTerminalDate(o) {
   return o.terminalDate || o.created || null;
 }
 
-// An offer is archived when it has been Confirmed/Declined for 30+ days
+// An offer is archived when it has been uploaded to E1, or Confirmed/Declined for 30+ days
 function isArchived(o) {
+  if (o.e1Uploaded) return true;
   if (!['Confirmed','Declined'].includes(o.stage)) return false;
   const td = getTerminalDate(o);
   if (!td) return false;
@@ -665,15 +666,12 @@ function renderCoTable() {
     archiveEl.style.cssText = 'margin-top:1.5rem;';
     document.getElementById('co-table-view').appendChild(archiveEl);
   }
-  if (!archived.length) {
-    archiveEl.innerHTML = '';
-  } else {
-    const open = archiveEl.dataset.open === 'true';
-    archiveEl.innerHTML = `
+  const open = archiveEl.dataset.open !== 'false';
+  archiveEl.innerHTML = `
       <div onclick="toggleCoArchive()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 14px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.08);border-radius:6px;user-select:none;">
         <span style="font-size:13px;font-weight:500;color:var(--text2);">Archive</span>
         <span class="badge badge-gray" style="font-size:10px;">${archived.length}</span>
-        <span style="font-size:11px;color:var(--text2);">— Confirmed &amp; Declined offers older than ${ARCHIVE_DAYS} days</span>
+        <span style="font-size:11px;color:var(--text2);">— E1 uploaded &amp; closed offers</span>
         <span style="margin-left:auto;font-size:12px;color:var(--text2);">${open ? '▲' : '▼'}</span>
       </div>
       <div id="co-archive-body" style="display:${open ? 'block' : 'none'};margin-top:8px;">
@@ -687,7 +685,7 @@ function renderCoTable() {
             <th style="text-align:left;padding:6px 8px;font-weight:500;">Created</th>
             <th style="text-align:left;padding:6px 8px;font-weight:500;">Closed</th>
           </tr></thead>
-          <tbody>${archived.map(o => {
+          <tbody>${archived.length ? archived.map(o => {
             const cls2     = SCM[o.ship] || '';
             const cb2      = CB[cls2] || 'badge-gray';
             const typeColor2 = o.type === 'Extension' ? 'var(--blue-t)' : o.type === 'Offer' ? 'var(--purple-t)' : 'var(--teal-t)';
@@ -699,18 +697,17 @@ function renderCoTable() {
               <td style="padding:7px 8px;">${coStageBadge(o.stage)}</td>
               <td style="padding:7px 8px;color:var(--text2);white-space:nowrap;">${dd2}</td>
               <td style="padding:7px 8px;color:var(--text2);">${o.created||'—'}</td>
-              <td style="padding:7px 8px;color:var(--text2);">${getTerminalDate(o)||'—'}</td>
+              <td style="padding:7px 8px;color:var(--text2);">${o.e1UploadedDate || getTerminalDate(o)||'—'}</td>
             </tr>`;
-          }).join('')}</tbody>
+          }).join('') : `<tr><td colspan="7" style="padding:14px 8px;color:var(--text2);font-size:12px;text-align:center;">No archived offers yet — confirmed contracts move here after E1 upload.</td></tr>`}</tbody>
         </table>
       </div>`;
-  }
 }
 
 export function toggleCoArchive() {
   const el = document.getElementById('co-archive-section');
   if (!el) return;
-  el.dataset.open = el.dataset.open === 'true' ? 'false' : 'true';
+  el.dataset.open = el.dataset.open === 'false' ? 'true' : 'false';
   renderCoTable();
 }
 
