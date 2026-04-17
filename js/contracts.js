@@ -900,7 +900,7 @@ export function openCoEditInline(id) {
     </div>`;
   document.getElementById('co-modal-actions').innerHTML = `
     <button class="btn btn-primary btn-sm" onclick="saveCoEdit(${id})">Save changes</button>
-    <button class="btn btn-sm" onclick="renderCoDetailModal(state.offers.find(x=>x.id===${id}))">Cancel</button>`;
+    <button class="btn btn-sm" onclick="openCoModal(${id})">Cancel</button>`;
 }
 
 export function coUpdateEditSubtype() {
@@ -1026,6 +1026,8 @@ window.saveCoEdit          = saveCoEdit;
 window.advanceCoStage      = advanceCoStage;
 window.deleteCoOffer       = deleteCoOffer;
 window.openCoEditInline    = openCoEditInline;
-window.toggleCoArchive     = toggleCoArchive;
-window.renderContracts     = renderContracts;
-window.renderCoSummary     = renderCoSummary;
+window.toggleCoArchive          = toggleCoArchive;
+window.renderContracts          = renderContracts;
+window.renderCoSummary          = renderCoSummary;
+window.renderCoDetailModal      = renderCoDetailModal;
+window.updateCoPipelineTabCount = updateCoPipelineTabCount;

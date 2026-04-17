@@ -411,49 +411,6 @@
     </div>
   </div>
 
-  <!-- Inline edit panel -->
-  <div class="co-edit-panel hidden" id="co-edit-panel">
-    <div class="co-edit-head">
-      <span id="co-edit-title" style="font-weight:600;"></span>
-      <button class="btn btn-sm" onclick="closeCoEditInline()">✕</button>
-    </div>
-    <div class="co-edit-body">
-      <div class="grid-2">
-        <div class="field"><label>Type</label>
-          <select id="co-edit-type" onchange="coTypeChanged('co-edit')">
-            <option value="Offer">New assignment offer</option>
-            <option value="Extension">Contract extension</option>
-            <option value="Leave">Leave request</option>
-          </select>
-        </div>
-        <div class="field" id="co-edit-subtype-wrap" style="display:none;"><label>Sub-type</label>
-          <select id="co-edit-subtype"></select>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Stage</label>
-          <select id="co-edit-stage">
-            <option value="Draft">Draft</option>
-            <option value="Sent">Sent</option>
-            <option value="Acknowledged">Acknowledged</option>
-            <option value="Accepted">Accepted</option>
-            <option value="Confirmed">Confirmed</option>
-          </select>
-        </div>
-        <div class="field"><label>Approver</label><input id="co-edit-approver" placeholder="Approver name"/></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Start date</label><input type="date" id="co-edit-datefrom"/></div>
-        <div class="field"><label>End date</label><input type="date" id="co-edit-dateto"/></div>
-      </div>
-      <div class="field"><label>Notes</label><textarea id="co-edit-notes" rows="2"></textarea></div>
-    </div>
-    <div class="co-edit-foot">
-      <button class="btn btn-sm btn-danger" onclick="deleteCoOffer(window._coEditId)">Delete</button>
-      <button class="btn btn-sm" onclick="closeCoEditInline()">Cancel</button>
-      <button class="btn btn-primary btn-sm" onclick="saveCoEdit()">Save</button>
-    </div>
-  </div>
 </div>
 
 <!-- REPORTS PAGE -->
