@@ -1,6 +1,6 @@
 // ── ship.js — individual ship pages ──────────────────────────────────────────
 import { state } from './state.js';
-import { parsePortLocation } from './utils.js';
+import { parsePortLocation, getShipPortForDate } from './utils.js';
 
 export const SHIP_CODES_ORDERED = ['ML','IN','SM','CS','SL','EQ','EC','SI','RF','EG','AX','BY','AT','XC'];
 export const SHIP_DISPLAY = {
@@ -127,15 +127,29 @@ export function switchShipTab(sc, tab) {
   });
 }
 
-// Helper: look up the port a ship is at on a given date from deployment data
+// Helper: look up the port a ship is at on a given date.
+// Tries per-day _depData first (exact match), then falls back to monthly SHIP_DEPLOYMENT.
 export function deployPortOnDate(sc, dateStr) {
-  if (!dateStr || !window._depData || !window._depData[sc]) return null;
-  const rows = window._depData[sc];
-  const row = rows.find(r => r.date === dateStr);
-  if (!row) return null;
-  if (row.dayType === 'S') return {port:'At sea',city:'At sea',country:'',dayType:'S'};
-  const loc = parsePortLocation(row.portName);
-  return { port: loc.city, city: loc.city, country: loc.country, dayType: row.dayType };
+  if (!dateStr) return null;
+
+  // Try exact per-day data if uploaded
+  if (window._depData && window._depData[sc]) {
+    const row = window._depData[sc].find(r => r.date === dateStr);
+    if (row) {
+      if (row.dayType === 'S') return { port: 'At sea', city: 'At sea', country: '', dayType: 'S' };
+      const loc = parsePortLocation(row.portName);
+      return { port: loc.city, city: loc.city, country: loc.country, dayType: row.dayType };
+    }
+  }
+
+  // Fall back to monthly SHIP_DEPLOYMENT data
+  const monthly = getShipPortForDate(sc, dateStr);
+  if (monthly) {
+    const loc = parsePortLocation(monthly.port);
+    return { port: loc.city, city: loc.city, country: loc.country, region: monthly.region, dayType: 'T' };
+  }
+
+  return null;
 }
 
 export function renderManifest(sc, crew, now) {
@@ -150,14 +164,10 @@ export function renderManifest(sc, crew, now) {
     return pa !== pb ? pa - pb : a.name.localeCompare(b.name);
   });
 
-  const hasDeployment = !!(window._depData && window._depData[sc]);
-  const deployNote = hasDeployment ? '' : `<div style="font-size:11px;color:var(--text2);background:rgba(232,116,53,.08);border:.5px solid rgba(232,116,53,.2);border-radius:var(--r);padding:6px 10px;margin-bottom:.75rem;">⚠ Upload fleet deployment data (Fleet → Fleet deployment) to see embark/debark ports.</div>`;
-
   function portCell(dateStr) {
     if (!dateStr) return `<td><span class="manifest-no-deploy">—</span></td>`;
-    if (!hasDeployment) return `<td><span class="manifest-no-deploy">No deployment data</span></td>`;
     const info = deployPortOnDate(sc, dateStr);
-    if (!info) return `<td><span class="manifest-no-deploy">Date not in range</span></td>`;
+    if (!info) return `<td><span class="manifest-no-deploy">Not in itinerary</span></td>`;
     const icon = info.dayType === 'T' ? '🔄' : info.dayType === 'S' ? '🌊' : '⚓';
     if (info.dayType === 'S') return `<td><div class="manifest-port">🌊 At sea</div></td>`;
     return `<td>
@@ -224,7 +234,6 @@ export function renderManifest(sc, crew, now) {
   </tr></thead>`;
 
   return `
-    ${deployNote}
     <div class="card" style="margin-bottom:1rem;">
       <div class="card-header">
         <div>
