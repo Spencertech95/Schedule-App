@@ -62,9 +62,9 @@
     <button class="nav-item" onclick="showPage('deployment',this)"><span class="nav-icon">🗺</span><span>Fleet deployment</span></button>
 
     <!-- Ships — collapsible -->
-    <button class="nav-section nav-collapsible" id="ships-nav-toggle" onclick="toggleShipsNav()" style="margin-top:.4rem;">
-      <span>Ships</span><span id="ships-nav-chevron" class="nav-chevron">▶</span>
-    </button>
+    <div class="nav-section-toggle" onclick="toggleShipsNav()" style="margin-top:.4rem;">
+      <span>Ships</span><span id="ships-nav-chevron" class="nav-chevron">▸</span>
+    </div>
     <div id="ship-nav-items" class="nav-ships-drawer"></div>
 
     <!-- Crew -->
@@ -87,7 +87,6 @@
     <div style="font-size:10px;color:var(--text2);padding:3px 12px 0;" id="last-import-label"></div>
     <div class="sidebar-footer-row">
       <button class="sidebar-footer-btn" onclick="openSettings()" title="Settings">⚙ Settings</button>
-      <button class="sidebar-footer-btn" onclick="if(confirm('Reset all data to defaults? This cannot be undone.')){location.reload();}" title="Reset app" style="color:var(--text2);">↺ Reset</button>
     </div>
   </div>
 

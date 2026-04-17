@@ -43,24 +43,28 @@
 .nav-icon{font-size:14px;width:17px;text-align:center;flex-shrink:0;}
 
 /* ── Collapsible ships section ── */
-.nav-collapsible{
+.nav-section-toggle{
   display:flex;align-items:center;justify-content:space-between;
-  width:100%;padding:.6rem 1rem .25rem;
+  padding:.6rem 1rem .25rem;
   font-size:9.5px;font-weight:700;
   color:rgba(136,150,184,0.6);
   text-transform:uppercase;letter-spacing:.1em;
-  background:none;border:none;cursor:pointer;
+  cursor:pointer;user-select:none;
   transition:color .15s;
 }
-.nav-collapsible:hover{color:rgba(136,150,184,0.9);}
-.nav-chevron{font-size:8px;transition:transform .2s;}
+.nav-section-toggle:hover{color:rgba(136,150,184,0.9);}
+.nav-chevron{
+  font-size:10px;
+  transition:transform .2s ease;
+  color:rgba(136,150,184,0.4);
+}
 .nav-chevron.open{transform:rotate(90deg);}
 .nav-ships-drawer{
   overflow:hidden;
   max-height:0;
-  transition:max-height .25s ease;
+  transition:max-height .3s ease;
 }
-.nav-ships-drawer.open{max-height:600px;}
+.nav-ships-drawer.open{max-height:700px;}
 
 /* ── Sidebar footer ── */
 .sidebar-footer{
@@ -69,15 +73,15 @@
   flex-shrink:0;
 }
 .sidebar-footer-row{
-  display:flex;gap:6px;padding:.4rem .75rem 0;
+  display:flex;padding:.4rem .75rem 0;
 }
 .sidebar-footer-btn{
-  flex:1;padding:5px 0;font-size:11px;
-  color:#fff;background:rgba(255,255,255,.05);
+  flex:1;padding:6px 0;font-size:11px;
+  color:var(--text2);background:rgba(255,255,255,.04);
   border:.5px solid var(--border);border-radius:6px;
-  cursor:pointer;transition:background .15s;
+  cursor:pointer;transition:all .15s;
 }
-.sidebar-footer-btn:hover{background:rgba(255,255,255,.1);}
+.sidebar-footer-btn:hover{background:rgba(255,255,255,.09);color:#fff;}
 
 /* ── MAIN ── */
 .main{flex:1;min-width:0;overflow-y:auto;height:100vh;}
