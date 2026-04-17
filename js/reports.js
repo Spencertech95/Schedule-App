@@ -1,6 +1,7 @@
 // ── reports.js — reports page ─────────────────────────────────────────────────
 import { state } from './state.js';
 import { upsertOffer } from './db.js';
+import { getShipPortForDate } from './utils.js';
 
 const SC2NAME  = {'ML':'Millennium','IN':'Infinity','SM':'Summit','CS':'Constellation','SL':'Solstice','EQ':'Equinox','EC':'Eclipse','SI':'Silhouette','RF':'Reflection','EG':'Edge','AX':'Apex','BY':'Beyond','AT':'Ascent','XC':'Xcel'};
 const SC2CLS   = {'ML':'MILLENNIUM CLASS','IN':'MILLENNIUM CLASS','SM':'MILLENNIUM CLASS','CS':'MILLENNIUM CLASS','SL':'SOLSTICE CLASS','EQ':'SOLSTICE CLASS','EC':'SOLSTICE CLASS','SI':'SOLSTICE CLASS','RF':'SOLSTICE CLASS','EG':'EDGE CLASS','AX':'EDGE CLASS','BY':'EDGE CLASS','AT':'EDGE CLASS','XC':'EDGE CLASS'};
@@ -163,24 +164,30 @@ export function renderE1Report() {
   const todayRows = pending.filter(o => (o.acceptedDate || o.created || '').slice(0, 10) === today);
   const olderRows = pending.filter(o => (o.acceptedDate || o.created || '').slice(0, 10) !== today);
 
-  const headHtml = `<div class="report-head" style="grid-template-columns:28px 1fr 80px 100px 100px 100px 90px;">
+  const headHtml = `<div class="report-head" style="grid-template-columns:28px 1fr 70px 110px 100px 150px 100px 150px 90px;">
     <div></div>
     <div class="report-head-cell">Crew member</div>
     <div class="report-head-cell">Position</div>
     <div class="report-head-cell">Ship</div>
     <div class="report-head-cell">Join date</div>
+    <div class="report-head-cell">Embark port</div>
     <div class="report-head-cell">Leave date</div>
-    <div class="report-head-cell">Accepted</div>
+    <div class="report-head-cell">Debark port</div>
+    <div class="report-head-cell">Confirmed</div>
   </div>`;
 
   function rowsHtml(offers) {
     return offers.map(o => {
-      const crew    = state.crew.find(c => c.id == o.crewId);
-      const shipName = SC2NAME[o.ship] || o.ship || '—';
-      const joinDate  = o.dateFrom || '—';
-      const leaveDate = o.dateTo   || '—';
-      const acceptedOn = (o.acceptedDate || o.created || '').slice(0, 10) || '—';
-      return `<div class="report-row e1-row" style="grid-template-columns:28px 1fr 80px 100px 100px 100px 90px;" id="e1-row-${o.id}">
+      const crew       = state.crew.find(c => c.id == o.crewId);
+      const shipName   = SC2NAME[o.ship] || o.ship || '—';
+      const joinDate   = o.dateFrom || '—';
+      const leaveDate  = o.dateTo   || '—';
+      const confirmedOn = (o.terminalDate || o.created || '').slice(0, 10) || '—';
+      const embark     = getShipPortForDate(o.ship, o.dateFrom);
+      const debark     = getShipPortForDate(o.ship, o.dateTo);
+      const embarkStr  = embark ? `<span style="font-size:11px;">${embark.port}</span><div style="font-size:9px;color:var(--text2);">${embark.region}</div>` : '—';
+      const debarkStr  = debark ? `<span style="font-size:11px;">${debark.port}</span><div style="font-size:9px;color:var(--text2);">${debark.region}</div>` : '—';
+      return `<div class="report-row e1-row" style="grid-template-columns:28px 1fr 70px 110px 100px 150px 100px 150px 90px;" id="e1-row-${o.id}">
         <div class="report-cell" style="padding-right:0;">
           <input type="checkbox" class="e1-chk" data-id="${o.id}" onchange="e1UpdateConfirmBtn()" style="width:14px;height:14px;cursor:pointer;">
         </div>
@@ -191,8 +198,10 @@ export function renderE1Report() {
         <div class="report-cell"><span class="badge badge-gray" style="font-size:10px;">${crew?.abbr || '—'}</span></div>
         <div class="report-cell"><span style="font-size:12px;">Celebrity ${shipName}</span></div>
         <div class="report-cell" style="font-size:12px;white-space:nowrap;">${joinDate}</div>
+        <div class="report-cell">${embarkStr}</div>
         <div class="report-cell" style="font-size:12px;white-space:nowrap;">${leaveDate}</div>
-        <div class="report-cell" style="font-size:11px;color:var(--text2);">${acceptedOn}</div>
+        <div class="report-cell">${debarkStr}</div>
+        <div class="report-cell" style="font-size:11px;color:var(--text2);">${confirmedOn}</div>
       </div>`;
     }).join('');
   }
@@ -249,10 +258,12 @@ export function confirmE1Upload() {
 export function downloadE1Csv() {
   const pending = e1PendingOffers();
   if (!pending.length) { if (typeof window.showToast === 'function') window.showToast('No pending E1 contracts to export'); return; }
-  const headers = ['Offer ID','Crew Name','Nationality','Position','Ship Code','Ship Name','Join Date','Leave Date','Contract Type','Accepted Date'];
+  const headers = ['Offer ID','Crew Name','Nationality','Position','Ship Code','Ship Name','Join Date','Embark Port','Embark Region','Leave Date','Debark Port','Debark Region','Contract Type','Confirmed Date'];
   const rows = pending.map(o => {
     const crew     = state.crew.find(c => c.id == o.crewId);
     const shipName = SC2NAME[o.ship] || o.ship || '';
+    const embark   = getShipPortForDate(o.ship, o.dateFrom);
+    const debark   = getShipPortForDate(o.ship, o.dateTo);
     return [
       o.id,
       crew?.name || o.crewName || '',
@@ -261,9 +272,13 @@ export function downloadE1Csv() {
       o.ship     || '',
       shipName,
       o.dateFrom || '',
+      embark?.port   || '',
+      embark?.region || '',
       o.dateTo   || '',
+      debark?.port   || '',
+      debark?.region || '',
       o.type     || 'Offer',
-      (o.acceptedDate || o.created || '').slice(0, 10),
+      (o.terminalDate || o.created || '').slice(0, 10),
     ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
   });
   const csv  = [headers.join(','), ...rows].join('\r\n');

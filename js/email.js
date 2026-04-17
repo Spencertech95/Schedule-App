@@ -4,6 +4,7 @@ import { showToast } from './utils.js';
 import { upsertCrew } from './db.js';
 import { upsertOffer } from './db.js';
 import { getEssShipOptions } from './placement.js';
+import { getShipPortForDate } from './utils.js';
 
 export function getCrewEmail(crewId) {
   const c = state.crew.find(x => x.id == crewId);
@@ -34,9 +35,13 @@ function buildOfferEmailBody(o) {
   const typeLabel   = o.type === 'Extension' ? 'Contract Extension'
     : o.type === 'Leave' ? `Leave Request — ${o.subtype || ''}`
     : 'New Assignment Offer';
-  const contractEnd = o.dateTo || addMonths(o.dateFrom, 6);
-  const dateSection = o.dateFrom
-    ? `Join date:    ${o.dateFrom}${contractEnd ? '\nLeave date:   ' + contractEnd : ''}`
+  const contractEnd   = o.dateTo || addMonths(o.dateFrom, 6);
+  const embarkInfo    = getShipPortForDate(o.ship, o.dateFrom);
+  const debarkInfo    = getShipPortForDate(o.ship, contractEnd);
+  const embarkLine    = embarkInfo  ? `\nEmbark port:  ${embarkInfo.port} (${embarkInfo.region})` : '';
+  const debarkLine    = debarkInfo  ? `\nDebark port:  ${debarkInfo.port} (${debarkInfo.region})` : '';
+  const dateSection   = o.dateFrom
+    ? `Join date:    ${o.dateFrom}${embarkLine}${contractEnd ? '\nLeave date:   ' + contractEnd + debarkLine : ''}`
     : '';
   const BASE_URL    = 'https://spencertech95.github.io/Schedule-App/';
   const declineLink = `${BASE_URL}?offer=${o.id}&action=decline`;
@@ -62,9 +67,11 @@ function buildOfferEmailBody(o) {
     const ranks  = ['1st Choice','2nd Choice','3rd Choice'];
     const lines  = rawOpts.map((opt, i) => {
       const endDate    = addMonths(opt.boardingDate, 6);
+      const embark     = getShipPortForDate(opt.sc, opt.boardingDate);
+      const debark     = getShipPortForDate(opt.sc, endDate);
       const dateLine   = opt.boardingDate
-        ? `Join date:    ${opt.boardingDate}\n     Leave date:   ${endDate}`
-        : 'Dates to be confirmed';
+        ? `Join date:    ${opt.boardingDate}${embark ? '\n     Embark port:  ' + embark.port + ' (' + embark.region + ')' : ''}\n     Leave date:   ${endDate}${debark ? '\n     Debark port:  ' + debark.port + ' (' + debark.region + ')' : ''}`
+        : 'Dates and ports to be confirmed';
       const acceptLink = `${BASE_URL}?offer=${o.id}&action=accept&ship=${opt.sc}`;
       return `  ${medals[i]}  ${ranks[i]}: Celebrity ${opt.name} (${opt.sc})\n     ${dateLine}\n\n     ✅ Accept this ship:\n     → ${acceptLink}`;
     }).join('\n\n─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n\n');

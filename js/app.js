@@ -3,7 +3,7 @@
 
 import { loadAll, upsertOffer } from './db.js';
 import { state }   from './state.js';
-import { showToast } from './utils.js';
+import { showToast, getShipPortForDate } from './utils.js';
 
 // Page modules — imported for their side-effects (window.* registrations)
 import './navigation.js';
@@ -150,12 +150,19 @@ function showOfferResponseOverlay() {
     return offer.dateTo || offer.endDate || '—';
   })();
 
-  document.getElementById('ofr-details').innerHTML = [
-    ['Ship',       `Celebrity ${shipName}`],
-    ['Position',   crew?.abbr || crew?.posTitle || '—'],
-    ['Join date',  joinDate],
-    ['Leave date', leaveDate],
-  ].map(([label, value]) => `
+  const embarkInfo = getShipPortForDate(resolvedShip, joinDate);
+  const debarkInfo = getShipPortForDate(resolvedShip, leaveDate);
+
+  const rows = [
+    ['Ship',         `Celebrity ${shipName}`],
+    ['Position',     crew?.abbr || crew?.posTitle || '—'],
+    ['Join date',    joinDate],
+    ['Embark port',  embarkInfo ? `${embarkInfo.port} (${embarkInfo.region})` : '—'],
+    ['Leave date',   leaveDate],
+    ['Debark port',  debarkInfo ? `${debarkInfo.port} (${debarkInfo.region})` : '—'],
+  ];
+
+  document.getElementById('ofr-details').innerHTML = rows.map(([label, value]) => `
     <div>
       <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:2px;">${label}</div>
       <div style="font-size:13px;color:#fff;">${value}</div>
