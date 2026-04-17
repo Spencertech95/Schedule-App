@@ -59,6 +59,42 @@ export function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// US states and territories — used to append ", USA" to the country label
+const US_STATES = new Set([
+  'FLORIDA','ALASKA','CALIFORNIA','HAWAII','WASHINGTON','OREGON','TEXAS',
+  'NEW YORK','NEW JERSEY','MASSACHUSETTS','MARYLAND','VIRGINIA','GEORGIA',
+  'SOUTH CAROLINA','NORTH CAROLINA','CONNECTICUT','RHODE ISLAND','MAINE',
+  'NEW HAMPSHIRE','LOUISIANA','MISSISSIPPI','ALABAMA','PORT CANAVERAL',
+  'PUERTO RICO','U.S VIRGIN ISLANDS','U.S. VIRGIN ISLANDS','GUAM',
+]);
+
+// Canadian provinces
+const CA_PROVINCES = new Set([
+  'BRITISH COLUMBIA','ONTARIO','NOVA SCOTIA','NEW BRUNSWICK','QUEBEC',
+  'PRINCE EDWARD ISLAND','NEWFOUNDLAND','YUKON','NORTHWEST TERRITORIES',
+]);
+
+/**
+ * Parses a port name string like "COZUMEL, MEXICO" or "KEY WEST, FLORIDA"
+ * into { city, country } with full country name where applicable.
+ */
+export function parsePortLocation(portName) {
+  if (!portName || portName === 'AT SEA') return { city: 'At sea', country: '' };
+  const parts   = portName.split(',').map(p => p.trim());
+  const city    = parts[0] || portName;
+  const region  = parts.slice(1).join(', ').trim();
+  if (!region) return { city, country: '' };
+
+  const regionUC = region.toUpperCase();
+  if (US_STATES.has(regionUC))    return { city, country: `${toTitleCase(region)}, USA` };
+  if (CA_PROVINCES.has(regionUC)) return { city, country: `${toTitleCase(region)}, Canada` };
+  return { city, country: toTitleCase(region) };
+}
+
+function toTitleCase(str) {
+  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // Expose to window for HTML onclick handlers and db.js toast
 window._showToast = showToast;
 window.toggleForm = toggleForm;

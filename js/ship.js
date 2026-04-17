@@ -1,5 +1,6 @@
 // ── ship.js — individual ship pages ──────────────────────────────────────────
 import { state } from './state.js';
+import { parsePortLocation } from './utils.js';
 
 export const SHIP_CODES_ORDERED = ['ML','IN','SM','CS','SL','EQ','EC','SI','RF','EG','AX','BY','AT','XC'];
 export const SHIP_DISPLAY = {
@@ -132,8 +133,9 @@ export function deployPortOnDate(sc, dateStr) {
   const rows = window._depData[sc];
   const row = rows.find(r => r.date === dateStr);
   if (!row) return null;
-  if (row.dayType === 'S') return {port:'At sea',country:'',dayType:'S'};
-  return {port:row.portName.split(',')[0].trim(),country:row.country||'',dayType:row.dayType};
+  if (row.dayType === 'S') return {port:'At sea',city:'At sea',country:'',dayType:'S'};
+  const loc = parsePortLocation(row.portName);
+  return { port: loc.city, city: loc.city, country: loc.country, dayType: row.dayType };
 }
 
 export function renderManifest(sc, crew, now) {
@@ -153,12 +155,15 @@ export function renderManifest(sc, crew, now) {
 
   function portCell(dateStr) {
     if (!dateStr) return `<td><span class="manifest-no-deploy">—</span></td>`;
-    const info = deployPortOnDate(sc, dateStr);
     if (!hasDeployment) return `<td><span class="manifest-no-deploy">No deployment data</span></td>`;
+    const info = deployPortOnDate(sc, dateStr);
     if (!info) return `<td><span class="manifest-no-deploy">Date not in range</span></td>`;
     const icon = info.dayType === 'T' ? '🔄' : info.dayType === 'S' ? '🌊' : '⚓';
-    const portLabel = info.dayType === 'S' ? 'At sea' : info.port;
-    return `<td><div class="manifest-port">${icon} ${portLabel}</div>${info.country && info.dayType !== 'S' ? `<div class="manifest-port-note">${info.country}</div>` : ''}</td>`;
+    if (info.dayType === 'S') return `<td><div class="manifest-port">🌊 At sea</div></td>`;
+    return `<td>
+      <div class="manifest-port">${icon} ${info.city}</div>
+      ${info.country ? `<div class="manifest-port-note">${info.country}</div>` : ''}
+    </td>`;
   }
 
   function daysLeftBadge(dateStr) {
