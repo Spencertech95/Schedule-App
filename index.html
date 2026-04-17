@@ -142,14 +142,98 @@
 <!-- SHIP ROTATIONS PAGE -->
 <div id="page-rotations" class="page">
   <div class="page-title">Ship rotations</div>
-  <div class="page-sub">Manage embarkation / disembarkation schedules per ship</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center;">
-    <select id="rot-ship-select" onchange="loadRotation()" style="font-size:13px;min-width:160px;">
-      <option value="">Select a ship…</option>
-    </select>
-    <button class="btn btn-primary btn-sm" onclick="addRotationRow()">+ Add entry</button>
+  <div class="page-sub">Fleet deployment overview and per-ship sign-on / sign-off schedules</div>
+
+  <!-- Year tabs -->
+  <div class="rotation-year-tabs" id="year-tabs"></div>
+
+  <!-- View toggle -->
+  <div style="display:flex;gap:6px;margin-bottom:1rem;align-items:center;">
+    <button class="btn btn-sm active" id="rot-btn-overview" onclick="switchRotationMode('overview')" style="font-size:11px;">Fleet overview</button>
+    <button class="btn btn-sm"        id="rot-btn-ship"     onclick="switchRotationMode('ship')"    style="font-size:11px;">Ship detail</button>
+    <div style="margin-left:auto;">
+      <button class="btn btn-primary btn-sm" onclick="addRotationRow()" style="font-size:11px;">+ Add entry</button>
+    </div>
   </div>
-  <div id="rotation-table-wrap"></div>
+
+  <!-- ── Overview section ── -->
+  <div id="rotation-overview-section">
+    <div class="card" style="padding:1rem 1.25rem;overflow-x:auto;">
+      <div class="card-title" style="margin-bottom:.75rem;">Fleet deployment — monthly by ship</div>
+      <table class="rotation-table" style="min-width:700px;">
+        <thead id="fleet-dep-head"></thead>
+        <tbody id="fleet-dep-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Ship detail section ── -->
+  <div id="rotation-ship-section" style="display:none;">
+    <!-- Ship tabs -->
+    <div class="ship-rotation-tabs" id="ship-rotation-tabs"></div>
+
+    <!-- Ship header -->
+    <div style="margin-bottom:1rem;">
+      <div class="card-title" id="rotation-ship-title"></div>
+      <div class="card-sub"   id="rotation-ship-sub"></div>
+    </div>
+
+    <!-- Month grid -->
+    <div class="rotation-grid" id="rotation-month-grid"></div>
+
+    <!-- Position schedule -->
+    <div class="card" style="padding:1rem 1.25rem;margin-bottom:1rem;">
+      <div class="card-title" style="margin-bottom:.75rem;">Position schedule</div>
+      <table class="rotation-table">
+        <thead>
+          <tr>
+            <th>Position</th>
+            <th>Count</th>
+            <th>Sign-on</th>
+            <th>Sign-off</th>
+            <th>Contract</th>
+            <th>Handover</th>
+          </tr>
+        </thead>
+        <tbody id="rotation-pos-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Custom entries -->
+    <div class="card" style="padding:1rem 1.25rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+        <div class="card-title">Custom rotation entries</div>
+        <button class="btn btn-sm" onclick="addRotationRow()" style="font-size:11px;">+ Add entry</button>
+      </div>
+      <div id="rotation-entries-list"></div>
+    </div>
+  </div>
+
+  <!-- ── Add entry form (collapsible) ── -->
+  <div id="rotation-form" style="display:none;margin-top:1rem;">
+    <div class="card" style="padding:1rem 1.25rem;">
+      <div class="card-title" style="margin-bottom:.75rem;">Add rotation entry</div>
+      <div class="grid-3" style="margin-bottom:10px;">
+        <div class="field"><label>Position</label><select id="rot-pos"></select></div>
+        <div class="field"><label>Type</label>
+          <select id="rot-type">
+            <option value="Sign-on">Sign-on</option>
+            <option value="Sign-off">Sign-off</option>
+          </select>
+        </div>
+        <div class="field"><label>Date</label><input type="date" id="rot-date"/></div>
+      </div>
+      <div class="grid-3" style="margin-bottom:10px;">
+        <div class="field"><label>Port</label><input id="rot-port" placeholder="Port name"/></div>
+        <div class="field"><label>Crew member</label><input id="rot-crew" placeholder="Name (optional)"/></div>
+        <div class="field"><label>Notes</label><input id="rot-notes" placeholder="Notes (optional)"/></div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-primary btn-sm" onclick="saveRotation()">Save entry</button>
+        <button class="btn btn-sm" onclick="addRotationRow()">Cancel</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- FLEET DEPLOYMENT PAGE -->

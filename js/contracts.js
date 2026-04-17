@@ -1026,6 +1026,7 @@ window.saveCoEdit          = saveCoEdit;
 window.advanceCoStage      = advanceCoStage;
 window.deleteCoOffer       = deleteCoOffer;
 window.openCoEditInline    = openCoEditInline;
+window.renderSmartSuggest       = renderSmartSuggest;
 window.toggleCoArchive          = toggleCoArchive;
 window.renderContracts          = renderContracts;
 window.renderCoSummary          = renderCoSummary;

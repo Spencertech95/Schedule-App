@@ -2,7 +2,6 @@
 import { state } from './state.js';
 import { SHIP_DEPLOYMENT, CLASS_MANNING } from './data.js';
 import { saveRotations } from './db.js';
-import { toggleForm } from './utils.js';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const YEARS  = ['2025','2026','2027'];
@@ -25,17 +24,32 @@ export function setRotationYear(y, el) {
 
 export function switchRotationMode(mode, ship) {
   state.rotationMode = mode;
+  const oBtnEl = document.getElementById('rot-btn-overview');
+  const sBtnEl = document.getElementById('rot-btn-ship');
   if (mode === 'overview') {
     document.getElementById('rotation-overview-section').style.display = '';
     document.getElementById('rotation-ship-section').style.display = 'none';
+    if (oBtnEl) oBtnEl.classList.add('active');
+    if (sBtnEl) sBtnEl.classList.remove('active');
     renderRotationOverview();
   } else {
     state.currentRotationShip = ship || Object.keys(SHIP_DEPLOYMENT)[0];
     document.getElementById('rotation-overview-section').style.display = 'none';
     document.getElementById('rotation-ship-section').style.display = '';
+    if (oBtnEl) oBtnEl.classList.remove('active');
+    if (sBtnEl) sBtnEl.classList.add('active');
     renderShipTabs();
     renderShipRotation(state.currentRotationShip);
   }
+}
+
+// Toggles the add-entry form open/closed
+function addRotationRow() {
+  const form = document.getElementById('rotation-form');
+  if (!form) return;
+  const isOpen = form.style.display === 'block';
+  form.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function renderRotationOverview() {
@@ -142,8 +156,9 @@ export function saveRotation() {
   if (!entry.date) return;
   if (!state.rotations[ship]) state.rotations[ship] = [];
   state.rotations[ship].push(entry);
-  ['rot-date','rot-port','rot-crew','rot-notes'].forEach(id => document.getElementById(id).value = '');
-  toggleForm('rotation-form');
+  ['rot-date','rot-port','rot-crew','rot-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const form = document.getElementById('rotation-form');
+  if (form) form.style.display = 'none';
   renderShipRotation(ship);
   saveRotations(ship);
 }
@@ -152,3 +167,5 @@ window.setRotationYear      = setRotationYear;
 window.switchRotationMode   = switchRotationMode;
 window.selectShipRotation   = selectShipRotation;
 window.saveRotation         = saveRotation;
+window.addRotationRow       = addRotationRow;
+window.renderShipRotation   = renderShipRotation;
