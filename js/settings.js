@@ -48,21 +48,35 @@ export function setSetting(key, value) {
   saveSettings();
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-export function renderSettings() {
+// ── Overlay open / close ──────────────────────────────────────────────────────
+function populateForm() {
   const s = _settings;
-
-  document.getElementById('settings-scheduler-name').value  = s.schedulerName  || '';
-  document.getElementById('settings-scheduler-email').value = s.schedulerEmail || '';
-  document.getElementById('settings-company-name').value    = s.companyName    || '';
-  document.getElementById('settings-department').value      = s.department     || '';
-  document.getElementById('settings-ss-gap').value          = s.ssMinGapDays   ?? 42;
-  document.getElementById('settings-contract-months').value = s.contractMonths ?? 6;
+  document.getElementById('settings-scheduler-name').value  = s.schedulerName    || '';
+  document.getElementById('settings-scheduler-email').value = s.schedulerEmail   || '';
+  document.getElementById('settings-company-name').value    = s.companyName      || '';
+  document.getElementById('settings-department').value      = s.department       || '';
+  document.getElementById('settings-ss-gap').value          = s.ssMinGapDays     ?? 42;
+  document.getElementById('settings-contract-months').value = s.contractMonths   ?? 6;
   document.getElementById('settings-signoff-alert').value   = s.signoffAlertDays ?? 30;
-  document.getElementById('settings-date-format').value     = s.dateFormat     || 'YYYY-MM-DD';
-
+  document.getElementById('settings-date-format').value     = s.dateFormat       || 'YYYY-MM-DD';
   updateGapLabel(s.ssMinGapDays ?? 42);
 }
+
+export function openSettings() {
+  populateForm();
+  document.getElementById('settings-overlay').style.display = 'flex';
+}
+
+export function closeSettings() {
+  document.getElementById('settings-overlay').style.display = 'none';
+}
+
+export function closeSettingsIfOutside(e) {
+  if (e.target === document.getElementById('settings-overlay')) closeSettings();
+}
+
+// Keep renderSettings as an alias for navigation.js compatibility
+export function renderSettings() { openSettings(); }
 
 function updateGapLabel(val) {
   const weeks = Math.round(val / 7);
@@ -81,6 +95,7 @@ export function saveSettingsForm() {
   _settings.dateFormat       = document.getElementById('settings-date-format').value;
 
   saveSettings();
+  closeSettings();
   if (typeof window._showToast === 'function') window._showToast('Settings saved');
 }
 
@@ -92,6 +107,9 @@ export function resetSettings() {
   if (typeof window._showToast === 'function') window._showToast('Settings reset to defaults');
 }
 
-window.saveSettingsForm  = saveSettingsForm;
-window.resetSettings     = resetSettings;
-window.updateGapLabel    = updateGapLabel;
+window.openSettings            = openSettings;
+window.closeSettings           = closeSettings;
+window.closeSettingsIfOutside  = closeSettingsIfOutside;
+window.saveSettingsForm        = saveSettingsForm;
+window.resetSettings           = resetSettings;
+window.updateGapLabel          = updateGapLabel;

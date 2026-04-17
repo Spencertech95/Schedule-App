@@ -59,7 +59,7 @@
     <div class="nav-section">Admin</div>
     <button class="nav-item" onclick="showPage('positions',this)"><span class="nav-icon">◻</span><span>Positions</span></button>
     <button class="nav-item" onclick="showPage('compliance',this)"><span class="nav-icon">✓</span><span>Compliance</span></button>
-    <button class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙</span><span>Settings</span></button>
+    <button class="nav-item" onclick="openSettings()"><span class="nav-icon">⚙</span><span>Settings</span></button>
     <div style="padding:.5rem 0 1rem;">
       <button class="sidebar-import-btn" onclick="openImport()">
         <span style="font-size:14px;">↑</span> Import roster
@@ -888,56 +888,62 @@
 </div>
 
 <!-- SETTINGS PAGE -->
-<div id="page-settings" class="page">
-  <div class="page-title">Settings</div>
-  <div class="page-sub">Configure scheduler details, Smart Suggest thresholds, and display preferences</div>
+<!-- SETTINGS OVERLAY -->
+<div id="settings-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;" onclick="closeSettingsIfOutside(event)">
+  <div style="background:var(--surface);border:.5px solid var(--border);border-radius:12px;width:min(680px,95vw);max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5);">
 
-  <!-- User / Account -->
-  <div class="card" style="margin-bottom:1rem;">
-    <div class="card-header"><div><div class="card-title">Scheduler account</div><div class="card-sub">Your name and email appear in offer emails and as the default approver</div></div></div>
-    <div class="grid-2" style="padding:1rem 0 0;">
-      <div class="field"><label>Scheduler name</label><input id="settings-scheduler-name" placeholder="e.g. Jane Smith"/></div>
-      <div class="field"><label>Scheduler email</label><input id="settings-scheduler-email" type="email" placeholder="e.g. jane.smith@celebrity.com"/></div>
-      <div class="field"><label>Company name</label><input id="settings-company-name" placeholder="Celebrity Cruises"/></div>
-      <div class="field"><label>Department</label><input id="settings-department" placeholder="Technical Entertainment Crew Scheduling"/></div>
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:.5px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;border-radius:12px 12px 0 0;">
+      <div>
+        <div style="font-size:16px;font-weight:600;color:#fff;">Settings</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">Scheduler details, Smart Suggest thresholds, display preferences</div>
+      </div>
+      <button onclick="closeSettings()" style="background:rgba(255,255,255,.06);border:.5px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:18px;line-height:1;">&times;</button>
     </div>
-  </div>
 
-  <!-- Smart Suggest -->
-  <div class="card" style="margin-bottom:1rem;">
-    <div class="card-header"><div><div class="card-title">Smart Suggest</div><div class="card-sub">Placement scoring thresholds used when generating ship options for signing-off crew</div></div></div>
-    <div style="padding:1rem 0 0;">
-      <div class="field" style="max-width:420px;">
-        <label>Minimum gap between sign-off and next boarding <span id="settings-ss-gap-label" style="color:var(--blue-t);font-weight:600;"></span></label>
-        <input id="settings-ss-gap" type="range" min="14" max="90" step="7"
-          oninput="updateGapLabel(this.value)"
-          style="width:100%;accent-color:var(--blue-t);margin-top:6px;"/>
+    <!-- Body -->
+    <div style="padding:1.25rem 1.5rem;">
+
+      <!-- Scheduler account -->
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.6rem;">Scheduler account</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;">Your name and email appear in offer emails and as the default approver</div>
+      <div class="grid-2" style="margin-bottom:1.25rem;">
+        <div class="field"><label>Scheduler name</label><input id="settings-scheduler-name" placeholder="e.g. Jane Smith"/></div>
+        <div class="field"><label>Scheduler email</label><input id="settings-scheduler-email" type="email" placeholder="e.g. jane.smith@celebrity.com"/></div>
+        <div class="field"><label>Company name</label><input id="settings-company-name" placeholder="Celebrity Cruises"/></div>
+        <div class="field"><label>Department</label><input id="settings-department" placeholder="Technical Entertainment Crew Scheduling"/></div>
+      </div>
+
+      <div style="border-top:.5px solid var(--border);margin-bottom:1.25rem;"></div>
+
+      <!-- Smart Suggest -->
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.6rem;">Smart Suggest</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;">Placement scoring thresholds used when generating ship options</div>
+      <div class="field" style="max-width:100%;margin-bottom:.75rem;">
+        <label>Minimum gap between sign-off and next boarding — <span id="settings-ss-gap-label" style="color:var(--blue-t);font-weight:600;"></span></label>
+        <input id="settings-ss-gap" type="range" min="14" max="90" step="7" oninput="updateGapLabel(this.value)" style="width:100%;accent-color:var(--blue-t);margin-top:6px;"/>
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2);margin-top:2px;"><span>2 weeks</span><span>13 weeks</span></div>
       </div>
-      <div class="field" style="max-width:200px;margin-top:1rem;">
+      <div class="field" style="max-width:200px;margin-bottom:1.25rem;">
         <label>Default contract length (months)</label>
         <input id="settings-contract-months" type="number" min="1" max="12" step="1" style="width:100%;"/>
       </div>
-    </div>
-  </div>
 
-  <!-- Contracts & Offers -->
-  <div class="card" style="margin-bottom:1rem;">
-    <div class="card-header"><div><div class="card-title">Contracts &amp; offers</div><div class="card-sub">Thresholds for sign-off alerts and automatic archiving</div></div></div>
-    <div style="padding:1rem 0 0;">
-      <div class="field" style="max-width:200px;">
+      <div style="border-top:.5px solid var(--border);margin-bottom:1.25rem;"></div>
+
+      <!-- Contracts & Offers -->
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.6rem;">Contracts &amp; offers</div>
+      <div class="field" style="max-width:200px;margin-bottom:1.25rem;">
         <label>Sign-off alert window (days)</label>
         <input id="settings-signoff-alert" type="number" min="7" max="90" step="1" style="width:100%;"/>
         <div style="font-size:11px;color:var(--text2);margin-top:4px;">Crew signing off within this window are flagged in the dashboard and Smart Suggest</div>
       </div>
-    </div>
-  </div>
 
-  <!-- Display -->
-  <div class="card" style="margin-bottom:1.5rem;">
-    <div class="card-header"><div><div class="card-title">Display</div><div class="card-sub">Date format used throughout the app</div></div></div>
-    <div style="padding:1rem 0 0;">
-      <div class="field" style="max-width:220px;">
+      <div style="border-top:.5px solid var(--border);margin-bottom:1.25rem;"></div>
+
+      <!-- Display -->
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.6rem;">Display</div>
+      <div class="field" style="max-width:220px;margin-bottom:.5rem;">
         <label>Date format</label>
         <select id="settings-date-format" style="width:100%;">
           <option value="YYYY-MM-DD">YYYY-MM-DD (2026-04-17)</option>
@@ -945,12 +951,18 @@
           <option value="MM/DD/YYYY">MM/DD/YYYY (04/17/2026)</option>
         </select>
       </div>
-    </div>
-  </div>
 
-  <div style="display:flex;gap:8px;">
-    <button class="btn btn-primary" onclick="saveSettingsForm()">Save settings</button>
-    <button class="btn" onclick="resetSettings()" style="color:var(--text2);">Reset to defaults</button>
+    </div>
+
+    <!-- Footer -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-top:.5px solid var(--border);position:sticky;bottom:0;background:var(--surface);border-radius:0 0 12px 12px;">
+      <button class="btn" onclick="resetSettings()" style="color:var(--text2);font-size:12px;">Reset to defaults</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="closeSettings()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettingsForm()">Save settings</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
