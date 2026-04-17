@@ -18,6 +18,13 @@ export function saveCrewEmail(crewId, email) {
   }
 }
 
+function addMonths(dateStr, months) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+
 function buildOfferEmailBody(o) {
   const crew        = state.crew.find(c => c.id == o.crewId);
   const SHIP_DISPLAY = window.SHIP_DISPLAY || {};
@@ -27,8 +34,9 @@ function buildOfferEmailBody(o) {
   const typeLabel   = o.type === 'Extension' ? 'Contract Extension'
     : o.type === 'Leave' ? `Leave Request — ${o.subtype || ''}`
     : 'New Assignment Offer';
+  const contractEnd = o.dateTo || addMonths(o.dateFrom, 6);
   const dateSection = o.dateFrom
-    ? `Expected boarding: ${o.dateFrom}${o.dateTo ? '\nContract end:      ' + o.dateTo : ''}`
+    ? `Join date:    ${o.dateFrom}${contractEnd ? '\nLeave date:   ' + contractEnd : ''}`
     : '';
   const BASE_URL    = 'https://spencertech95.github.io/Schedule-App/';
   const declineLink = `${BASE_URL}?offer=${o.id}&action=decline`;
@@ -53,11 +61,12 @@ function buildOfferEmailBody(o) {
     const medals = ['🥇','🥈','🥉'];
     const ranks  = ['1st Choice','2nd Choice','3rd Choice'];
     const lines  = rawOpts.map((opt, i) => {
-      const boardingLine = opt.boardingDate
-        ? `Expected boarding: ${opt.boardingDate}`
-        : 'Boarding date to be confirmed';
+      const endDate    = addMonths(opt.boardingDate, 6);
+      const dateLine   = opt.boardingDate
+        ? `Join date:    ${opt.boardingDate}\n     Leave date:   ${endDate}`
+        : 'Dates to be confirmed';
       const acceptLink = `${BASE_URL}?offer=${o.id}&action=accept&ship=${opt.sc}`;
-      return `  ${medals[i]}  ${ranks[i]}: Celebrity ${opt.name} (${opt.sc})\n     ${boardingLine}\n\n     ✅ Accept this ship:\n     → ${acceptLink}`;
+      return `  ${medals[i]}  ${ranks[i]}: Celebrity ${opt.name} (${opt.sc})\n     ${dateLine}\n\n     ✅ Accept this ship:\n     → ${acceptLink}`;
     }).join('\n\n─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n\n');
     multiShipSection = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
