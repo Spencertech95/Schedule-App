@@ -5,6 +5,7 @@ import { upsertCrew } from './db.js';
 import { upsertOffer } from './db.js';
 import { getEssShipOptions } from './placement.js';
 import { getShipPortForDate } from './utils.js';
+import { getSetting } from './settings.js';
 
 export function getCrewEmail(crewId) {
   const c = state.crew.find(x => x.id == crewId);
@@ -35,7 +36,7 @@ function buildOfferEmailBody(o) {
   const typeLabel   = o.type === 'Extension' ? 'Contract Extension'
     : o.type === 'Leave' ? `Leave Request — ${o.subtype || ''}`
     : 'New Assignment Offer';
-  const contractEnd   = o.dateTo || addMonths(o.dateFrom, 6);
+  const contractEnd   = o.dateTo || addMonths(o.dateFrom, getSetting('contractMonths'));
   const embarkInfo    = getShipPortForDate(o.ship, o.dateFrom);
   const debarkInfo    = getShipPortForDate(o.ship, contractEnd);
   const embarkLine    = embarkInfo  ? `\nEmbark port:  ${embarkInfo.port} (${embarkInfo.region})` : '';
@@ -66,7 +67,7 @@ function buildOfferEmailBody(o) {
     const medals = ['🥇','🥈','🥉'];
     const ranks  = ['1st Choice','2nd Choice','3rd Choice'];
     const lines  = rawOpts.map((opt, i) => {
-      const endDate    = addMonths(opt.boardingDate, 6);
+      const endDate    = addMonths(opt.boardingDate, getSetting('contractMonths'));
       const embark     = getShipPortForDate(opt.sc, opt.boardingDate);
       const debark     = getShipPortForDate(opt.sc, endDate);
       const dateLine   = opt.boardingDate
@@ -115,9 +116,14 @@ To respond, click the link that matches your decision:
 Clicking either link will open a confirmation page — no login required.
 Your response will be recorded instantly.`;
 
+  const company    = getSetting('companyName')    || 'Celebrity Cruises';
+  const department = getSetting('department')     || 'Technical Entertainment Crew Scheduling';
+  const sigName    = getSetting('schedulerName')  || '';
+  const signature  = sigName ? `${sigName}\n${department}\n${company}` : `${department}\n${company}`;
+
   return `Dear ${crew?.name?.split(' ')[0] || 'Crew Member'},
 
-We are pleased to extend the following offer to you from Celebrity Cruises Technical Entertainment.
+We are pleased to extend the following offer to you from ${company} Technical Entertainment.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ${typeLabel.toUpperCase()}
@@ -126,18 +132,17 @@ We are pleased to extend the following offer to you from Celebrity Cruises Techn
 Ship:          ${shipDisplay.name}${cls ? ' (' + cls + ' Class)' : ''}
 Position:      ${crew?.posTitle || crew?.abbr || '—'}
 ${dateSection}
-Approver:      ${o.approver || 'Celebrity Cruises Technical Entertainment'}
+Approver:      ${o.approver || department}
 
 ${o.notes ? 'Additional notes:\n' + o.notes + '\n\n' : ''}${multiShipSection}${respondSection}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-We value your continued contribution to the Celebrity Cruises fleet and look forward to your response.
+We value your continued contribution to the ${company} fleet and look forward to your response.
 
 Warm regards,
 
-Celebrity Cruises
-Technical Entertainment Crew Scheduling
+${signature}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 This message contains confidential information.`;
 }

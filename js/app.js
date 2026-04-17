@@ -4,6 +4,7 @@
 import { loadAll, upsertOffer } from './db.js';
 import { state }   from './state.js';
 import { showToast, getShipPortForDate } from './utils.js';
+import { loadSettings } from './settings.js';
 
 // Page modules — imported for their side-effects (window.* registrations)
 import './navigation.js';
@@ -23,6 +24,10 @@ import './deployment.js';
 import './ship.js';
 import './docwallet.js';
 import './import.js';
+import './settings.js';
+
+// Load settings from localStorage before anything else renders
+loadSettings();
 
 // Expose showToast globally (used by db.js error handler and inline HTML)
 window._showToast = showToast;

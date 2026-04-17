@@ -5,6 +5,7 @@ import { showToast } from './utils.js';
 import { upsertOffer, dbDeleteOffer } from './db.js';
 import { saveCrewEmail, getCrewEmail } from './crew.js';
 import { openEmailCompose } from './email.js';
+import { getSetting } from './settings.js';
 
 export const CO_STAGES    = ['Draft','Sent','Acknowledged','Accepted','Declined','Confirmed'];
 export const CO_STAGE_IDX = {Draft:0,Sent:1,Acknowledged:2,Accepted:3,Declined:4,Confirmed:5};
@@ -124,8 +125,8 @@ function renderSmartSuggest() {
     : renderSSByCrew(crewOffers, SCM, CB, SNM, PC);
 }
 
-// Minimum break between sign-off and next boarding — always at least 6 weeks
-const SS_MIN_GAP_DAYS = 42;
+// Minimum break between sign-off and next boarding — configurable in Settings (default 6 weeks)
+const SS_MIN_GAP_DAYS = () => getSetting('ssMinGapDays');
 // Positions where the scheduler picks one ship to offer (per-card buttons, not a combined email)
 const SS_SINGLE_SHIP = new Set(['EOS','EOL','EOF','VPM','SPM','ETDC']);
 
@@ -137,7 +138,7 @@ function ssBuildShipOptions(crewMember, windowDays, vacDays, SCM, SNM, CB, SCO) 
   const crewSc    = crewMember.recentShipCode || crewMember.shipCode;
   const crewCls   = SCM[crewSc] || '';
   // Respect the UI gap slider but never go below the 6-week minimum
-  const gapDays   = Math.max(SS_MIN_GAP_DAYS, vacDays);
+  const gapDays   = Math.max(SS_MIN_GAP_DAYS(), vacDays);
   const availDate = new Date(new Date(crewMember.end).getTime() + gapDays * 864e5);
 
   return SCO
@@ -519,7 +520,7 @@ export function coSort(key) {
 }
 
 // ── Archive helpers ───────────────────────────────────────────────────────────
-const ARCHIVE_DAYS = 30;
+const ARCHIVE_DAYS = () => getSetting('signoffAlertDays');
 
 // Date an offer entered its terminal state; falls back to created for legacy offers
 function getTerminalDate(o) {
@@ -532,7 +533,7 @@ function isArchived(o) {
   if (!['Confirmed','Declined'].includes(o.stage)) return false;
   const td = getTerminalDate(o);
   if (!td) return false;
-  return (new Date() - new Date(td + 'T00:00:00')) / 864e5 >= ARCHIVE_DAYS;
+  return (new Date() - new Date(td + 'T00:00:00')) / 864e5 >= ARCHIVE_DAYS();
 }
 
 function coBaseFilter(o, q, shipF, stageF) {
