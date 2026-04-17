@@ -183,9 +183,16 @@ async function confirmOfferResponse(action) {
   if (declineBtn) declineBtn.disabled = true;
 
   offer.stage = action === 'accept' ? 'Accepted' : 'Declined';
-  // If crew chose a specific ship (ESS multi-ship), record it on the offer
+  // If crew chose a specific ship (ESS multi-ship), record it and update the contract dates
   if (action === 'accept' && _ofrShip) {
     offer.ship = _ofrShip;
+    const detail = offer.shipOptionDetails?.find(d => d.sc === _ofrShip);
+    if (detail?.boardingDate) {
+      offer.dateFrom = detail.boardingDate;
+      const end = new Date(detail.boardingDate + 'T00:00:00');
+      end.setMonth(end.getMonth() + 6);
+      offer.dateTo = end.toISOString().slice(0, 10);
+    }
   }
   // Stamp terminal date for Declined (starts 30-day active window before archiving)
   if (action === 'decline' && !offer.terminalDate) {
