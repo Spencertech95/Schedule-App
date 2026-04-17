@@ -139,7 +139,7 @@ function renderCertReport() {
 
 function e1PendingOffers() {
   return state.offers.filter(o =>
-    ['Accepted'].includes(o.stage) && !o.e1Uploaded
+    o.stage === 'Confirmed' && !o.e1Uploaded
   ).sort((a, b) => (a.created || '').localeCompare(b.created || ''));
 }
 
@@ -148,7 +148,7 @@ export function renderE1Report() {
   const pending = e1PendingOffers();
 
   const subEl = document.getElementById('e1-sub');
-  if (subEl) subEl.textContent = `${pending.length} accepted offer${pending.length !== 1 ? 's' : ''} pending upload to E1`;
+  if (subEl) subEl.textContent = `${pending.length} confirmed contract${pending.length !== 1 ? 's' : ''} pending upload to E1`;
 
   const confirmBtn = document.getElementById('e1-confirm-btn');
 
