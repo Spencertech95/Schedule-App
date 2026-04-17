@@ -138,13 +138,23 @@ function showOfferResponseOverlay() {
   document.getElementById('ofr-title').textContent = typeLabel;
   document.getElementById('ofr-sub').textContent   = `For ${crew?.name || 'Crew Member'} · Celebrity ${shipName}`;
 
+  // Resolve the correct boarding/leave dates for the specific ship clicked
+  const shipDetail  = ship && offer.shipOptionDetails?.find(d => d.sc === ship);
+  const joinDate    = shipDetail?.boardingDate || offer.dateFrom || offer.startDate || '—';
+  const leaveDate   = (() => {
+    if (shipDetail?.boardingDate) {
+      const d = new Date(shipDetail.boardingDate + 'T00:00:00');
+      d.setMonth(d.getMonth() + 6);
+      return d.toISOString().slice(0, 10);
+    }
+    return offer.dateTo || offer.endDate || '—';
+  })();
+
   document.getElementById('ofr-details').innerHTML = [
-    ['Ship',      `Celebrity ${shipName}`],
-    ['Position',  crew?.abbr || crew?.posTitle || '—'],
-    ['Start date',offer.startDate || offer.dateFrom || '—'],
-    ['End date',  offer.endDate   || offer.dateTo   || '—'],
-    ['Type',      offer.type || '—'],
-    ['Status',    offer.stage],
+    ['Ship',       `Celebrity ${shipName}`],
+    ['Position',   crew?.abbr || crew?.posTitle || '—'],
+    ['Join date',  joinDate],
+    ['Leave date', leaveDate],
   ].map(([label, value]) => `
     <div>
       <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:2px;">${label}</div>
