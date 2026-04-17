@@ -518,20 +518,57 @@ export function coSort(key) {
   renderContracts();
 }
 
+// ── Archive helpers ───────────────────────────────────────────────────────────
+const ARCHIVE_DAYS = 30;
+
+// Date an offer entered its terminal state; falls back to created for legacy offers
+function getTerminalDate(o) {
+  return o.terminalDate || o.created || null;
+}
+
+// An offer is archived when it has been Confirmed/Declined for 30+ days
+function isArchived(o) {
+  if (!['Confirmed','Declined'].includes(o.stage)) return false;
+  const td = getTerminalDate(o);
+  if (!td) return false;
+  return (new Date() - new Date(td + 'T00:00:00')) / 864e5 >= ARCHIVE_DAYS;
+}
+
+function coBaseFilter(o, q, shipF, stageF) {
+  if (coCatFilter && o.type !== coCatFilter) return false;
+  if (shipF  && o.ship  !== shipF)  return false;
+  if (stageF && o.stage !== stageF) return false;
+  if (q && !((o.crewName||'').toLowerCase().includes(q) || (o.ship||'').toLowerCase().includes(q) || (o.approver||'').toLowerCase().includes(q))) return false;
+  return true;
+}
+
+function coSorted(arr) {
+  return arr.sort((a, b) => {
+    const va = a[coSortKey] || '', vb = b[coSortKey] || '';
+    return coSortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+  });
+}
+
+// Active offers — excludes anything that has aged into the archive
 function coFilteredOffers() {
   const q     = (document.getElementById('co-search').value || '').toLowerCase();
   const shipF = document.getElementById('co-filter-ship').value;
   const stageF = document.getElementById('co-filter-stage').value;
-  return state.offers.filter(o => {
-    if (coCatFilter && o.type !== coCatFilter) return false;
-    if (shipF && o.ship !== shipF) return false;
-    if (stageF && o.stage !== stageF) return false;
-    if (q && !((o.crewName||'').toLowerCase().includes(q) || (o.ship||'').toLowerCase().includes(q) || (o.approver||'').toLowerCase().includes(q))) return false;
-    return true;
-  }).sort((a, b) => {
-    const va = a[coSortKey] || '', vb = b[coSortKey] || '';
-    return coSortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
-  });
+  return coSorted(state.offers.filter(o => {
+    if (isArchived(o)) return false;
+    return coBaseFilter(o, q, shipF, stageF);
+  }));
+}
+
+// Archived offers — Confirmed/Declined for 30+ days
+function coArchivedOffers() {
+  const q     = (document.getElementById('co-search').value || '').toLowerCase();
+  const shipF = document.getElementById('co-filter-ship').value;
+  const stageF = document.getElementById('co-filter-stage').value;
+  return coSorted(state.offers.filter(o => {
+    if (!isArchived(o)) return false;
+    return coBaseFilter(o, q, shipF, stageF);
+  }));
 }
 
 export function renderContracts() {
@@ -600,8 +637,11 @@ function renderCoTable() {
     const rowStyle = isAccepted
       ? 'cursor:pointer;background:rgba(61,232,160,.06);border-left:3px solid var(--green-t);'
       : 'cursor:pointer;';
+    const isTerminal = ['Confirmed','Declined'].includes(o.stage);
     const confirmBtn = isAccepted
       ? `<button class="btn btn-sm" style="font-size:10px;color:var(--green-t);border-color:rgba(61,232,160,.4);white-space:nowrap;" onclick="event.stopPropagation();advanceCoStage(${o.id},'Confirmed')" title="Confirm">✓ Confirm</button>`
+      : isTerminal
+      ? '' // terminal offers are retained — no delete
       : `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteCoOffer(${o.id})" title="Delete">✕</button>`;
     return `<tr style="${rowStyle}" onclick="openCoModal(${o.id})">
       <td><div style="font-weight:600;font-size:12px;">${o.crewName||'—'}</div><div style="font-size:10px;color:var(--text2);">#${o.crewId||'—'}</div></td>
@@ -615,32 +655,100 @@ function renderCoTable() {
       <td>${confirmBtn}</td>
     </tr>`;
   }).join('');
+
+  // ── Archive section ───────────────────────────────────────────────────────
+  const archived = coArchivedOffers();
+  let archiveEl = document.getElementById('co-archive-section');
+  if (!archiveEl) {
+    archiveEl = document.createElement('div');
+    archiveEl.id = 'co-archive-section';
+    archiveEl.style.cssText = 'margin-top:1.5rem;';
+    document.getElementById('co-table-view').appendChild(archiveEl);
+  }
+  if (!archived.length) {
+    archiveEl.innerHTML = '';
+  } else {
+    const open = archiveEl.dataset.open === 'true';
+    archiveEl.innerHTML = `
+      <div onclick="toggleCoArchive()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 14px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.08);border-radius:6px;user-select:none;">
+        <span style="font-size:13px;font-weight:500;color:var(--text2);">Archive</span>
+        <span class="badge badge-gray" style="font-size:10px;">${archived.length}</span>
+        <span style="font-size:11px;color:var(--text2);">— Confirmed &amp; Declined offers older than ${ARCHIVE_DAYS} days</span>
+        <span style="margin-left:auto;font-size:12px;color:var(--text2);">${open ? '▲' : '▼'}</span>
+      </div>
+      <div id="co-archive-body" style="display:${open ? 'block' : 'none'};margin-top:8px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.04em;">
+            <th style="text-align:left;padding:6px 8px;font-weight:500;">Crew member</th>
+            <th style="text-align:left;padding:6px 8px;font-weight:500;">Type</th>
+            <th style="text-align:left;padding:6px 8px;font-weight:500;">Ship</th>
+            <th style="text-align:left;padding:6px 8px;font-weight:500;">Stage</th>
+            <th style="text-align:left;padding:6px 8px;font-weight:500;">Dates</th>
+            <th style="text-align:left;padding:6px 8px;font-weight:500;">Created</th>
+            <th style="text-align:left;padding:6px 8px;font-weight:500;">Closed</th>
+          </tr></thead>
+          <tbody>${archived.map(o => {
+            const cls2     = SCM[o.ship] || '';
+            const cb2      = CB[cls2] || 'badge-gray';
+            const typeColor2 = o.type === 'Extension' ? 'var(--blue-t)' : o.type === 'Offer' ? 'var(--purple-t)' : 'var(--teal-t)';
+            const dd2      = o.dateFrom ? (o.dateTo ? `${o.dateFrom} → ${o.dateTo}` : o.dateFrom) : '—';
+            return `<tr style="border-top:.5px solid rgba(255,255,255,.06);opacity:.7;cursor:pointer;" onclick="openCoModal(${o.id})">
+              <td style="padding:7px 8px;"><span style="font-weight:500;">${o.crewName||'—'}</span></td>
+              <td style="padding:7px 8px;color:${typeColor2};font-weight:500;">${CO_TYPE_ICONS[o.type]} ${o.type}</td>
+              <td style="padding:7px 8px;">${o.ship?`<span class="badge ${cb2}" style="font-size:9px;">${o.ship}</span>`:'—'}</td>
+              <td style="padding:7px 8px;">${coStageBadge(o.stage)}</td>
+              <td style="padding:7px 8px;color:var(--text2);white-space:nowrap;">${dd2}</td>
+              <td style="padding:7px 8px;color:var(--text2);">${o.created||'—'}</td>
+              <td style="padding:7px 8px;color:var(--text2);">${getTerminalDate(o)||'—'}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>`;
+  }
+}
+
+export function toggleCoArchive() {
+  const el = document.getElementById('co-archive-section');
+  if (!el) return;
+  el.dataset.open = el.dataset.open === 'true' ? 'false' : 'true';
+  renderCoTable();
 }
 
 function renderCoBoard() {
-  const data   = coFilteredOffers();
-  const SCM    = SHIP_CLASS_MAP(); const CB = CLASS_BADGE();
+  const data     = coFilteredOffers();
+  const archived = coArchivedOffers();
+  const SCM      = SHIP_CLASS_MAP(); const CB = CLASS_BADGE();
   const visStages = ['Draft','Sent','Acknowledged','Accepted','Declined','Confirmed'];
   const board  = document.getElementById('co-board');
-  board.innerHTML = visStages.map(stage => {
+
+  const makeCard = (o) => {
+    const typeColor = o.type === 'Extension' ? 'var(--blue-t)' : o.type === 'Offer' ? 'var(--purple-t)' : 'var(--teal-t)';
+    const cls       = SCM[o.ship] || '';
+    const clsBadge  = CB[cls] || 'badge-gray';
+    return `<div class="co-card" onclick="openCoModal(${o.id})">
+      <div class="co-card-name">${o.crewName||'—'}</div>
+      <div class="co-card-meta">${o.ship?`<span class="badge ${clsBadge}" style="font-size:9px;margin-right:3px;">${o.ship}</span>`:''}${o.dateFrom||'No date'}</div>
+      <div class="co-card-type" style="color:${typeColor};">${CO_TYPE_ICONS[o.type]} ${o.type}${o.subtype?' — '+o.subtype:''}</div>
+    </div>`;
+  };
+
+  const stageCols = visStages.map(stage => {
     const cards = data.filter(o => o.stage === stage);
     const hdrColor = {Draft:'var(--gray-t)',Sent:'var(--blue-t)',Acknowledged:'var(--purple-t)',Accepted:'var(--green-t)',Declined:'var(--red-t)',Confirmed:'var(--amber-t)'}[stage] || '#fff';
     return `<div class="co-col">
       <div class="co-col-header" style="color:${hdrColor};">${stage}<span class="co-col-count">${cards.length}</span></div>
       <div class="co-col-body">
-        ${cards.length ? cards.map(o => {
-          const typeColor = o.type === 'Extension' ? 'var(--blue-t)' : o.type === 'Offer' ? 'var(--purple-t)' : 'var(--teal-t)';
-          const cls       = SCM[o.ship] || '';
-          const clsBadge  = CB[cls] || 'badge-gray';
-          return `<div class="co-card" onclick="openCoModal(${o.id})">
-            <div class="co-card-name">${o.crewName||'—'}</div>
-            <div class="co-card-meta">${o.ship?`<span class="badge ${clsBadge}" style="font-size:9px;margin-right:3px;">${o.ship}</span>`:''}${o.dateFrom||'No date'}</div>
-            <div class="co-card-type" style="color:${typeColor};">${CO_TYPE_ICONS[o.type]} ${o.type}${o.subtype?' — '+o.subtype:''}</div>
-          </div>`;
-        }).join('') : `<div style="font-size:11px;color:var(--text2);text-align:center;padding:1rem;font-style:italic;">Empty</div>`}
+        ${cards.length ? cards.map(makeCard).join('') : `<div style="font-size:11px;color:var(--text2);text-align:center;padding:1rem;font-style:italic;">Empty</div>`}
       </div>
     </div>`;
   }).join('');
+
+  const archiveCol = archived.length ? `<div class="co-col">
+    <div class="co-col-header" style="color:var(--text2);">Archive<span class="co-col-count">${archived.length}</span></div>
+    <div class="co-col-body" style="opacity:.6;">${archived.map(makeCard).join('')}</div>
+  </div>` : '';
+
+  board.innerHTML = stageCols + archiveCol;
 }
 
 export function openCoModal(id) {
@@ -854,8 +962,10 @@ export function saveCoEdit(id) {
     notes:    document.getElementById('co-edit-notes').value.trim()
   });
   if (oldStage !== newStage) {
+    const today2 = new Date().toISOString().slice(0, 10);
     o.history = o.history || [];
-    o.history.push({date: new Date().toISOString().slice(0, 10), note: `Stage changed: ${oldStage} → ${newStage}`});
+    o.history.push({date: today2, note: `Stage changed: ${oldStage} → ${newStage}`});
+    if (['Confirmed','Declined'].includes(newStage) && !o.terminalDate) o.terminalDate = today2;
   }
   renderCoDetailModal(o);
   renderCoSummary();
@@ -866,10 +976,15 @@ export function saveCoEdit(id) {
 export function advanceCoStage(id, stage) {
   const o = state.offers.find(x => x.id === id);
   if (!o) return;
+  const today    = new Date().toISOString().slice(0, 10);
   const oldStage = o.stage;
   o.stage = stage;
+  // Stamp the date an offer first enters a terminal state — used for 30-day archive window
+  if (['Confirmed','Declined'].includes(stage) && !o.terminalDate) {
+    o.terminalDate = today;
+  }
   o.history = o.history || [];
-  o.history.push({date: new Date().toISOString().slice(0, 10), note: `Stage: ${oldStage} → ${stage}`});
+  o.history.push({date: today, note: `Stage: ${oldStage} → ${stage}`});
   renderCoDetailModal(o);
   renderCoSummary();
   renderContracts();
@@ -911,3 +1026,6 @@ window.saveCoEdit          = saveCoEdit;
 window.advanceCoStage      = advanceCoStage;
 window.deleteCoOffer       = deleteCoOffer;
 window.openCoEditInline    = openCoEditInline;
+window.toggleCoArchive     = toggleCoArchive;
+window.renderContracts     = renderContracts;
+window.renderCoSummary     = renderCoSummary;

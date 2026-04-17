@@ -177,6 +177,10 @@ async function confirmOfferResponse(action) {
   if (action === 'accept' && _ofrShip) {
     offer.ship = _ofrShip;
   }
+  // Stamp terminal date for Declined (starts 30-day active window before archiving)
+  if (action === 'decline' && !offer.terminalDate) {
+    offer.terminalDate = new Date().toISOString().slice(0, 10);
+  }
   offer.history = offer.history || [];
   offer.history.push({
     date: new Date().toISOString().slice(0, 10),

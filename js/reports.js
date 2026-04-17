@@ -234,6 +234,7 @@ export function confirmE1Upload() {
     offer.e1Uploaded     = true;
     offer.e1UploadedDate = today;
     offer.stage          = 'Confirmed';
+    if (!offer.terminalDate) offer.terminalDate = today;
     offer.history        = offer.history || [];
     offer.history.push({ date: today, note: 'Contract confirmed uploaded to E1 — stage advanced to Confirmed' });
     upsertOffer(offer);
