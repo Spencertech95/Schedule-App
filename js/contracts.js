@@ -124,38 +124,56 @@ function renderSmartSuggest() {
     : renderSSByCrew(crewOffers, SCM, CB, SNM, PC);
 }
 
-// Build up to 3 destination ship options for a signing-off crew member.
-// Looks for ships where the same position is also vacating around the same time.
+// Positions that only ever get 1 ship option (scheduler picks and offers directly)
+const SS_SINGLE_SHIP = new Set(['EOS','EOL','EOF','VPM','SPM','ETDC']);
+// Minimum break between sign-off and next boarding — always at least 6 weeks
+const SS_MIN_GAP_DAYS = 42;
+
+// Build destination ship options for a signing-off crew member.
+// ESS → up to 3 options (crew picks via email links).
+// EOS/EOL/EOF/VPM/SPM/ETDC → 1 option (scheduler offers one ship).
+// Others → up to 3 options (scheduler picks which to send).
+// Boarding date must be ≥ crew sign-off + 6 weeks minimum.
 function ssBuildShipOptions(crewMember, windowDays, vacDays, SCM, SNM, CB, SCO) {
-  const now       = new Date();
   const crewSc    = crewMember.recentShipCode || crewMember.shipCode;
   const crewCls   = SCM[crewSc] || '';
-  const availDate = new Date(new Date(crewMember.end).getTime() + vacDays * 864e5);
+  // Respect the UI gap slider but never go below the 6-week minimum
+  const gapDays   = Math.max(SS_MIN_GAP_DAYS, vacDays);
+  const availDate = new Date(new Date(crewMember.end).getTime() + gapDays * 864e5);
+  const maxOpts   = SS_SINGLE_SHIP.has(crewMember.abbr) ? 1 : 3;
 
   return SCO
     .map(sc => {
       // Find crew in the same position on this ship who are vacating
-      const vacancies = state.crew.filter(c =>
+      const allVacancies = state.crew.filter(c =>
         (c.recentShipCode === sc || c.shipCode === sc) &&
         c.abbr === crewMember.abbr &&
         c.id !== crewMember.id &&
         c.end
       );
-      if (!vacancies.length) return null;
+      if (!allVacancies.length) return null;
 
       const cls      = SCM[sc] || '';
       const clsBadge = CB[cls] || 'badge-gray';
 
-      // Pick the vacancy whose opening date best matches this crew member's availability
-      const bestVac = vacancies.reduce((best, v) => {
-        const vOpen = new Date(new Date(v.end).getTime() + vacDays * 864e5);
-        if (!best) return v;
-        const bOpen = new Date(new Date(best.end).getTime() + vacDays * 864e5);
-        return Math.abs(vOpen - availDate) < Math.abs(bOpen - availDate) ? v : best;
-      }, null);
+      // Only consider vacancies whose opening date is on or after this crew member's
+      // earliest availability (sign-off + gap). This enforces the 6-week minimum.
+      const eligible = allVacancies.filter(v => {
+        const vOpen = new Date(new Date(v.end).getTime() + gapDays * 864e5);
+        return vOpen >= availDate;
+      });
+      if (!eligible.length) return null;
 
-      const vacOpenDate = new Date(new Date(bestVac.end).getTime() + vacDays * 864e5);
-      const timingGap   = Math.round(Math.abs((vacOpenDate - availDate) / 864e5));
+      // Pick the earliest eligible vacancy (soonest available boarding)
+      const bestVac = eligible.reduce((best, v) => {
+        const vOpen = new Date(new Date(v.end).getTime() + gapDays * 864e5);
+        const bOpen = new Date(new Date(best.end).getTime() + gapDays * 864e5);
+        return vOpen < bOpen ? v : best;
+      }, eligible[0]);
+
+      const vacOpenDate = new Date(new Date(bestVac.end).getTime() + gapDays * 864e5);
+      // timingGap: days between crew's earliest availability and the boarding date (always ≥ 0)
+      const timingGap   = Math.round((vacOpenDate - availDate) / 864e5);
       const openStr     = vacOpenDate.toISOString().slice(0, 10);
 
       // Score: lower is better
@@ -172,7 +190,7 @@ function ssBuildShipOptions(crewMember, windowDays, vacDays, SCM, SNM, CB, SCO) 
     })
     .filter(Boolean)
     .sort((a, b) => a.score - b.score)
-    .slice(0, 3);
+    .slice(0, maxOpts);
 }
 
 function renderSSByCrew(crewOffers, SCM, CB, SNM, PC) {
@@ -205,20 +223,21 @@ function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, S
     : daysUntil <= 30 ? `<span class="badge badge-amber">${daysUntil}d</span>`
     : `<span class="badge badge-blue">${daysUntil}d</span>`;
 
-  const isEss = crewMember.abbr === 'ESS';
+  const isEss        = crewMember.abbr === 'ESS';
+  // Single-ship positions: always offer just 1 option, scheduler picks and sends directly
+  const isSingleShip = SS_SINGLE_SHIP.has(crewMember.abbr);
 
-  // ESS: scheduler sends all 3 options, crew picks via email links
-  // Non-ESS: scheduler picks which ship to offer — each card gets its own button
-  const essShipCodes = shipOptions.map(o => o.sc).join(',');
+  // ESS: header button sends all options at once — crew picks via per-ship accept links
+  // Single-ship & other non-ESS: per-card buttons (scheduler chooses which ship to offer)
   const headerActionBtn = existingOffer
     ? `<span class="pipe-badge pipe-${existingOffer.stage.toLowerCase()}" style="font-size:10px;">${existingOffer.stage}</span>
        <button class="btn btn-sm" style="font-size:10px;margin-left:6px;" onclick="openEmailCompose(${existingOffer.id})">✉ Re-send</button>`
     : isEss && shipOptions.length
-      ? `<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="ssCreateAndEmail(${crewMember.id},'${shipOptions.map(o=>`${o.sc}:${o.openStr}`).join(',')}')">✉ Send offer (3 options)</button>
+      ? `<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="ssCreateAndEmail(${crewMember.id},'${shipOptions.map(o=>`${o.sc}:${o.openStr}`).join(',')}')">✉ Send offer (${shipOptions.length} option${shipOptions.length !== 1 ? 's' : ''})</button>
          <button class="btn btn-sm" style="font-size:10px;" onclick="ssCreateDraft(${crewMember.id},'${shipOptions.map(o=>`${o.sc}:${o.openStr}`).join(',')}')">Draft</button>`
       : isEss
       ? `<span style="font-size:10px;color:var(--text2);font-style:italic;">No ESS vacancies found</span>`
-      : ''; // non-ESS: buttons live on each ship card
+      : ''; // non-ESS / single-ship: buttons live on each ship card
 
   const optionCards = shipOptions.length ? shipOptions.map((opt, i) => {
     const rankLabel = ['1st choice','2nd choice','3rd choice'][i];
