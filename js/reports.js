@@ -1,5 +1,6 @@
 // ── reports.js — reports page ─────────────────────────────────────────────────
 import { state } from './state.js';
+import { upsertOffer } from './db.js';
 
 const SC2NAME  = {'ML':'Millennium','IN':'Infinity','SM':'Summit','CS':'Constellation','SL':'Solstice','EQ':'Equinox','EC':'Eclipse','SI':'Silhouette','RF':'Reflection','EG':'Edge','AX':'Apex','BY':'Beyond','AT':'Ascent','XC':'Xcel'};
 const SC2CLS   = {'ML':'MILLENNIUM CLASS','IN':'MILLENNIUM CLASS','SM':'MILLENNIUM CLASS','CS':'MILLENNIUM CLASS','SL':'SOLSTICE CLASS','EQ':'SOLSTICE CLASS','EC':'SOLSTICE CLASS','SI':'SOLSTICE CLASS','RF':'SOLSTICE CLASS','EG':'EDGE CLASS','AX':'EDGE CLASS','BY':'EDGE CLASS','AT':'EDGE CLASS','XC':'EDGE CLASS'};
@@ -23,9 +24,13 @@ export function setReportWindow(w, el) {
   document.querySelectorAll('.rw-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   const isCert = w === 'cert';
-  document.getElementById('report-sign-off-section').style.display = isCert ? 'none' : '';
-  document.getElementById('report-cert-section').style.display    = isCert ? '' : 'none';
-  if (!isCert) renderReport(); else renderCertReport();
+  const isE1   = w === 'e1';
+  document.getElementById('report-sign-off-section').style.display = (!isCert && !isE1) ? '' : 'none';
+  document.getElementById('report-cert-section').style.display     = isCert  ? '' : 'none';
+  document.getElementById('report-e1-section').style.display       = isE1    ? '' : 'none';
+  if (isE1)        renderE1Report();
+  else if (isCert) renderCertReport();
+  else             renderReport();
 }
 
 function renderReportSummary() {
@@ -130,4 +135,150 @@ function renderCertReport() {
   }).join('');
 }
 
-window.setReportWindow = setReportWindow;
+// ── E1 UPLOAD REPORT ─────────────────────────────────────────────────────────
+
+function e1PendingOffers() {
+  return state.offers.filter(o =>
+    ['Accepted'].includes(o.stage) && !o.e1Uploaded
+  ).sort((a, b) => (a.created || '').localeCompare(b.created || ''));
+}
+
+export function renderE1Report() {
+  const today   = new Date().toISOString().slice(0, 10);
+  const pending = e1PendingOffers();
+
+  const subEl = document.getElementById('e1-sub');
+  if (subEl) subEl.textContent = `${pending.length} accepted offer${pending.length !== 1 ? 's' : ''} pending upload to E1`;
+
+  const confirmBtn = document.getElementById('e1-confirm-btn');
+
+  if (!pending.length) {
+    document.getElementById('e1-body').innerHTML =
+      `<div style="padding:2rem 0;text-align:center;color:var(--text2);">All accepted contracts have been uploaded to E1.</div>`;
+    if (confirmBtn) { confirmBtn.disabled = true; }
+    return;
+  }
+
+  // Split into today's new acceptances vs older pending
+  const todayRows = pending.filter(o => (o.acceptedDate || o.created || '').slice(0, 10) === today);
+  const olderRows = pending.filter(o => (o.acceptedDate || o.created || '').slice(0, 10) !== today);
+
+  const headHtml = `<div class="report-head" style="grid-template-columns:28px 1fr 80px 100px 100px 100px 90px;">
+    <div></div>
+    <div class="report-head-cell">Crew member</div>
+    <div class="report-head-cell">Position</div>
+    <div class="report-head-cell">Ship</div>
+    <div class="report-head-cell">Join date</div>
+    <div class="report-head-cell">Leave date</div>
+    <div class="report-head-cell">Accepted</div>
+  </div>`;
+
+  function rowsHtml(offers) {
+    return offers.map(o => {
+      const crew    = state.crew.find(c => c.id == o.crewId);
+      const shipName = SC2NAME[o.ship] || o.ship || '—';
+      const joinDate  = o.dateFrom || '—';
+      const leaveDate = o.dateTo   || '—';
+      const acceptedOn = (o.acceptedDate || o.created || '').slice(0, 10) || '—';
+      return `<div class="report-row e1-row" style="grid-template-columns:28px 1fr 80px 100px 100px 100px 90px;" id="e1-row-${o.id}">
+        <div class="report-cell" style="padding-right:0;">
+          <input type="checkbox" class="e1-chk" data-id="${o.id}" onchange="e1UpdateConfirmBtn()" style="width:14px;height:14px;cursor:pointer;">
+        </div>
+        <div class="report-cell">
+          <div style="font-weight:500;">${crew?.name || o.crewName || '—'}</div>
+          <div style="font-size:10px;color:var(--text2);">${crew?.nat || ''} ${crew?.airport ? '· ' + crew.airport : ''}</div>
+        </div>
+        <div class="report-cell"><span class="badge badge-gray" style="font-size:10px;">${crew?.abbr || '—'}</span></div>
+        <div class="report-cell"><span style="font-size:12px;">Celebrity ${shipName}</span></div>
+        <div class="report-cell" style="font-size:12px;white-space:nowrap;">${joinDate}</div>
+        <div class="report-cell" style="font-size:12px;white-space:nowrap;">${leaveDate}</div>
+        <div class="report-cell" style="font-size:11px;color:var(--text2);">${acceptedOn}</div>
+      </div>`;
+    }).join('');
+  }
+
+  let html = headHtml;
+  if (todayRows.length) {
+    html += `<div class="report-group"><div class="report-group-header">
+      <span class="badge badge-green" style="font-size:10px;">New today</span>
+      <span style="font-size:13px;font-weight:500;">${today}</span>
+      <span style="font-size:11px;color:var(--text2);">${todayRows.length} contract${todayRows.length !== 1 ? 's' : ''}</span>
+    </div>${rowsHtml(todayRows)}</div>`;
+  }
+  if (olderRows.length) {
+    html += `<div class="report-group"><div class="report-group-header">
+      <span class="badge badge-amber" style="font-size:10px;">Older pending</span>
+      <span style="font-size:13px;font-weight:500;">Not yet uploaded</span>
+      <span style="font-size:11px;color:var(--text2);">${olderRows.length} contract${olderRows.length !== 1 ? 's' : ''}</span>
+    </div>${rowsHtml(olderRows)}</div>`;
+  }
+
+  document.getElementById('e1-body').innerHTML = html;
+  if (confirmBtn) confirmBtn.disabled = true;
+}
+
+export function e1UpdateConfirmBtn() {
+  const any = document.querySelectorAll('.e1-chk:checked').length > 0;
+  const btn = document.getElementById('e1-confirm-btn');
+  if (btn) btn.disabled = !any;
+}
+
+export function confirmE1Upload() {
+  const checked = [...document.querySelectorAll('.e1-chk:checked')];
+  if (!checked.length) return;
+  const today = new Date().toISOString().slice(0, 10);
+  checked.forEach(chk => {
+    const id    = parseInt(chk.dataset.id);
+    const offer = state.offers.find(o => o.id === id);
+    if (!offer) return;
+    offer.e1Uploaded     = true;
+    offer.e1UploadedDate = today;
+    offer.stage          = 'Confirmed';
+    offer.history        = offer.history || [];
+    offer.history.push({ date: today, note: 'Contract confirmed uploaded to E1 — stage advanced to Confirmed' });
+    upsertOffer(offer);
+  });
+  if (typeof window.renderContracts  === 'function') window.renderContracts();
+  if (typeof window.renderCoSummary  === 'function') window.renderCoSummary();
+  renderE1Report();
+  const n = checked.length;
+  if (typeof window.showToast === 'function') window.showToast(`${n} contract${n !== 1 ? 's' : ''} confirmed uploaded to E1`);
+}
+
+export function downloadE1Csv() {
+  const pending = e1PendingOffers();
+  if (!pending.length) { if (typeof window.showToast === 'function') window.showToast('No pending E1 contracts to export'); return; }
+  const headers = ['Offer ID','Crew Name','Nationality','Position','Ship Code','Ship Name','Join Date','Leave Date','Contract Type','Accepted Date'];
+  const rows = pending.map(o => {
+    const crew     = state.crew.find(c => c.id == o.crewId);
+    const shipName = SC2NAME[o.ship] || o.ship || '';
+    return [
+      o.id,
+      crew?.name || o.crewName || '',
+      crew?.nat  || '',
+      crew?.abbr || '',
+      o.ship     || '',
+      shipName,
+      o.dateFrom || '',
+      o.dateTo   || '',
+      o.type     || 'Offer',
+      (o.acceptedDate || o.created || '').slice(0, 10),
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+  });
+  const csv  = [headers.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `E1_upload_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+window.setReportWindow    = setReportWindow;
+window.renderReport       = renderReport;
+window.renderCertReport   = renderCertReport;
+window.renderE1Report     = renderE1Report;
+window.e1UpdateConfirmBtn = e1UpdateConfirmBtn;
+window.confirmE1Upload    = confirmE1Upload;
+window.downloadE1Csv      = downloadE1Csv;
