@@ -124,15 +124,14 @@ function renderSmartSuggest() {
     : renderSSByCrew(crewOffers, SCM, CB, SNM, PC);
 }
 
-// Positions that only ever get 1 ship option (scheduler picks and offers directly)
-const SS_SINGLE_SHIP = new Set(['EOS','EOL','EOF','VPM','SPM','ETDC']);
 // Minimum break between sign-off and next boarding — always at least 6 weeks
 const SS_MIN_GAP_DAYS = 42;
+// Positions where the scheduler picks one ship to offer (per-card buttons, not a combined email)
+const SS_SINGLE_SHIP = new Set(['EOS','EOL','EOF','VPM','SPM','ETDC']);
 
-// Build destination ship options for a signing-off crew member.
-// ESS → up to 3 options (crew picks via email links).
-// EOS/EOL/EOF/VPM/SPM/ETDC → 1 option (scheduler offers one ship).
-// Others → up to 3 options (scheduler picks which to send).
+// Build up to 3 destination ship options for a signing-off crew member.
+// ESS → crew picks from all 3 via per-ship email links.
+// All other positions → 3 options shown, scheduler clicks the one to offer.
 // Boarding date must be ≥ crew sign-off + 6 weeks minimum.
 function ssBuildShipOptions(crewMember, windowDays, vacDays, SCM, SNM, CB, SCO) {
   const crewSc    = crewMember.recentShipCode || crewMember.shipCode;
@@ -140,7 +139,6 @@ function ssBuildShipOptions(crewMember, windowDays, vacDays, SCM, SNM, CB, SCO) 
   // Respect the UI gap slider but never go below the 6-week minimum
   const gapDays   = Math.max(SS_MIN_GAP_DAYS, vacDays);
   const availDate = new Date(new Date(crewMember.end).getTime() + gapDays * 864e5);
-  const maxOpts   = SS_SINGLE_SHIP.has(crewMember.abbr) ? 1 : 3;
 
   return SCO
     .map(sc => {
@@ -190,7 +188,7 @@ function ssBuildShipOptions(crewMember, windowDays, vacDays, SCM, SNM, CB, SCO) 
     })
     .filter(Boolean)
     .sort((a, b) => a.score - b.score)
-    .slice(0, maxOpts);
+    .slice(0, 3);
 }
 
 function renderSSByCrew(crewOffers, SCM, CB, SNM, PC) {
