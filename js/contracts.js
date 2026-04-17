@@ -205,15 +205,20 @@ function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, S
     : daysUntil <= 30 ? `<span class="badge badge-amber">${daysUntil}d</span>`
     : `<span class="badge badge-blue">${daysUntil}d</span>`;
 
-  // One action button per crew card — sends an offer email with all ship options
-  const shipCodes = shipOptions.map(o => o.sc).join(',');
-  const actionBtn = existingOffer
+  const isEss = crewMember.abbr === 'ESS';
+
+  // ESS: scheduler sends all 3 options, crew picks via email links
+  // Non-ESS: scheduler picks which ship to offer — each card gets its own button
+  const essShipCodes = shipOptions.map(o => o.sc).join(',');
+  const headerActionBtn = existingOffer
     ? `<span class="pipe-badge pipe-${existingOffer.stage.toLowerCase()}" style="font-size:10px;">${existingOffer.stage}</span>
        <button class="btn btn-sm" style="font-size:10px;margin-left:6px;" onclick="openEmailCompose(${existingOffer.id})">✉ Re-send</button>`
-    : shipOptions.length
-      ? `<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="ssCreateAndEmail(${crewMember.id},'${shipCodes}')">✉ Send offer</button>
-         <button class="btn btn-sm" style="font-size:10px;" onclick="ssCreateDraft(${crewMember.id},'${shipCodes}')">Draft</button>`
-      : `<span style="font-size:10px;color:var(--text2);font-style:italic;">No vacancies found</span>`;
+    : isEss && shipOptions.length
+      ? `<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="ssCreateAndEmail(${crewMember.id},'${essShipCodes}')">✉ Send offer (3 options)</button>
+         <button class="btn btn-sm" style="font-size:10px;" onclick="ssCreateDraft(${crewMember.id},'${essShipCodes}')">Draft</button>`
+      : isEss
+      ? `<span style="font-size:10px;color:var(--text2);font-style:italic;">No ESS vacancies found</span>`
+      : ''; // non-ESS: buttons live on each ship card
 
   const optionCards = shipOptions.length ? shipOptions.map((opt, i) => {
     const rankLabel = ['1st choice','2nd choice','3rd choice'][i];
@@ -224,6 +229,14 @@ function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, S
       : sameCls     ? `<span class="badge badge-teal"  style="font-size:9px;">Same class</span>` : '';
     const gapColor  = opt.timingGap <= 3 ? 'var(--green-t)' : opt.timingGap <= 14 ? 'var(--amber-t)' : 'var(--text2)';
     const gapLabel  = opt.timingGap <= 1 ? 'Perfect timing' : `${opt.timingGap}d gap`;
+
+    // Non-ESS: per-card offer button — scheduler picks which ship to send
+    const cardBtn = !isEss && !existingOffer
+      ? `<button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;font-size:10px;margin-top:8px;" onclick="ssCreateAndEmail(${crewMember.id},'${opt.sc}')">✉ Offer this ship</button>`
+      : !isEss && existingOffer
+      ? `<button class="btn btn-sm" style="width:100%;justify-content:center;font-size:10px;margin-top:8px;" onclick="openEmailCompose(${existingOffer.id})">✉ Re-send</button>`
+      : '';
+
     return `<div class="ss-ship-card rank-${i+1}">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <span style="font-size:9px;font-weight:700;color:${rankColor};text-transform:uppercase;letter-spacing:.06em;">${rankLabel}</span>
@@ -233,9 +246,10 @@ function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, S
       <div style="font-size:11px;color:var(--text2);margin-bottom:2px;">Vacancy opens</div>
       <div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:4px;">${opt.openStr}</div>
       <div style="font-size:11px;font-weight:600;color:${gapColor};margin-bottom:6px;">${gapLabel}</div>
-      ${expTag ? `<div>${expTag}</div>` : ''}
+      ${expTag ? `<div style="margin-bottom:4px;">${expTag}</div>` : ''}
+      ${cardBtn}
     </div>`;
-  }).join('') : '';
+  }).join('') : !isEss ? `<div style="font-size:12px;color:var(--text2);font-style:italic;padding:4px 0;">No vacancies found in this window for ${crewMember.abbr}.</div>` : '';
 
   return `<div class="ss-crew-card ${existingOffer ? 'has-offer' : ''} ${isSelected ? 'ss-selected' : ''}" id="ss-card-${crewMember.id}">
     <div class="ss-crew-header">
@@ -250,7 +264,7 @@ function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, S
         <div style="font-size:11px;color:var(--text2);">Signs off <strong style="color:#fff;">${crewMember.end || '—'}</strong> · Currently on ${SNM[crewSc] || crewSc || '—'}</div>
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:12px;">
-        ${actionBtn}
+        ${headerActionBtn}
       </div>
     </div>
     ${optionCards ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:2px;">${optionCards}</div>` : ''}
@@ -327,7 +341,8 @@ export function ssCreateDraft(crewId, shipCodesArg) {
   const shipLabel = shipCodes.map(sc => SNM[sc] || sc).join(', ') || '—';
   const offer = {
     id: uid(), crewId, crewName: crew.name, ship: primarySc,
-    shipOptions: shipCodes,
+    // only store shipOptions for multi-ship ESS offers (crew chooses from email)
+    ...(shipCodes.length > 1 ? { shipOptions: shipCodes } : {}),
     type: 'Offer', subtype: 'New assignment offer', stage: 'Draft',
     dateFrom: today, dateTo: endDate.toISOString().slice(0, 10), approver: '',
     notes: `Smart suggest: ${crew.name} signs off ${crew.end || '—'}. Ship options: ${shipLabel}.`,

@@ -119,12 +119,9 @@ function showOfferResponseOverlay() {
     return;
   }
 
-  // Already responded
+  // Already responded — lock it, no changes allowed
   if (['Accepted','Declined','Confirmed'].includes(offer.stage)) {
-    showOfrResult(
-      offer.stage === 'Declined' ? 'declined' : 'already',
-      offer
-    );
+    showOfrResult('already', offer);
     return;
   }
 
@@ -210,9 +207,13 @@ function showOfrResult(type, offer) {
     document.getElementById('ofr-result-title').textContent = `Response recorded`;
     document.getElementById('ofr-result-sub').textContent   = `Your decline has been noted. Your scheduling team will follow up with alternative options.`;
   } else if (type === 'already') {
-    document.getElementById('ofr-result-icon').textContent  = 'ℹ️';
-    document.getElementById('ofr-result-title').textContent = `Already responded`;
-    document.getElementById('ofr-result-sub').textContent   = `This offer has already been ${offer?.stage?.toLowerCase()}. No further action is needed.`;
+    const wasAccepted = ['Accepted','Confirmed'].includes(offer?.stage);
+    const shipName    = SHIP_NAMES[offer?.ship] || offer?.ship || '—';
+    document.getElementById('ofr-result-icon').textContent  = wasAccepted ? '🔒' : 'ℹ️';
+    document.getElementById('ofr-result-title').textContent = wasAccepted ? `Ship selection locked` : `Already responded`;
+    document.getElementById('ofr-result-sub').textContent   = wasAccepted
+      ? `You have already accepted the Celebrity ${shipName} assignment. Your selection is final and cannot be changed. Your scheduling team will be in touch shortly.`
+      : `This offer has already been ${offer?.stage?.toLowerCase()}. No further action is needed.`;
   }
 }
 

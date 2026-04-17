@@ -38,8 +38,9 @@ function buildOfferEmailBody(o) {
   let multiShipSection = '';
   let hasMultiOptions  = false;
 
-  // Prefer stored shipOptions from the offer; fall back to ESS scoring for legacy offers
-  const storedOpts = o.shipOptions?.length ? o.shipOptions : null;
+  // Multi-ship options only for ESS (crew picks from email) — non-ESS gets a single-ship email
+  // Prefer stored shipOptions (2+ ships); fall back to live ESS scoring for legacy offers
+  const storedOpts = o.shipOptions?.length > 1 ? o.shipOptions : null;
   const rawOpts = storedOpts
     ? storedOpts.map(sc => ({ sc, name: SHIP_NAMES_LOCAL[sc] || sc }))
     : (crew?.abbr === 'ESS' && crew?.end ? getEssShipOptions(crew).map(opt => ({ sc: opt.sc, name: opt.name, timingGap: opt.timingGap, bestVac: opt.bestVac })) : []);
