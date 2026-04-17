@@ -51,10 +51,24 @@ export function initShipNav() {
   document.getElementById('ship-nav-items').innerHTML = html;
 }
 
+export function toggleShipsNav() {
+  const drawer  = document.getElementById('ship-nav-items');
+  const chevron = document.getElementById('ships-nav-chevron');
+  const isOpen  = drawer.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open', isOpen);
+}
+
 export function showShip(shipCode, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-ship').classList.add('active');
+  // Ensure ships drawer is open when a ship is active
+  const drawer  = document.getElementById('ship-nav-items');
+  const chevron = document.getElementById('ships-nav-chevron');
+  if (drawer && !drawer.classList.contains('open')) {
+    drawer.classList.add('open');
+    if (chevron) chevron.classList.add('open');
+  }
   if (el) el.classList.add('active');
   currentShipCode = shipCode;
   history.replaceState(null, '', '#ship-' + shipCode);
@@ -407,6 +421,7 @@ window.POS_COLORS          = POS_COLORS;
 window.POS_COLORS_FUTURE   = POS_COLORS_FUTURE;
 
 window.initShipNav      = initShipNav;
+window.toggleShipsNav   = toggleShipsNav;
 window.showShip         = showShip;
 window.renderShipPage   = renderShipPage;
 window.switchShipTab    = switchShipTab;

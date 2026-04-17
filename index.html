@@ -40,37 +40,57 @@
     <h1>Technical Entertainment</h1>
     <p>Crew Scheduling</p>
   </div>
+
   <div class="sidebar-nav">
-    <div class="nav-section">Dashboard</div>
-    <button class="nav-item" data-page="overview" onclick="showPage('overview',this)"><span class="nav-icon">◈</span><span>Overview</span></button>
-    <button class="nav-item" data-page="dashboard" onclick="showPage('dashboard',this)"><span class="nav-icon">⊞</span><span>Crew dashboard</span></button>
-    <div class="nav-section">Fleet</div>
+
+    <!-- Overview -->
+    <button class="nav-item" data-page="overview" onclick="showPage('overview',this)" style="margin-top:.3rem;">
+      <span class="nav-icon">◈</span><span>Overview</span>
+    </button>
+
+    <!-- Operations -->
+    <div class="nav-section" style="margin-top:.4rem;">Operations</div>
+    <button class="nav-item" data-page="dashboard"  onclick="showPage('dashboard',this)"><span class="nav-icon">⊞</span><span>Crew dashboard</span></button>
+    <button class="nav-item"                         onclick="showPage('placement',this)"><span class="nav-icon">⇄</span><span>Placement finder</span></button>
+    <button class="nav-item"                         onclick="showPage('contracts',this)"><span class="nav-icon">◎</span><span>Contracts &amp; offers</span></button>
+    <button class="nav-item"                         onclick="showPage('reports',this)"><span class="nav-icon">▤</span><span>Reports</span></button>
+
+    <!-- Fleet -->
+    <div class="nav-section" style="margin-top:.4rem;">Fleet</div>
     <button class="nav-item" onclick="showPage('fleet',this)"><span class="nav-icon">⛴</span><span>Fleet &amp; manning</span></button>
     <button class="nav-item" onclick="showPage('rotations',this)"><span class="nav-icon">↺</span><span>Ship rotations</span></button>
     <button class="nav-item" onclick="showPage('deployment',this)"><span class="nav-icon">🗺</span><span>Fleet deployment</span></button>
-    <div class="nav-section">Ships</div>
-    <div id="ship-nav-items"></div>
-    <div class="nav-section">Crew</div>
+
+    <!-- Ships — collapsible -->
+    <button class="nav-section nav-collapsible" id="ships-nav-toggle" onclick="toggleShipsNav()" style="margin-top:.4rem;">
+      <span>Ships</span><span id="ships-nav-chevron" class="nav-chevron">▶</span>
+    </button>
+    <div id="ship-nav-items" class="nav-ships-drawer"></div>
+
+    <!-- Crew -->
+    <div class="nav-section" style="margin-top:.4rem;">Crew</div>
     <button class="nav-item" onclick="showPage('crew',this)"><span class="nav-icon">◉</span><span>Crew roster</span></button>
     <button class="nav-item" onclick="showPage('docwallet',this)"><span class="nav-icon">📋</span><span>Document wallet</span></button>
-    <button class="nav-item" onclick="showPage('contracts',this)"><span class="nav-icon">◎</span><span>Contracts &amp; offers</span></button>
-    <button class="nav-item" onclick="showPage('reports',this)"><span class="nav-icon">▤</span><span>Reports</span></button>
-    <button class="nav-item" onclick="showPage('placement',this)"><span class="nav-icon">⇄</span><span>Placement finder</span></button>
-    <div class="nav-section">Admin</div>
+
+    <!-- Admin -->
+    <div class="nav-section" style="margin-top:.4rem;">Admin</div>
     <button class="nav-item" onclick="showPage('positions',this)"><span class="nav-icon">◻</span><span>Positions</span></button>
     <button class="nav-item" onclick="showPage('compliance',this)"><span class="nav-icon">✓</span><span>Compliance</span></button>
-    <button class="nav-item" onclick="openSettings()"><span class="nav-icon">⚙</span><span>Settings</span></button>
-    <div style="padding:.5rem 0 1rem;">
-      <button class="sidebar-import-btn" onclick="openImport()">
-        <span style="font-size:14px;">↑</span> Import roster
-      </button>
-      <div style="font-size:10px;color:var(--text2);padding:4px 12px 0;" id="last-import-label"></div>
-    </div>
-    <div style="padding:0 12px 1.2rem;">
-      <!-- TODO: replace with Supabase data wipe when implemented -->
-      <button onclick="if(confirm('Reset all data to defaults? This cannot be undone.')){location.reload();}" style="width:100%;padding:5px 0;font-size:10.5px;color:var(--text2);background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;" title="Reload app">Reset to defaults</button>
-    </div>
+
   </div><!-- /sidebar-nav -->
+
+  <!-- Sidebar footer — pinned to bottom -->
+  <div class="sidebar-footer">
+    <button class="sidebar-import-btn" onclick="openImport()">
+      <span style="font-size:14px;">↑</span> Import roster
+    </button>
+    <div style="font-size:10px;color:var(--text2);padding:3px 12px 0;" id="last-import-label"></div>
+    <div class="sidebar-footer-row">
+      <button class="sidebar-footer-btn" onclick="openSettings()" title="Settings">⚙ Settings</button>
+      <button class="sidebar-footer-btn" onclick="if(confirm('Reset all data to defaults? This cannot be undone.')){location.reload();}" title="Reset app" style="color:var(--text2);">↺ Reset</button>
+    </div>
+  </div>
+
 </nav><!-- /sidebar -->
 
 <!-- MAIN CONTENT AREA -->
