@@ -28,7 +28,7 @@ function buildOfferEmailBody(o) {
     : o.type === 'Leave' ? `Leave Request — ${o.subtype || ''}`
     : 'New Assignment Offer';
   const dateSection = o.dateFrom
-    ? `Start date:    ${o.dateFrom}${o.dateTo ? '\nEnd date:      ' + o.dateTo : ''}`
+    ? `Expected boarding: ${o.dateFrom}${o.dateTo ? '\nContract end:      ' + o.dateTo : ''}`
     : '';
   const BASE_URL    = 'https://spencertech95.github.io/Schedule-App/';
   const declineLink = `${BASE_URL}?offer=${o.id}&action=decline`;
@@ -39,24 +39,25 @@ function buildOfferEmailBody(o) {
   let hasMultiOptions  = false;
 
   // Multi-ship options only for ESS (crew picks from email) — non-ESS gets a single-ship email
-  // Prefer stored shipOptions (2+ ships); fall back to live ESS scoring for legacy offers
-  const storedOpts = o.shipOptions?.length > 1 ? o.shipOptions : null;
-  const rawOpts = storedOpts
-    ? storedOpts.map(sc => ({ sc, name: SHIP_NAMES_LOCAL[sc] || sc }))
-    : (crew?.abbr === 'ESS' && crew?.end ? getEssShipOptions(crew).map(opt => ({ sc: opt.sc, name: opt.name, timingGap: opt.timingGap, bestVac: opt.bestVac })) : []);
+  // Prefer stored shipOptionDetails (has boarding dates); fall back to ESS scoring for legacy offers
+  const storedDetails = o.shipOptionDetails?.length > 1 ? o.shipOptionDetails : null;
+  const storedCodes   = !storedDetails && o.shipOptions?.length > 1 ? o.shipOptions : null;
+  const rawOpts = storedDetails
+    ? storedDetails  // [{sc, name, boardingDate}]
+    : storedCodes
+    ? storedCodes.map(sc => ({ sc, name: SHIP_NAMES_LOCAL[sc] || sc, boardingDate: null }))
+    : (crew?.abbr === 'ESS' && crew?.end ? getEssShipOptions(crew).map(opt => ({ sc: opt.sc, name: opt.name, boardingDate: opt.bestVac?.end || null, timingGap: opt.timingGap })) : []);
 
   if (rawOpts.length) {
     hasMultiOptions = true;
     const medals = ['🥇','🥈','🥉'];
     const ranks  = ['1st Choice','2nd Choice','3rd Choice'];
-    const SC2CLS = window.SC2CLS || {};
     const lines  = rawOpts.map((opt, i) => {
-      const gap      = opt.timingGap != null && opt.timingGap < 999 ? ` · ${opt.timingGap}d timing gap` : '';
-      const sameShip = (crew?.recentShipCode || '') === opt.sc ? ' · Familiar ship' : '';
-      const sameCls  = !sameShip && opt.cls && opt.cls === (SC2CLS[crew?.recentShipCode] || '') ? ' · Same class' : '';
-      const avail    = opt.bestVac ? `Vacancy opens ~${opt.bestVac.end}` : 'Vacancy available';
+      const boardingLine = opt.boardingDate
+        ? `Expected boarding: ${opt.boardingDate}`
+        : 'Boarding date to be confirmed';
       const acceptLink = `${BASE_URL}?offer=${o.id}&action=accept&ship=${opt.sc}`;
-      return `  ${medals[i]}  ${ranks[i]}: Celebrity ${opt.name} (${opt.sc})\n     ${avail}${gap}${sameShip}${sameCls}\n\n     ✅ Accept this ship:\n     → ${acceptLink}`;
+      return `  ${medals[i]}  ${ranks[i]}: Celebrity ${opt.name} (${opt.sc})\n     ${boardingLine}\n\n     ✅ Accept this ship:\n     → ${acceptLink}`;
     }).join('\n\n─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n\n');
     multiShipSection = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

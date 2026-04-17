@@ -214,8 +214,8 @@ function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, S
     ? `<span class="pipe-badge pipe-${existingOffer.stage.toLowerCase()}" style="font-size:10px;">${existingOffer.stage}</span>
        <button class="btn btn-sm" style="font-size:10px;margin-left:6px;" onclick="openEmailCompose(${existingOffer.id})">✉ Re-send</button>`
     : isEss && shipOptions.length
-      ? `<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="ssCreateAndEmail(${crewMember.id},'${essShipCodes}')">✉ Send offer (3 options)</button>
-         <button class="btn btn-sm" style="font-size:10px;" onclick="ssCreateDraft(${crewMember.id},'${essShipCodes}')">Draft</button>`
+      ? `<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="ssCreateAndEmail(${crewMember.id},'${shipOptions.map(o=>`${o.sc}:${o.openStr}`).join(',')}')">✉ Send offer (3 options)</button>
+         <button class="btn btn-sm" style="font-size:10px;" onclick="ssCreateDraft(${crewMember.id},'${shipOptions.map(o=>`${o.sc}:${o.openStr}`).join(',')}')">Draft</button>`
       : isEss
       ? `<span style="font-size:10px;color:var(--text2);font-style:italic;">No ESS vacancies found</span>`
       : ''; // non-ESS: buttons live on each ship card
@@ -232,7 +232,7 @@ function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, S
 
     // Non-ESS: per-card offer button — scheduler picks which ship to send
     const cardBtn = !isEss && !existingOffer
-      ? `<button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;font-size:10px;margin-top:8px;" onclick="ssCreateAndEmail(${crewMember.id},'${opt.sc}')">✉ Offer this ship</button>`
+      ? `<button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;font-size:10px;margin-top:8px;" onclick="ssCreateAndEmail(${crewMember.id},'${opt.sc}:${opt.openStr}')">✉ Offer this ship</button>`
       : !isEss && existingOffer
       ? `<button class="btn btn-sm" style="width:100%;justify-content:center;font-size:10px;margin-top:8px;" onclick="openEmailCompose(${existingOffer.id})">✉ Re-send</button>`
       : '';
@@ -329,22 +329,36 @@ function renderSSByShip(crewOffers, SCM, CB, SNM, SD, SCO, PC) {
   }).join('');
 }
 
-// shipCodesArg: comma-separated string or array of ship codes (up to 3 options)
+// shipCodesArg: comma-separated string of "SC" or "SC:YYYY-MM-DD" entries (up to 3 options)
+// e.g. "EC:2026-05-03,SI:2026-05-08,SL:2026-05-15" or just "EC:2026-05-03"
 export function ssCreateDraft(crewId, shipCodesArg) {
-  const SNM       = SHIP_NAME_MAP();
-  const crew      = state.crew.find(c => c.id == crewId);
+  const SNM  = SHIP_NAME_MAP();
+  const crew = state.crew.find(c => c.id == crewId);
   if (!crew) return null;
-  const shipCodes = typeof shipCodesArg === 'string' ? shipCodesArg.split(',').filter(Boolean) : (shipCodesArg || []);
-  const primarySc = shipCodes[0] || '';
-  const today     = new Date().toISOString().slice(0, 10);
-  const endDate   = new Date(); endDate.setMonth(endDate.getMonth() + 6);
+
+  // Parse "SC:date" pairs
+  const entries = (typeof shipCodesArg === 'string' ? shipCodesArg : '').split(',').filter(Boolean);
+  const parsed  = entries.map(e => { const [sc, date] = e.split(':'); return { sc, boardingDate: date || null }; });
+  const shipCodes    = parsed.map(p => p.sc);
+  const primarySc    = shipCodes[0] || '';
+  const primaryDate  = parsed[0]?.boardingDate || null;
+
+  const today   = new Date().toISOString().slice(0, 10);
+  const dateFrom = primaryDate || today;
+  const dateTo   = (() => { const d = new Date(dateFrom); d.setMonth(d.getMonth() + 6); return d.toISOString().slice(0, 10); })();
   const shipLabel = shipCodes.map(sc => SNM[sc] || sc).join(', ') || '—';
+
+  // Store full option details (sc + boarding date) so the email can show them per ship
+  const shipOptionDetails = parsed.length > 1
+    ? parsed.map(p => ({ sc: p.sc, name: SNM[p.sc] || p.sc, boardingDate: p.boardingDate }))
+    : null;
+
   const offer = {
     id: uid(), crewId, crewName: crew.name, ship: primarySc,
-    // only store shipOptions for multi-ship ESS offers (crew chooses from email)
-    ...(shipCodes.length > 1 ? { shipOptions: shipCodes } : {}),
+    // shipOptions (codes only) drives the multi-accept-link email for ESS
+    ...(parsed.length > 1 ? { shipOptions: shipCodes, shipOptionDetails } : {}),
     type: 'Offer', subtype: 'New assignment offer', stage: 'Draft',
-    dateFrom: today, dateTo: endDate.toISOString().slice(0, 10), approver: '',
+    dateFrom, dateTo, approver: '',
     notes: `Smart suggest: ${crew.name} signs off ${crew.end || '—'}. Ship options: ${shipLabel}.`,
     created: today,
     history: [{date: today, note: 'Created by Smart Suggest engine'}]
@@ -391,7 +405,7 @@ export function ssBulkCreateOffers() {
     if (state.offers.find(o => o.crewId == crewId && !['Confirmed','Declined'].includes(o.stage))) return;
     const opts = ssBuildShipOptions(c, _ssWindow, vacDays, SCM, SNM, CB, SCO);
     if (!opts.length) return;
-    ssCreateDraft(crewId, opts.map(o => o.sc));
+    ssCreateDraft(crewId, opts.map(o => `${o.sc}:${o.openStr}`).join(','));
     created++;
   });
   showToast(`${created} draft offer${created !== 1 ? 's' : ''} created`);
