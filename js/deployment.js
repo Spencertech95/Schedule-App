@@ -1,5 +1,5 @@
 // ── deployment.js — fleet deployment map page ────────────────────────────────
-import { showToast } from './utils.js';
+import { showToast, parsePortLocation } from './utils.js';
 
 const SHIP_NAME_MAP = {'ML':'Millennium','IN':'Infinity','SM':'Summit','CS':'Constellation','SL':'Solstice','EQ':'Equinox','EC':'Eclipse','SI':'Silhouette','RF':'Reflection','EG':'Edge','AX':'Apex','BY':'Beyond','AT':'Ascent','XC':'Xcel'};
 
@@ -271,15 +271,15 @@ export function deployRefresh() {
         ${hasLive?`<span style="background:#00ff88;color:#000;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:800;margin-left:4px;">● LIVE</span>`:''}
       </div>
       <div style="font-size:11px;color:${typeColor};font-weight:500;margin-bottom:5px;">${dayTypeLabels[dayTypeLbl]||dayTypeLbl}</div>
-      <div style="font-size:12px;margin-bottom:2px;">${dayTypeLbl==='S'?'🌊 At sea':portLabel.split(',')[0]}</div>
-      ${pos&&pos.country&&pos.dayType!=='S'?`<div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:6px;">${pos.country}</div>`:''}
+      <div style="font-size:12px;margin-bottom:2px;">${dayTypeLbl==='S'?'🌊 At sea':parsePortLocation(portLabel).city}</div>
+      ${pos&&pos.dayType!=='S'?`<div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:6px;">${parsePortLocation(portLabel).country}</div>`:''}
       ${pos&&pos.arrival&&pos.dayType!=='S'?`<div style="font-size:10px;color:rgba(255,255,255,.5);">Arrival ${pos.arrival} · Dep. ${pos.dep}</div>`:''}
       ${hasLive?`<div style="font-size:10px;color:#00ff88;margin-top:4px;margin-bottom:2px;">📡 AIS: ${livePos.lat.toFixed(4)}°, ${livePos.lon.toFixed(4)}°${livePos.speed!=null?' · '+livePos.speed+' kn':''}</div><div style="font-size:9px;color:rgba(255,255,255,.35);">Updated ${liveUpdatedAgo!=null?liveUpdatedAgo+' min ago':'recently'}</div>`:''}
       <div style="margin-top:8px;margin-bottom:3px;">
         <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.4);margin-bottom:3px;"><span>Voyage progress</span><span>${dayInVoyage}/${voyageLen} days · ${pct}%</span></div>
         <div style="height:4px;background:rgba(255,255,255,.12);border-radius:2px;"><div style="height:4px;width:${pct}%;background:${color};border-radius:2px;"></div></div>
       </div>
-      ${nextT?`<div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:5px;">Next turnaround: <b style="color:var(--blue-t);">${nextT.date}</b> — ${nextT.portName.split(',')[0]}</div>`:''}
+      ${nextT?`<div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:5px;">Next turnaround: <b style="color:var(--blue-t);">${nextT.date}</b> — ${parsePortLocation(nextT.portName).city}</div>`:''}
       <div style="margin-top:10px;border-top:.5px solid rgba(255,255,255,.1);padding-top:8px;">
         <button onclick="selectDeployShip('${sc}','${dateStr}')" style="background:${color};color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;cursor:pointer;width:100%;font-weight:500;">View voyage itinerary →</button>
       </div>`;
