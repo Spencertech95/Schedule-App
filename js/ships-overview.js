@@ -106,16 +106,6 @@ function buildRows() {
     if (s) shipIdToSc[s.id] = sc;
   }
 
-  // Debug: log first crew member's key fields so we can spot mismatches
-  if (state.crew.length) {
-    const s = state.crew[0];
-    console.log('[Gantt] sample crew[0]', {
-      name: s.name, abbr: s.abbr, posId: s.posId,
-      shipCode: s.shipCode, recentShipCode: s.recentShipCode, shipId: s.shipId,
-      start: s.start, end: s.end, status: s.status,
-    });
-  }
-  console.log('[Gantt] total crew:', state.crew.length);
 
   const ships = [];
 
@@ -170,14 +160,19 @@ function buildRows() {
     }
   }
 
-  const totalBars = ships.reduce((n, s) => n + s.posRows.reduce((m, r) => m + r.bars.length, 0), 0);
-  console.log('[Gantt] rendered:', ships.length, 'ships,', totalBars, 'bars');
-
   return ships;
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderGantt() {
+  // Pin gantt-body height using JS — the flex chain doesn't always propagate
+  // a finite height through the scrollable .main container
+  const ganttBody = document.querySelector('.gantt-body');
+  if (ganttBody) {
+    const top = ganttBody.getBoundingClientRect().top;
+    ganttBody.style.height = Math.max(300, window.innerHeight - top - 24) + 'px';
+  }
+
   const v      = VIEWS[_view];
   const endMs  = _startMs + v.totalDays * MS_DAY;
   const totPx  = Math.round(v.totalDays * v.pxPerDay);
@@ -287,6 +282,16 @@ export function initAllShips() {
   }
 
   renderGantt();
+
+  // Re-pin height on resize
+  if (!window._ganttResizeBound) {
+    window.addEventListener('resize', () => {
+      const gb = document.querySelector('.gantt-body');
+      if (!gb || !document.getElementById('page-all-ships')?.classList.contains('active')) return;
+      gb.style.height = Math.max(300, window.innerHeight - gb.getBoundingClientRect().top - 24) + 'px';
+    });
+    window._ganttResizeBound = true;
+  }
 }
 
 window.ganttSetView  = v   => { _view = v; goToToday(); };
