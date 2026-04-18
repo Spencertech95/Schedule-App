@@ -83,8 +83,9 @@
       <span style="font-size:14px;">↑</span> Import roster
     </button>
     <div style="font-size:10px;color:var(--text2);padding:3px 12px 0;" id="last-import-label"></div>
-    <div class="sidebar-footer-row">
+    <div class="sidebar-footer-row" style="gap:6px;">
       <button class="sidebar-footer-btn" onclick="openSettings()" title="Settings">⚙ Settings</button>
+      <button class="sidebar-footer-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode" style="flex:0 0 auto;padding:6px 10px;">🌙</button>
     </div>
   </div>
 
@@ -999,5 +1000,25 @@
 
 <!-- App entry point (ES module) -->
 <script type="module" src="js/app.js"></script>
+
+<script>
+// ── Theme toggle (dark / light) ───────────────────────────────────────────
+(function(){
+  const DARK_ICON  = '🌙';
+  const LIGHT_ICON = '☀️';
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('theme-toggle-btn');
+    if (btn) btn.textContent = theme === 'light' ? LIGHT_ICON : DARK_ICON;
+    localStorage.setItem('app_theme', theme);
+  }
+  window.toggleTheme = function() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  };
+  // Restore saved preference immediately (before first paint)
+  applyTheme(localStorage.getItem('app_theme') || 'dark');
+})();
+</script>
 </body>
 </html>

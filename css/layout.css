@@ -57,7 +57,7 @@
   flex-shrink:0;
 }
 .sidebar-footer-row{
-  display:flex;padding:.4rem .75rem 0;
+  display:flex;padding:.4rem .75rem 0;gap:6px;
 }
 .sidebar-footer-btn{
   flex:1;padding:6px 0;font-size:11px;
