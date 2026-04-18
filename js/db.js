@@ -52,8 +52,23 @@ export async function loadAll() {
     });
   }
 
-  const nextIdRow = metaR.data?.find(r => r.key === 'nextId');
+  const nextIdRow   = metaR.data?.find(r => r.key === 'nextId');
   if (nextIdRow) state.nextId = parseInt(nextIdRow.value, 10);
+
+  const manningRow  = metaR.data?.find(r => r.key === 'manning');
+  if (manningRow) {
+    try {
+      const saved = JSON.parse(manningRow.value);
+      // Merge saved values into state.manning, converting string keys to ints
+      ['Millennium','Solstice','Edge'].forEach(cls => {
+        if (saved[cls]) {
+          Object.entries(saved[cls]).forEach(([k, v]) => {
+            state.manning[cls][parseInt(k)] = parseInt(v);
+          });
+        }
+      });
+    } catch(e) { console.warn('Failed to parse manning data', e); }
+  }
 }
 
 // ── CREW ─────────────────────────────────────────────────────────────────────
@@ -120,6 +135,12 @@ export async function saveNextId() {
   const { error } = await supabase.from('app_meta')
     .upsert({ key: 'nextId', value: String(state.nextId) });
   if (error) onError('saveNextId', error);
+}
+
+export async function saveManning() {
+  const { error } = await supabase.from('app_meta')
+    .upsert({ key: 'manning', value: JSON.stringify(state.manning) });
+  if (error) onError('saveManning', error);
 }
 
 // ── BULK CREW REPLACE (import) ────────────────────────────────────────────────

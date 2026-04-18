@@ -1,9 +1,14 @@
 // ── state.js — mutable application state ────────────────────────────────────
-import { POSITIONS, SHIPS_DATA } from './data.js';
+import { POSITIONS, SHIPS_DATA, CLASS_MANNING } from './data.js';
 
 export const state = {
   positions: POSITIONS.map(p => ({ ...p })),
   ships: SHIPS_DATA.map(s => ({ ...s })),
+  manning: {
+    Millennium: { ...CLASS_MANNING.Millennium },
+    Solstice:   { ...CLASS_MANNING.Solstice },
+    Edge:       { ...CLASS_MANNING.Edge },
+  },
   crew: [],
   offers: [],
   rotations: {},

@@ -1,6 +1,7 @@
 // ── rotations.js — rotation page ─────────────────────────────────────────────
 import { state } from './state.js';
-import { SHIP_DEPLOYMENT, CLASS_MANNING } from './data.js';
+import { SHIP_DEPLOYMENT } from './data.js';
+import { state } from './state.js';
 import { saveRotations } from './db.js';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -105,7 +106,7 @@ export function renderShipRotation(ship) {
     return `<div class="rotation-month" style="${isDry ? 'border:1px solid var(--highlight);' : ''}"><div class="rotation-month-name">${MONTHS[parseInt(m.split('-')[1]) - 1]} ${state.currentYear.slice(2)}</div><div class="rotation-region" style="${isDry ? 'color:var(--highlight);' : ''}">${d.region}</div><div class="rotation-ports">${d.ports.slice(0, 2).map(p => p.split(',')[0]).join(' · ')}</div></div>`;
   }).join('');
 
-  const manning = CLASS_MANNING[cls];
+  const manning = state.manning[cls];
   const tbody = document.getElementById('rotation-pos-tbody');
   tbody.innerHTML = state.positions.map(p => {
     const count = manning[p.id] || 0;

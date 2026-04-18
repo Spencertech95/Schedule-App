@@ -114,7 +114,17 @@
   <div id="fleet-stats" style="display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap;"></div>
   <div id="fleet-grid" class="fleet-grid" style="margin-bottom:1.5rem;"></div>
   <div class="card" style="margin-bottom:1.5rem;">
-    <div style="padding:.75rem 1rem;border-bottom:.5px solid var(--border);font-size:12px;font-weight:600;">Manning matrix — required crew per position by class</div>
+    <div style="padding:.75rem 1rem;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:12px;font-weight:600;">Par levels — required crew per position by class</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">Edit to adjust how many of each position are required per ship</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button id="manning-edit-btn"   class="btn btn-sm" onclick="editManning()">Edit par levels</button>
+        <button id="manning-save-btn"   class="btn btn-sm btn-primary" onclick="saveManningEdit()" style="display:none;">Save</button>
+        <button id="manning-cancel-btn" class="btn btn-sm" onclick="cancelManningEdit()" style="display:none;">Cancel</button>
+      </div>
+    </div>
     <div style="overflow-x:auto;">
       <table class="roster-table" style="min-width:580px;">
         <thead>

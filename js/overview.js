@@ -1,12 +1,11 @@
 // ── overview.js — overview page rendering ────────────────────────────────────
 import { state } from './state.js';
-import { CLASS_MANNING } from './data.js';
 import { classBadge, statusBadge } from './utils.js';
 
 export function renderOverview() {
   const now = new Date();
   const fleetTotal = state.ships.reduce((a, s) => {
-    const m = CLASS_MANNING[s.shipClass];
+    const m = state.manning[s.shipClass];
     return a + (m ? Object.values(m).reduce((x, y) => x + y, 0) : 0);
   }, 0);
   const onboard    = state.crew.filter(c => c.status === 'Onboard').length;

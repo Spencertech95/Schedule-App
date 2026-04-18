@@ -1,9 +1,8 @@
 // ── fleet.js — fleet & manning page ─────────────────────────────────────────
 import { state } from './state.js';
 import { uid } from './state.js';
-import { CLASS_MANNING } from './data.js';
 import { classBadge, statusBadge, toggleForm } from './utils.js';
-import { upsertShip, dbDeleteShip } from './db.js';
+import { upsertShip, dbDeleteShip, saveManning } from './db.js';
 
 export function renderFleet() {
   const codeMap = {};
@@ -19,7 +18,7 @@ export function renderFleet() {
   ];
 
   function shipStats(ship) {
-    const req = CLASS_MANNING[ship.shipClass] || {};
+    const req = state.manning[ship.shipClass] || {};
     const reqTotal = Object.values(req).reduce((a, b) => a + b, 0);
     const code = codeMap[ship.name] || '';
     const onboard = {};
@@ -56,7 +55,7 @@ export function renderFleet() {
 
   document.getElementById('fleet-grid').innerHTML = classDefs.map(cl => {
     const ships = state.ships.filter(s => s.shipClass === cl.name);
-    const clReq = Object.values(CLASS_MANNING[cl.name] || {}).reduce((a, b) => a + b, 0);
+    const clReq = Object.values(state.manning[cl.name] || {}).reduce((a, b) => a + b, 0);
 
     const cards = ships.map(ship => {
       const st = shipStats(ship);
@@ -108,24 +107,37 @@ export function renderFleet() {
 
   const countByClass = {};
   state.ships.forEach(s => { countByClass[s.shipClass] = (countByClass[s.shipClass] || 0) + 1; });
+  renderManningTable(countByClass);
+}
+
+function renderManningTable(countByClass) {
+  const editing = window._manningEditing || false;
   let rows = '', mT = 0, sT = 0, eT = 0;
+
   state.positions.forEach(p => {
-    const mc = CLASS_MANNING.Millennium[p.id] || 0;
-    const sc = CLASS_MANNING.Solstice[p.id] || 0;
-    const ec = CLASS_MANNING.Edge[p.id] || 0;
-    if (mc + sc + ec === 0) return;
+    const mc = state.manning.Millennium[p.id] || 0;
+    const sc = state.manning.Solstice[p.id]   || 0;
+    const ec = state.manning.Edge[p.id]        || 0;
     const nm = countByClass.Millennium || 0, ns = countByClass.Solstice || 0, ne = countByClass.Edge || 0;
     const mF = mc * nm, sF = sc * ns, eF = ec * ne;
     mT += mF; sT += sF; eT += eF;
-    const cell = (n, total) => n > 0 ? `${n} &times; ${total/n} = <strong>${total}</strong>` : '-';
+
+    const cell = (cls, posId, val, fleet) => editing
+      ? `<input type="number" min="0" max="20" value="${val}"
+           data-cls="${cls}" data-pos="${posId}"
+           style="width:44px;text-align:center;padding:2px 4px;font-size:12px;background:var(--input-bg);border:.5px solid var(--border);border-radius:4px;color:#fff;"
+           oninput="updateManningCell(this)"/>`
+      : (val > 0 ? `${val} &times; ${fleet/val||0} = <strong>${fleet}</strong>` : '—');
+
     rows += `<tr>
       <td style="padding:7px 12px;"><span style="font-weight:500;">${p.abbr}</span> <span style="font-size:11px;color:var(--text2);">${p.title}</span></td>
-      <td class="num" style="padding:7px 12px;">${cell(mc, mF)}</td>
-      <td class="num" style="padding:7px 12px;">${cell(sc, sF)}</td>
-      <td class="num" style="padding:7px 12px;">${cell(ec, eF)}</td>
+      <td class="num" style="padding:7px 12px;">${cell('Millennium', p.id, mc, mF)}</td>
+      <td class="num" style="padding:7px 12px;">${cell('Solstice',   p.id, sc, sF)}</td>
+      <td class="num" style="padding:7px 12px;">${cell('Edge',       p.id, ec, eF)}</td>
       <td class="num" style="padding:7px 12px;font-weight:600;">${mF + sF + eF}</td>
     </tr>`;
   });
+
   rows += `<tr class="total-row">
     <td style="padding:7px 12px;">Fleet total</td>
     <td class="num" style="padding:7px 12px;">${mT}</td>
@@ -133,7 +145,58 @@ export function renderFleet() {
     <td class="num" style="padding:7px 12px;">${eT}</td>
     <td class="num" style="padding:7px 12px;font-weight:700;">${mT + sT + eT}</td>
   </tr>`;
+
   document.getElementById('manning-breakdown').innerHTML = rows;
+
+  // Show/hide edit vs save buttons
+  const editBtn = document.getElementById('manning-edit-btn');
+  const saveBtn = document.getElementById('manning-save-btn');
+  const cancelBtn = document.getElementById('manning-cancel-btn');
+  if (editBtn)   editBtn.style.display   = editing ? 'none' : '';
+  if (saveBtn)   saveBtn.style.display   = editing ? '' : 'none';
+  if (cancelBtn) cancelBtn.style.display = editing ? '' : 'none';
+}
+
+export function editManning() {
+  window._manningEditing = true;
+  window._manningSnapshot = JSON.parse(JSON.stringify(state.manning));
+  const countByClass = {};
+  state.ships.forEach(s => { countByClass[s.shipClass] = (countByClass[s.shipClass] || 0) + 1; });
+  renderManningTable(countByClass);
+}
+
+export function cancelManningEdit() {
+  state.manning = window._manningSnapshot;
+  window._manningEditing = false;
+  const countByClass = {};
+  state.ships.forEach(s => { countByClass[s.shipClass] = (countByClass[s.shipClass] || 0) + 1; });
+  renderManningTable(countByClass);
+}
+
+export function saveManningEdit() {
+  window._manningEditing = false;
+  saveManning();
+  const countByClass = {};
+  state.ships.forEach(s => { countByClass[s.shipClass] = (countByClass[s.shipClass] || 0) + 1; });
+  renderManningTable(countByClass);
+  if (typeof window._showToast === 'function') window._showToast('Par levels saved');
+}
+
+export function updateManningCell(input) {
+  const cls = input.dataset.cls;
+  const pos = parseInt(input.dataset.pos);
+  const val = parseInt(input.value) || 0;
+  if (!state.manning[cls]) state.manning[cls] = {};
+  state.manning[cls][pos] = val;
+  // Update fleet total column live
+  const row = input.closest('tr');
+  if (row) {
+    const inputs = row.querySelectorAll('input[data-pos]');
+    let rowTotal = 0;
+    inputs.forEach(inp => { rowTotal += parseInt(inp.value) || 0; });
+    const lastCell = row.querySelector('td:last-child');
+    if (lastCell) lastCell.innerHTML = `<strong>${rowTotal}</strong>`;
+  }
 }
 
 export function saveShip() {
@@ -161,5 +224,9 @@ export function deleteShip(id) {
   dbDeleteShip(id);
 }
 
-window.saveShip   = saveShip;
-window.deleteShip = deleteShip;
+window.saveShip          = saveShip;
+window.deleteShip        = deleteShip;
+window.editManning       = editManning;
+window.cancelManningEdit = cancelManningEdit;
+window.saveManningEdit   = saveManningEdit;
+window.updateManningCell = updateManningCell;
