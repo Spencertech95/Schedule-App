@@ -1,7 +1,7 @@
 // ── reports.js — reports page ─────────────────────────────────────────────────
 import { state } from './state.js';
 import { upsertOffer } from './db.js';
-import { getShipPortForDate } from './utils.js';
+import { getShipPortForDate, crewLink } from './utils.js';
 
 const SC2NAME  = {'ML':'Millennium','IN':'Infinity','SM':'Summit','CS':'Constellation','SL':'Solstice','EQ':'Equinox','EC':'Eclipse','SI':'Silhouette','RF':'Reflection','EG':'Edge','AX':'Apex','BY':'Beyond','AT':'Ascent','XC':'Xcel'};
 const SC2CLS   = {'ML':'MILLENNIUM CLASS','IN':'MILLENNIUM CLASS','SM':'MILLENNIUM CLASS','CS':'MILLENNIUM CLASS','SL':'SOLSTICE CLASS','EQ':'SOLSTICE CLASS','EC':'SOLSTICE CLASS','SI':'SOLSTICE CLASS','RF':'SOLSTICE CLASS','EG':'EDGE CLASS','AX':'EDGE CLASS','BY':'EDGE CLASS','AT':'EDGE CLASS','XC':'EDGE CLASS'};
@@ -88,7 +88,7 @@ function renderReport() {
         : `<span style="color:var(--text2);font-size:11px;">— Pending</span>`;
       const hwAlert = pos && d <= pos.handover ? `<span class="badge badge-red" style="font-size:9px;margin-left:4px;">Handover!</span>` : '';
       html += `<div class="report-row">
-        <div class="report-cell"><div style="font-weight:500">${c.name} <span style="font-size:10px;color:var(--text2);">${c.nat}</span></div><div style="font-size:10px;color:var(--text2);">${c.airport||''}</div></div>
+        <div class="report-cell"><div style="font-weight:500">${crewLink(c.name, c.id)} <span style="font-size:10px;color:var(--text2);">${c.nat}</span></div><div style="font-size:10px;color:var(--text2);">${c.airport||''}</div></div>
         <div class="report-cell"><span class="badge badge-gray" style="font-size:10px;">${pos?pos.abbr:'—'}</span>${hwAlert}</div>
         <div class="report-cell" style="white-space:nowrap;">${c.end}</div>
         <div class="report-cell">${rel}</div>
@@ -124,7 +124,7 @@ function renderCertReport() {
     const pos = state.positions.find(p => p.id == a.c.posId);
     const cb  = CLS2BADGE[SC2CLS[a.c.recentShipCode]] || 'badge-gray';
     return `<div class="cert-row">
-      <div class="report-cell"><span style="font-weight:500;">${a.c.name}</span> <span style="font-size:10px;color:var(--text2);">${a.c.nat}</span></div>
+      <div class="report-cell">${crewLink(a.c.name, a.c.id)} <span style="font-size:10px;color:var(--text2);">${a.c.nat}</span></div>
       <div class="report-cell"><span class="badge badge-gray" style="font-size:10px;">${pos?pos.abbr:'—'}</span></div>
       <div class="report-cell"><span class="badge ${cb}" style="font-size:9px;">${a.c.recentShipCode||'—'}</span> <span style="font-size:11px;">${a.c.recentShipName||'—'}</span></div>
       <div class="report-cell"><span class="badge ${ub(a.days)}">${a.type}</span></div>
@@ -189,7 +189,7 @@ export function renderE1Report() {
           <input type="checkbox" class="e1-chk" data-id="${o.id}" onchange="e1UpdateConfirmBtn()" style="width:14px;height:14px;cursor:pointer;">
         </div>
         <div class="report-cell">
-          <div style="font-weight:500;">${crew?.name || o.crewName || '—'}</div>
+          <div style="font-weight:500;">${crew ? crewLink(crew.name, crew.id) : o.crewName || '—'}</div>
           <div style="font-size:10px;color:var(--text2);">${crew?.nat || ''} ${crew?.airport ? '· ' + crew.airport : ''}</div>
         </div>
         <div class="report-cell"><span class="badge badge-gray" style="font-size:10px;">${crew?.abbr || '—'}</span></div>

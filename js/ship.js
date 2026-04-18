@@ -1,6 +1,6 @@
 // ── ship.js — individual ship pages ──────────────────────────────────────────
 import { state } from './state.js';
-import { parsePortLocation, getShipPortForDate } from './utils.js';
+import { parsePortLocation, getShipPortForDate, crewLink } from './utils.js';
 import { upsertCrew } from './db.js';
 
 export const SHIP_CODES_ORDERED = ['ML','IN','SM','CS','SL','EQ','EC','SI','RF','EG','AX','BY','AT','XC'];
@@ -243,7 +243,7 @@ export function renderManifest(sc, crew, now) {
   const currentRows = current.map(c => {
     const posColor = POS_COLORS[c.abbr] || '#A4A4A7';
     return `<tr>
-      <td><div class="manifest-name">${c.name}</div><div class="manifest-id">#${c.id}</div></td>
+      <td><div class="manifest-name">${crewLink(c.name, c.id)}</div><div class="manifest-id">#${c.id}</div></td>
       <td><span class="badge" style="background:${posColor}22;color:${posColor};border:.5px solid ${posColor}55;font-size:10px;">${c.abbr}</span></td>
       <td style="font-size:11px;">${c.start || '—'}</td>
       ${portCell(c.start)}
@@ -258,7 +258,7 @@ export function renderManifest(sc, crew, now) {
   const incomingRows = incoming.map(c => {
     const posColor = POS_COLORS[c.abbr] || '#A4A4A7';
     return `<tr>
-      <td><div class="manifest-name">${c.name}</div><div class="manifest-id">#${c.id}</div></td>
+      <td><div class="manifest-name">${crewLink(c.name, c.id)}</div><div class="manifest-id">#${c.id}</div></td>
       <td><span class="badge" style="background:${posColor}22;color:${posColor};border:.5px solid ${posColor}55;font-size:10px;">${c.abbr}</span></td>
       <td style="font-size:11px;">${c.futureOn || '—'} ${daysUntilBadge(c.futureOn)}</td>
       ${portCell(c.futureOn)}
@@ -396,7 +396,7 @@ export function renderPosGrid(sc, crew, now) {
       const statusLabel = isOnboard ? 'Onboard' : isFuture ? 'Returning' : 'Offboard';
       const dotCls = isOnboard ? 'dot-on' : isFuture ? '' : 'dot-off';
       return `<div class="crew-slot ${cls}">
-        <div><div class="crew-slot-name">${c.name}</div><div class="crew-slot-nat">${c.nat || ''}${c.airport ? ' · ' + c.airport : ''}</div></div>
+        <div><div class="crew-slot-name">${crewLink(c.name, c.id)}</div><div class="crew-slot-nat">${c.nat || ''}${c.airport ? ' · ' + c.airport : ''}</div></div>
         <div>${dateInfo}</div>
         <div><span class="status-dot ${dotCls}" style="${isFuture ? 'background:var(--blue-t);' : ''} margin-right:4px;"></span><span style="font-size:10px;color:var(--text2);">${statusLabel}</span></div>
       </div>`;

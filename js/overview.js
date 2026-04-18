@@ -1,6 +1,6 @@
 // ── overview.js — overview page rendering ────────────────────────────────────
 import { state } from './state.js';
-import { classBadge, statusBadge } from './utils.js';
+import { classBadge, statusBadge, crewLink } from './utils.js';
 
 export function renderOverview() {
   const now = new Date();
@@ -34,13 +34,13 @@ export function renderOverview() {
     const pos  = state.positions.find(p => p.id == c.posId);
     const ship = state.ships.find(s => s.id == c.shipId);
     const days = Math.round((new Date(c.end) - now) / 86400000);
-    return `<div class="row-item"><div><div style="font-size:13px;font-weight:500;">${c.name}</div><div style="font-size:11px;color:var(--text2);">${pos ? pos.abbr : '—'} · ${ship ? ship.name : '—'}</div></div><span class="badge ${days < 30 ? 'badge-red' : 'badge-amber'}">${days}d</span></div>`;
+    return `<div class="row-item"><div><div style="font-size:13px;font-weight:500;">${crewLink(c.name, c.id)}</div><div style="font-size:11px;color:var(--text2);">${pos ? pos.abbr : '—'} · ${ship ? ship.name : '—'}</div></div><span class="badge ${days < 30 ? 'badge-red' : 'badge-amber'}">${days}d</span></div>`;
   }).join('') : '<p class="empty">No contracts ending in the next 60 days.</p>';
 
   const alerts = state.crew.filter(c => { const d = (new Date(c.medical) - now) / 86400000; return d >= 0 && d <= 90; });
   document.getElementById('cert-alerts').innerHTML = alerts.length ? alerts.map(c => {
     const ship = state.ships.find(s => s.id == c.shipId);
     const days = Math.round((new Date(c.medical) - now) / 86400000);
-    return `<div class="row-item"><div><div style="font-size:13px;font-weight:500;">${c.name}</div><div style="font-size:11px;color:var(--text2);">Medical cert expires ${c.medical} · ${ship ? ship.name : '—'}</div></div><span class="badge ${days < 30 ? 'badge-red' : 'badge-amber'}">${days}d</span></div>`;
+    return `<div class="row-item"><div><div style="font-size:13px;font-weight:500;">${crewLink(c.name, c.id)}</div><div style="font-size:11px;color:var(--text2);">Medical cert expires ${c.medical} · ${ship ? ship.name : '—'}</div></div><span class="badge ${days < 30 ? 'badge-red' : 'badge-amber'}">${days}d</span></div>`;
   }).join('') : '<p class="empty">No certification alerts in the next 90 days.</p>';
 }

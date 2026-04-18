@@ -1,7 +1,7 @@
 // ── contracts.js — contracts & offers page ───────────────────────────────────
 import { state } from './state.js';
 import { uid } from './state.js';
-import { showToast } from './utils.js';
+import { showToast, crewLink } from './utils.js';
 import { upsertOffer, dbDeleteOffer, upsertCrew } from './db.js';
 import { saveCrewEmail, getCrewEmail } from './crew.js';
 import { openEmailCompose } from './email.js';
@@ -655,7 +655,7 @@ function renderCoTable() {
       ? '' // terminal offers are retained — no delete
       : `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteCoOffer(${o.id})" title="Delete">✕</button>`;
     return `<tr style="${rowStyle}" onclick="openCoModal(${o.id})">
-      <td><div style="font-weight:600;font-size:12px;">${o.crewName||'—'}</div><div style="font-size:10px;color:var(--text2);">#${o.crewId||'—'}</div></td>
+      <td><div style="font-weight:600;font-size:12px;">${o.crewId ? crewLink(o.crewName||'—', o.crewId, true) : o.crewName||'—'}</div><div style="font-size:10px;color:var(--text2);">#${o.crewId||'—'}</div></td>
       <td><span style="font-size:11px;font-weight:600;color:${typeColor};">${typeIcon} ${o.type}</span>${o.subtype?`<div style="font-size:10px;color:var(--text2);">${o.subtype}</div>`:''}</td>
       <td>${o.ship?`<span class="badge ${clsBadge}" style="font-size:9px;">${o.ship}</span>`:'<span style="color:var(--text2);font-size:11px;">—</span>'}</td>
       <td>${coStageBadge(o.stage)}</td>
@@ -703,7 +703,7 @@ function renderCoTable() {
             const typeColor2 = o.type === 'Extension' ? 'var(--blue-t)' : o.type === 'Offer' ? 'var(--purple-t)' : 'var(--teal-t)';
             const dd2      = o.dateFrom ? (o.dateTo ? `${o.dateFrom} → ${o.dateTo}` : o.dateFrom) : '—';
             return `<tr style="border-top:.5px solid rgba(255,255,255,.06);opacity:.7;cursor:pointer;" onclick="openCoModal(${o.id})">
-              <td style="padding:7px 8px;"><span style="font-weight:500;">${o.crewName||'—'}</span></td>
+              <td style="padding:7px 8px;">${o.crewId ? crewLink(o.crewName||'—', o.crewId, true) : `<span style="font-weight:500;">${o.crewName||'—'}</span>`}</td>
               <td style="padding:7px 8px;color:${typeColor2};font-weight:500;">${CO_TYPE_ICONS[o.type]} ${o.type}</td>
               <td style="padding:7px 8px;">${o.ship?`<span class="badge ${cb2}" style="font-size:9px;">${o.ship}</span>`:'—'}</td>
               <td style="padding:7px 8px;">${coStageBadge(o.stage)}</td>
@@ -736,7 +736,7 @@ function renderCoBoard() {
     const cls       = SCM[o.ship] || '';
     const clsBadge  = CB[cls] || 'badge-gray';
     return `<div class="co-card" onclick="openCoModal(${o.id})">
-      <div class="co-card-name">${o.crewName||'—'}</div>
+      <div class="co-card-name">${o.crewId ? crewLink(o.crewName||'—', o.crewId, true) : o.crewName||'—'}</div>
       <div class="co-card-meta">${o.ship?`<span class="badge ${clsBadge}" style="font-size:9px;margin-right:3px;">${o.ship}</span>`:''}${o.dateFrom||'No date'}</div>
       <div class="co-card-type" style="color:${typeColor};">${CO_TYPE_ICONS[o.type]} ${o.type}${o.subtype?' — '+o.subtype:''}</div>
     </div>`;

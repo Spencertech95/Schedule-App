@@ -1,5 +1,6 @@
 // ── dashboard.js — crew dashboard page ───────────────────────────────────────
 import { state } from './state.js';
+import { crewLink } from './utils.js';
 
 const SHIP_CLASS_MAP = {'ML':'MILLENNIUM CLASS','IN':'MILLENNIUM CLASS','SM':'MILLENNIUM CLASS','CS':'MILLENNIUM CLASS','SL':'SOLSTICE CLASS','EQ':'SOLSTICE CLASS','EC':'SOLSTICE CLASS','SI':'SOLSTICE CLASS','RF':'SOLSTICE CLASS','EG':'EDGE CLASS','AX':'EDGE CLASS','BY':'EDGE CLASS','AT':'EDGE CLASS','XC':'EDGE CLASS'};
 const CLASS_BADGE    = {'MILLENNIUM CLASS':'badge-teal','SOLSTICE CLASS':'badge-blue','EDGE CLASS':'badge-purple'};
@@ -132,7 +133,7 @@ export function renderDashboard() {
       else if (c.status !== 'Onboard' &&  c.futureOn) catBadge = `<span class="badge badge-blue" style="font-size:9px;margin-left:4px;">Assigned</span>`;
       else                                              catBadge = `<span class="badge badge-gray" style="font-size:9px;margin-left:4px;">Unassigned</span>`;
       return `<tr>
-        <td style="font-weight:500;white-space:nowrap;">${c.name}</td>
+        <td style="font-weight:500;white-space:nowrap;">${crewLink(c.name, c.id)}</td>
         <td><span class="badge badge-gray" style="font-size:10px;">${c.abbr}</span></td>
         <td><span class="badge ${clsBadge}" style="font-size:9px;margin-right:3px;">${c.recentShipCode||'—'}</span><span style="font-size:11px;">${c.recentShipName||'—'}</span></td>
         <td><span class="status-dot ${c.status==='Onboard'?'dot-on':'dot-off'}"></span><span style="font-size:11px;">${c.status}</span>${catBadge}</td>
@@ -215,7 +216,7 @@ export function renderSignoffTable() {
       : c.futureOn ? `<span class="so-relief-warn">⚠ Moving to ${c.futureShip}</span>`
       : `<span class="so-relief-none">✕ No relief</span>`;
     return `<tr>
-      <td style="font-weight:500;white-space:nowrap;">${c.name}</td>
+      <td style="font-weight:500;white-space:nowrap;">${crewLink(c.name, c.id)}</td>
       <td><span class="badge badge-gray" style="font-size:10px;">${c.abbr}</span></td>
       <td><span class="badge ${clsBadge}" style="font-size:9px;margin-right:3px;">${c.recentShipCode}</span><span style="font-size:11px;">${c.recentShipName||''}</span></td>
       <td style="font-size:11px;white-space:nowrap;">${c.end}</td>

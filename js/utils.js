@@ -45,6 +45,13 @@ export function toggleForm(id) {
   el.style.display = isOpen ? 'block' : 'none';
 }
 
+export function crewLink(name, id, stopProp = false) {
+  const click = stopProp
+    ? `event.stopPropagation();openProfile(${id})`
+    : `openProfile(${id})`;
+  return `<span onclick="${click}" style="cursor:pointer;color:var(--blue-t);">${esc(name || '—')}</span>`;
+}
+
 export function classBadge(c) {
   const m = {Millennium:'badge-teal', Solstice:'badge-blue', Edge:'badge-purple'};
   return `<span class="badge ${m[c]||'badge-gray'}">${c}</span>`;
