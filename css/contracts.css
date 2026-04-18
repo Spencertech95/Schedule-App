@@ -14,6 +14,9 @@
 .co-stat-label{font-size:11px;color:var(--text2);margin-bottom:5px;font-weight:500;}
 .co-stat-val{font-size:22px;font-weight:700;color:#fff;}
 
+/* table wrapper — must NOT constrain height; rows must expand the page freely */
+.co-table-scroll{overflow-x:auto;overflow-y:visible;}
+
 /* table */
 .co-table{width:100%;border-collapse:collapse;font-size:12px;}
 .co-table thead th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);padding:7px 10px;border-bottom:.5px solid var(--border);background:rgba(255,255,255,.02);white-space:nowrap;cursor:pointer;}
