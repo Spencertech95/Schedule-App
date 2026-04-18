@@ -1,7 +1,9 @@
 // ── ship.js — individual ship pages ──────────────────────────────────────────
-import { state } from './state.js';
-import { parsePortLocation, getShipPortForDate, crewLink } from './utils.js';
+import { state, uid } from './state.js';
+import { parsePortLocation, getShipPortForDate, crewLink, showToast } from './utils.js';
 import { upsertCrew } from './db.js';
+
+const SC_TO_SHIP_ID = {ML:1,IN:2,SM:3,CS:4,SL:5,EQ:6,EC:7,SI:8,RF:9,EG:10,AX:11,BY:12,AT:13,XC:14};
 
 export const SHIP_CODES_ORDERED = ['ML','IN','SM','CS','SL','EQ','EC','SI','RF','EG','AX','BY','AT','XC'];
 export const SHIP_DISPLAY = {
@@ -157,6 +159,89 @@ export function deployPortOnDate(sc, dateStr) {
   return null;
 }
 
+function buildAddForm(sc, section) {
+  const isIncoming = section === 'incoming';
+  const posOpts = state.positions.map(p => `<option value="${p.id}">${p.abbr} — ${p.title}</option>`).join('');
+  return `<div id="manifest-add-${section}-${sc}" style="display:none;background:rgba(255,255,255,.03);border-bottom:.5px solid var(--border);padding:10px 12px;">
+    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;">Add ${isIncoming ? 'incoming' : 'onboard'} crew member</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div class="field" style="margin:0;flex:2;min-width:150px;">
+        <label style="font-size:10px;">Full name *</label>
+        <input type="text" id="madd-name-${sc}-${section}" placeholder="First Last" style="font-size:12px;width:100%;"/>
+      </div>
+      <div class="field" style="margin:0;min-width:140px;">
+        <label style="font-size:10px;">Position *</label>
+        <select id="madd-pos-${sc}-${section}" style="font-size:12px;width:100%;">${posOpts}</select>
+      </div>
+      <div class="field" style="margin:0;min-width:130px;">
+        <label style="font-size:10px;">${isIncoming ? 'Sign on (future)' : 'Sign on'}</label>
+        <input type="date" id="madd-signon-${sc}-${section}" style="font-size:12px;width:100%;"/>
+      </div>
+      <div class="field" style="margin:0;min-width:130px;">
+        <label style="font-size:10px;">${isIncoming ? 'Sign off (future)' : 'Sign off'}</label>
+        <input type="date" id="madd-signoff-${sc}-${section}" style="font-size:12px;width:100%;"/>
+      </div>
+      <div class="field" style="margin:0;width:72px;">
+        <label style="font-size:10px;">Nationality</label>
+        <input type="text" id="madd-nat-${sc}-${section}" placeholder="GBR" maxlength="3" style="font-size:12px;width:100%;"/>
+      </div>
+      <div class="field" style="margin:0;width:72px;">
+        <label style="font-size:10px;">Airport</label>
+        <input type="text" id="madd-airport-${sc}-${section}" placeholder="LHR" maxlength="4" style="font-size:12px;width:100%;"/>
+      </div>
+      <div style="display:flex;gap:6px;padding-bottom:1px;">
+        <button class="btn btn-sm btn-primary" onclick="saveManifestAdd('${sc}','${section}')">Add</button>
+        <button class="btn btn-sm" onclick="toggleAddManifestForm('${sc}','${section}')">Cancel</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+export function toggleAddManifestForm(sc, section) {
+  const el = document.getElementById(`manifest-add-${section}-${sc}`);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+  if (el.style.display !== 'none') document.getElementById(`madd-name-${sc}-${section}`)?.focus();
+}
+
+export function saveManifestAdd(sc, section) {
+  const isIncoming = section === 'incoming';
+  const name    = document.getElementById(`madd-name-${sc}-${section}`)?.value.trim();
+  const posId   = parseInt(document.getElementById(`madd-pos-${sc}-${section}`)?.value);
+  const signOn  = document.getElementById(`madd-signon-${sc}-${section}`)?.value  || '';
+  const signOff = document.getElementById(`madd-signoff-${sc}-${section}`)?.value || '';
+  const nat     = (document.getElementById(`madd-nat-${sc}-${section}`)?.value.trim()     || '').toUpperCase();
+  const airport = (document.getElementById(`madd-airport-${sc}-${section}`)?.value.trim() || '').toUpperCase();
+
+  if (!name) { showToast('Name is required'); return; }
+
+  const pos  = state.positions.find(p => p.id === posId);
+  const abbr = pos?.abbr || '';
+
+  const member = {
+    id: uid(), name, nat, posId,
+    abbr,
+    shipId:         SC_TO_SHIP_ID[sc] || 0,
+    shipCode:       sc,
+    recentShipCode: sc,
+    status:         isIncoming ? 'Offboard' : 'Onboard',
+    start:          isIncoming ? '' : signOn,
+    end:            isIncoming ? '' : signOff,
+    futureShip:     isIncoming ? sc : '',
+    futureOn:       isIncoming ? signOn  : '',
+    futureOff:      isIncoming ? signOff : '',
+    airport, email: '', passport: '', medical: '', certs: [], notes: '', docs: [],
+  };
+
+  state.crew.push(member);
+  upsertCrew(member);
+
+  const allCrew = state.crew.filter(c => c.recentShipCode === sc || c.shipCode === sc);
+  const wrap = document.getElementById(`ship-tab-manifest-${sc}`);
+  if (wrap) wrap.innerHTML = renderManifest(sc, allCrew, new Date());
+  showToast(`${name} added to manifest`);
+}
+
 export function renderManifest(sc, crew, now) {
   const current = crew.filter(c => c.status === 'Onboard').sort((a, b) => {
     const pa = POS_ORDER.indexOf(a.abbr), pb = POS_ORDER.indexOf(b.abbr);
@@ -286,8 +371,12 @@ export function renderManifest(sc, crew, now) {
           <div class="card-title">Current crew <span class="manifest-count-badge" style="background:rgba(77,212,160,.15);color:#4dd4a0;border:.5px solid rgba(77,212,160,.3);">${current.length}</span></div>
           <div class="card-sub">All crew currently onboard — sign-on/off dates and embark/debark ports</div>
         </div>
-        <input class="manifest-search" placeholder="Search name or position…" oninput="filterManifest('${sc}','current',this.value)"/>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="manifest-search" placeholder="Search name or position…" oninput="filterManifest('${sc}','current',this.value)"/>
+          <button class="btn btn-sm btn-primary" onclick="toggleAddManifestForm('${sc}','current')" style="white-space:nowrap;">+ Add crew</button>
+        </div>
       </div>
+      ${buildAddForm(sc, 'current')}
       <div style="overflow-x:auto;max-height:460px;overflow-y:auto;" id="manifest-current-wrap-${sc}">
         <table class="manifest-table" id="manifest-current-${sc}">
           ${th}
@@ -302,8 +391,12 @@ export function renderManifest(sc, crew, now) {
           <div class="card-title">Incoming crew <span class="manifest-count-badge" style="background:rgba(41,155,225,.15);color:#299BE1;border:.5px solid rgba(41,155,225,.3);">${incoming.length}</span></div>
           <div class="card-sub">Confirmed future assignments to this ship — ordered by sign-on date</div>
         </div>
-        <input class="manifest-search" placeholder="Search name or position…" oninput="filterManifest('${sc}','incoming',this.value)"/>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="manifest-search" placeholder="Search name or position…" oninput="filterManifest('${sc}','incoming',this.value)"/>
+          <button class="btn btn-sm btn-primary" onclick="toggleAddManifestForm('${sc}','incoming')" style="white-space:nowrap;">+ Add crew</button>
+        </div>
       </div>
+      ${buildAddForm(sc, 'incoming')}
       <div style="overflow-x:auto;max-height:460px;overflow-y:auto;" id="manifest-incoming-wrap-${sc}">
         <table class="manifest-table" id="manifest-incoming-${sc}">
           ${th}
@@ -502,10 +595,12 @@ window.showShip         = showShip;
 window.renderShipPage   = renderShipPage;
 window.switchShipTab    = switchShipTab;
 window.deployPortOnDate = deployPortOnDate;
-window.renderManifest      = renderManifest;
-window.filterManifest      = filterManifest;
-window.openManifestEdit    = openManifestEdit;
-window.closeManifestEdit   = closeManifestEdit;
-window.saveManifestEdit    = saveManifestEdit;
+window.renderManifest         = renderManifest;
+window.filterManifest         = filterManifest;
+window.openManifestEdit       = openManifestEdit;
+window.closeManifestEdit      = closeManifestEdit;
+window.saveManifestEdit       = saveManifestEdit;
+window.toggleAddManifestForm  = toggleAddManifestForm;
+window.saveManifestAdd        = saveManifestAdd;
 window.renderPosGrid    = renderPosGrid;
 window.renderTimeline   = renderTimeline;
