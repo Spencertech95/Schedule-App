@@ -93,6 +93,12 @@ textarea{resize:vertical;min-height:65px;}
 .filters{display:flex;gap:7px;margin-bottom:1rem;flex-wrap:wrap;}
 .filter-select{width:auto;min-width:130px;font-size:12px;}
 
+/* ── SCHEDULING RULES ── */
+.rule-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:12px;}
+.rule-row:last-child{border-bottom:none;}
+.rule-dot{color:var(--blue-t);font-size:10px;flex-shrink:0;}
+.rule-text{flex:1;line-height:1.4;}
+
 /* ── LIGHT MODE ── */
 [data-theme="light"] .card-title{color:var(--text);}
 [data-theme="light"] .metric-value{color:var(--text);}

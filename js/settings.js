@@ -1,4 +1,6 @@
 // ── settings.js — app-wide user settings ─────────────────────────────────────
+import { state } from './state.js';
+
 const STORAGE_KEY = 'tec_settings_v1';
 
 const DEFAULTS = {
@@ -24,6 +26,9 @@ const DEFAULTS = {
 
   // Display
   dateFormat: 'YYYY-MM-DD',
+
+  // Scheduling rules
+  schedulingRules: [],  // [{ id, posA, direction ('before'|'after'|'either'), days, posB }]
 };
 
 // In-memory settings object — loaded once on init
@@ -74,7 +79,65 @@ function populateForm() {
   updateGapLabel(s.ssMinGapDays ?? 42);
 }
 
-export function renderSettings() { populateForm(); }
+export function renderSettings() { populateForm(); populateRuleSelects(); renderRules(); }
+
+// ── Scheduling Rules ─────────────────────────────────────────────────────────
+
+function posOptions(selectedAbbr) {
+  return state.positions.map(p =>
+    `<option value="${p.abbr}" ${p.abbr === selectedAbbr ? 'selected' : ''}>${p.abbr} — ${p.title}</option>`
+  ).join('');
+}
+
+export function renderRules() {
+  const list = document.getElementById('settings-rules-list');
+  if (!list) return;
+  const rules = _settings.schedulingRules || [];
+  if (!rules.length) {
+    list.innerHTML = '<p style="font-size:12px;color:var(--text2);margin:0;">No rules defined.</p>';
+    return;
+  }
+  list.innerHTML = rules.map(r => {
+    const dirLabel = r.direction === 'before' ? 'before' : r.direction === 'after' ? 'after' : 'before or after';
+    return `<div class="rule-row">
+      <span class="rule-dot">●</span>
+      <span class="rule-text"><strong>${r.posA}</strong> cannot sign off within <strong>${r.days}</strong> day${r.days !== 1 ? 's' : ''} ${dirLabel} <strong>${r.posB}</strong> signing off</span>
+      <button class="btn btn-sm btn-danger" onclick="deleteSchedulingRule(${r.id})" style="margin-left:auto;flex-shrink:0;">✕ Remove</button>
+    </div>`;
+  }).join('');
+}
+
+export function addSchedulingRule() {
+  const posA      = document.getElementById('rule-pos-a').value;
+  const days      = parseInt(document.getElementById('rule-days').value);
+  const direction = document.getElementById('rule-direction').value;
+  const posB      = document.getElementById('rule-pos-b').value;
+  if (!posA || !posB || !days || posA === posB) {
+    if (typeof window._showToast === 'function') window._showToast('Fill in all fields — positions must differ');
+    return;
+  }
+  if (!_settings.schedulingRules) _settings.schedulingRules = [];
+  const id = Date.now();
+  _settings.schedulingRules.push({ id, posA, direction, days, posB });
+  saveSettings();
+  renderRules();
+  document.getElementById('rule-days').value = 14;
+}
+
+export function deleteSchedulingRule(id) {
+  if (!_settings.schedulingRules) return;
+  _settings.schedulingRules = _settings.schedulingRules.filter(r => r.id !== id);
+  saveSettings();
+  renderRules();
+}
+
+export function populateRuleSelects() {
+  ['rule-pos-a', 'rule-pos-b'].forEach(elId => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.innerHTML = posOptions('');
+  });
+}
 
 function updateGapLabel(val) {
   const weeks = Math.round(val / 7);
@@ -109,6 +172,9 @@ export function resetSettings() {
   if (typeof window._showToast === 'function') window._showToast('Settings reset to defaults');
 }
 
-window.saveSettingsForm = saveSettingsForm;
-window.resetSettings    = resetSettings;
-window.updateGapLabel   = updateGapLabel;
+window.saveSettingsForm        = saveSettingsForm;
+window.resetSettings           = resetSettings;
+window.updateGapLabel          = updateGapLabel;
+window.addSchedulingRule       = addSchedulingRule;
+window.deleteSchedulingRule    = deleteSchedulingRule;
+window.populateRuleSelects     = populateRuleSelects;
