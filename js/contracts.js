@@ -627,7 +627,8 @@ function renderCoTable() {
     }
   }
 
-  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; }
+  else {
   empty.style.display = 'none';
   tbody.innerHTML = data.map(o => {
     const cls      = SCM[o.ship] || '';
@@ -657,6 +658,7 @@ function renderCoTable() {
       <td>${confirmBtn}</td>
     </tr>`;
   }).join('');
+  } // end else (active offers exist)
 
   // ── Archive section ───────────────────────────────────────────────────────
   const archived = coArchivedOffers();
