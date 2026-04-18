@@ -10,17 +10,12 @@ export function renderOverview() {
   const now = new Date();
 
   // ── KPI metrics ──
-  const fleetTotal = state.ships.reduce((a, s) => {
-    const m = state.manning[s.shipClass];
-    return a + (m ? Object.values(m).reduce((x, y) => x + y, 0) : 0);
-  }, 0);
   const onboard    = state.crew.filter(c => c.status === 'Onboard').length;
   const incoming   = state.crew.filter(c => c.status === 'Incoming').length;
   const ending60   = state.crew.filter(c => { const d = (new Date(c.end) - now) / 86400000; return d >= 0 && d <= 60; }).length;
   const certAlerts = state.crew.filter(c => { const d = (new Date(c.medical) - now) / 86400000; return d >= 0 && d <= 90; }).length;
 
   document.getElementById('metrics').innerHTML = `
-    <div class="metric"><div class="metric-label">Fleet crew capacity</div><div class="metric-value">${fleetTotal}</div></div>
     <div class="metric"><div class="metric-label">Onboard</div><div class="metric-value ok">${onboard}</div></div>
     <div class="metric"><div class="metric-label">Incoming</div><div class="metric-value">${incoming}</div></div>
     <div class="metric"><div class="metric-label">Ending (60d)</div><div class="metric-value ${ending60 > 0 ? 'warn' : 'ok'}">${ending60}</div></div>
