@@ -1,27 +1,20 @@
 // ── ships-overview.js — All Ships Gantt chart ───────────────────────────────
 import { state } from './state.js';
-import { SHIP_CODES_ORDERED, SHIP_DISPLAY } from './ship.js';
+import { SHIP_CODES_ORDERED, SHIP_DISPLAY, POS_ORDER, POS_COLORS, POS_COLORS_FUTURE } from './ship.js';
 
-const POS_ORDER  = ['SPM','VPM','ETDC','EOF','EOS','EOL','ESS','EOMC'];
-const POS_COLORS = {SPM:'#E87435',VPM:'#299BE1',ETDC:'#13818D',EOF:'#4dd4a0',EOS:'#A4A4A7',EOL:'#7fc8e8',ESS:'#5a9fd4',EOMC:'#E87435'};
-const MS_DAY     = 86_400_000;
-
-function fmtBarDate(ms) {
-  if (!ms) return '?';
-  return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
-}
+const MS_DAY = 86_400_000;
 
 // ── View configs ──────────────────────────────────────────────────────────────
 const VIEWS = {
   day: {
     totalDays: 30,
     pxPerDay:  40,
-    tickEvery: 1,           // days
+    tickEvery: 1,
     tickFmt: d => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
   },
   week: {
     totalDays: 91,
-    pxPerDay:  80 / 7,      // ~11.4 px/day
+    pxPerDay:  80 / 7,
     tickEvery: 7,
     tickFmt: d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
   },
@@ -51,14 +44,6 @@ function dateMs(s) {
   return s ? new Date(s + 'T00:00:00').getTime() : null;
 }
 
-function barCls(sc) {
-  const c = SHIP_DISPLAY[sc]?.cls;
-  if (c === 'Millennium') return 'gantt-mil';
-  if (c === 'Solstice')   return 'gantt-sol';
-  return 'gantt-edge';
-}
-
-// Returns the first tick >= startMs aligned to natural boundary
 function firstTick(startMs, view) {
   const d = new Date(startMs);
   const ev = VIEWS[view].tickEvery;
@@ -75,7 +60,6 @@ function firstTick(startMs, view) {
     if (d.getTime() < startMs) d.setMonth(d.getMonth() + 1);
     return d.getTime();
   }
-  // quarter
   const qm = Math.floor(d.getMonth() / 3) * 3;
   d.setMonth(qm); d.setDate(1);
   if (d.getTime() < startMs) d.setMonth(d.getMonth() + 3);
@@ -86,8 +70,8 @@ function nextTick(ms, view) {
   const ev = VIEWS[view].tickEvery;
   if (typeof ev === 'number') return ms + ev * MS_DAY;
   const d = new Date(ms);
-  if (ev === 'month')   { d.setMonth(d.getMonth() + 1);   return d.getTime(); }
-  /* quarter */           d.setMonth(d.getMonth() + 3);   return d.getTime();
+  if (ev === 'month') { d.setMonth(d.getMonth() + 1); return d.getTime(); }
+  d.setMonth(d.getMonth() + 3); return d.getTime();
 }
 
 function tickWidthPx(tickMs, view) {
@@ -108,7 +92,6 @@ function buildRows() {
   for (const sc of SHIP_CODES_ORDERED) {
     const members = [];
 
-    // All currently onboard crew for this ship
     for (const c of state.crew) {
       if (c.status !== 'Onboard') continue;
       if (c.recentShipCode !== sc && c.shipCode !== sc) continue;
@@ -125,7 +108,6 @@ function buildRows() {
       });
     }
 
-    // Crew with upcoming assignments to this ship
     for (const c of state.crew) {
       if (c.futureShip !== sc || !c.futureOn) continue;
       const sMs = dateMs(c.futureOn);
@@ -139,7 +121,6 @@ function buildRows() {
 
     if (!members.length) continue;
 
-    // Sort by position order then name
     members.sort((a, b) => {
       const ai = POS_ORDER.indexOf(a.abbr);
       const bi = POS_ORDER.indexOf(b.abbr);
@@ -155,8 +136,6 @@ function buildRows() {
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderGantt() {
-  // Pin gantt-body height using JS — the flex chain doesn't always propagate
-  // a finite height through the scrollable .main container
   const ganttBody = document.querySelector('.gantt-body');
   if (ganttBody) {
     const top = ganttBody.getBoundingClientRect().top;
@@ -169,7 +148,6 @@ function renderGantt() {
   const today  = today0();
   const rows   = buildRows();
 
-  // View tab active state
   document.querySelectorAll('.gantt-tab')
     .forEach(b => b.classList.toggle('active', b.dataset.view === _view));
 
@@ -213,11 +191,14 @@ function renderGantt() {
     rowHtml += `<div class="gantt-ship-spacer"></div>`;
 
     for (const m of ship.members) {
-      const col = POS_COLORS[m.abbr] || '#8896b8';
+      const col = m.future
+        ? (POS_COLORS_FUTURE[m.abbr] || 'var(--blue-t)')
+        : (POS_COLORS[m.abbr] || '#4dd4a0');
+      const opacity = m.future ? 0.55 : 1;
 
       labHtml += `<div class="gantt-pos-label" title="${m.name}">
-        ${m.abbr ? `<span style="font-size:9px;font-weight:600;color:${col};margin-right:5px;flex-shrink:0;">${m.abbr}</span>` : ''}
-        <span style="overflow:hidden;text-overflow:ellipsis;">${m.name}</span>
+        <span class="badge badge-gray" style="font-size:9px;width:34px;text-align:center;flex-shrink:0;">${m.abbr || '—'}</span>
+        <span style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.name}</span>
       </div>`;
 
       rowHtml += `<div class="gantt-row">`;
@@ -227,14 +208,10 @@ function renderGantt() {
       if (!(rPx <= 0 || lPx >= totPx)) {
         const left  = Math.max(0, lPx);
         const width = Math.max(4, Math.min(totPx, rPx) - left);
-        const dateStr = `${fmtBarDate(m.startMs)} → ${fmtBarDate(m.endMs)}`;
-        rowHtml += `<div class="gantt-bar${m.future ? ' gantt-future' : ''}"
-          style="left:${left}px;width:${width}px;background:${col}b8;border:0.5px solid ${col};"
-          title="${m.name} · ${m.abbr} · ${dateStr}"
-          onclick="openProfile(${m.crewId})">
-          <span class="gantt-bar-name">${m.name}</span>
-          <span class="gantt-bar-dates">${dateStr}</span>
-        </div>`;
+        rowHtml += `<div class="gantt-bar"
+          style="left:${left}px;width:${width}px;background:${col};opacity:${opacity};"
+          title="${m.name} · ${m.abbr} · ${m.startMs ? new Date(m.startMs).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '?'} → ${m.endMs ? new Date(m.endMs).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '?'}"
+          onclick="openProfile(${m.crewId})">${width > 30 ? m.name : ''}</div>`;
       }
 
       rowHtml += `</div>`;
@@ -247,7 +224,6 @@ function renderGantt() {
 
   rowHtml += `</div>`;
 
-  // Inject
   const headerEl  = document.getElementById('gantt-header');
   const labRowsEl = document.getElementById('gantt-labels-rows');
   const rowsEl    = document.getElementById('gantt-rows');
@@ -268,7 +244,6 @@ function goToToday(andRender = true) {
 export function initAllShips() {
   if (!_startMs) goToToday(false);
 
-  // Sync label panel scroll with timeline scroll
   const timeline  = document.getElementById('gantt-timeline');
   const labsRows  = document.getElementById('gantt-labels-rows');
   if (timeline && labsRows && !timeline._scrollBound) {
@@ -278,7 +253,6 @@ export function initAllShips() {
 
   renderGantt();
 
-  // Re-pin height on resize
   if (!window._ganttResizeBound) {
     window.addEventListener('resize', () => {
       const gb = document.querySelector('.gantt-body');
