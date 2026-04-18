@@ -285,8 +285,13 @@ export function renderManifest(sc, crew, now) {
   }
 
   function editRow(c, isIncoming) {
-    const signOnField  = isIncoming ? 'futureOn'  : 'start';
-    const signOffField = isIncoming ? 'futureOff' : 'end';
+    const posOpts = state.positions.map(p =>
+      `<option value="${p.id}" ${p.id === c.tempPosId ? 'selected' : ''}>${p.abbr} — ${p.title}</option>`
+    ).join('');
+    const hasTempPromo = c.tempAbbr && c.tempPosStart;
+    const tempStatus = hasTempPromo
+      ? `<span style="font-size:10px;color:var(--text2);">Currently: <strong style="color:var(--blue-t);">↑ ${c.tempAbbr}</strong> from ${c.tempPosStart}${c.tempPosEnd ? ' → ' + c.tempPosEnd : ''}</span>`
+      : '';
     return `<tr id="manifest-edit-row-${c.id}" style="display:none;background:rgba(255,255,255,.03);">
       <td colspan="9" style="padding:10px 12px;">
         <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;">
@@ -318,15 +323,57 @@ export function renderManifest(sc, crew, now) {
             <button class="btn btn-sm" onclick="closeManifestEdit(${c.id})">Cancel</button>
           </div>
         </div>
+        <!-- Temporary Promotion -->
+        <div style="margin-top:10px;padding-top:10px;border-top:.5px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);">Temporary promotion</span>
+            ${tempStatus}
+            ${hasTempPromo ? `<button class="btn btn-sm btn-danger" onclick="clearTempPromo(${c.id})" style="margin-left:auto;">✕ Clear</button>` : ''}
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <div class="field" style="margin:0;min-width:160px;">
+              <label style="font-size:10px;">Acting position</label>
+              <select id="medit-temppos-${c.id}" style="width:100%;font-size:12px;">
+                <option value="">— Select position —</option>
+                ${posOpts}
+              </select>
+            </div>
+            <div class="field" style="margin:0;min-width:130px;">
+              <label style="font-size:10px;">Effective from</label>
+              <input type="date" id="medit-tempstart-${c.id}" value="${c.tempPosStart || ''}"
+                style="width:100%;font-size:12px;"/>
+            </div>
+            <div class="field" style="margin:0;min-width:130px;">
+              <label style="font-size:10px;">Until (optional)</label>
+              <input type="date" id="medit-tempend-${c.id}" value="${c.tempPosEnd || ''}"
+                style="width:100%;font-size:12px;"/>
+            </div>
+          </div>
+        </div>
       </td>
     </tr>`;
   }
 
-  const currentRows = current.map(c => {
+  function posCell(c) {
     const posColor = POS_COLORS[c.abbr] || '#A4A4A7';
+    const base = `<span class="badge" style="background:${posColor}22;color:${posColor};border:.5px solid ${posColor}55;font-size:10px;">${c.abbr}</span>`;
+    if (!c.tempAbbr || !c.tempPosStart) return `<td>${base}</td>`;
+    const today = now.toISOString().slice(0, 10);
+    const started  = c.tempPosStart <= today;
+    const notEnded = !c.tempPosEnd || c.tempPosEnd >= today;
+    if (!notEnded) return `<td>${base}</td>`;
+    const tempColor = POS_COLORS[c.tempAbbr] || '#A4A4A7';
+    const label = started ? 'Acting' : `From ${c.tempPosStart}`;
+    return `<td>
+      <span class="badge" style="background:${tempColor}22;color:${tempColor};border:.5px solid ${tempColor}55;font-size:10px;">↑ ${c.tempAbbr}</span>
+      <div style="font-size:9px;color:var(--text2);margin-top:2px;">${label} (${c.abbr})</div>
+    </td>`;
+  }
+
+  const currentRows = current.map(c => {
     return `<tr>
       <td><div class="manifest-name">${crewLink(c.name, c.id)}</div><div class="manifest-id">#${c.id}</div></td>
-      <td><span class="badge" style="background:${posColor}22;color:${posColor};border:.5px solid ${posColor}55;font-size:10px;">${c.abbr}</span></td>
+      ${posCell(c)}
       <td style="font-size:11px;">${c.start || '—'}</td>
       ${portCell(c.start)}
       <td style="font-size:11px;">${c.end || '—'} ${daysLeftBadge(c.end)}</td>
@@ -338,10 +385,9 @@ export function renderManifest(sc, crew, now) {
   }).join('');
 
   const incomingRows = incoming.map(c => {
-    const posColor = POS_COLORS[c.abbr] || '#A4A4A7';
     return `<tr>
       <td><div class="manifest-name">${crewLink(c.name, c.id)}</div><div class="manifest-id">#${c.id}</div></td>
-      <td><span class="badge" style="background:${posColor}22;color:${posColor};border:.5px solid ${posColor}55;font-size:10px;">${c.abbr}</span></td>
+      ${posCell(c)}
       <td style="font-size:11px;">${c.futureOn || '—'} ${daysUntilBadge(c.futureOn)}</td>
       ${portCell(c.futureOn)}
       <td style="font-size:11px;">${c.futureOff || '—'}</td>
@@ -441,9 +487,31 @@ export function saveManifestEdit(id, isIncoming) {
     c.notes = c.notes ? `${c.notes}\n${note}` : note;
   }
 
+  // Temporary promotion
+  const tempPosId  = parseInt(document.getElementById(`medit-temppos-${id}`)?.value  || '0');
+  const tempStart  = document.getElementById(`medit-tempstart-${id}`)?.value.trim()  || '';
+  const tempEnd    = document.getElementById(`medit-tempend-${id}`)?.value.trim()    || '';
+  if (tempPosId && tempStart) {
+    const pos = state.positions.find(p => p.id === tempPosId);
+    c.tempPosId    = tempPosId;
+    c.tempAbbr     = pos?.abbr || '';
+    c.tempPosStart = tempStart;
+    c.tempPosEnd   = tempEnd;
+  }
+
   upsertCrew(c);
   closeManifestEdit(id);
-  // Re-render the manifest to reflect the updated dates/gateway
+  const sc = currentShipCode;
+  const crew = state.crew.filter(x => x.recentShipCode === sc || x.shipCode === sc);
+  const wrap = document.getElementById(`ship-tab-manifest-${sc}`);
+  if (wrap) wrap.innerHTML = renderManifest(sc, crew, new Date());
+}
+
+export function clearTempPromo(id) {
+  const c = state.crew.find(x => x.id === id);
+  if (!c) return;
+  delete c.tempPosId; delete c.tempAbbr; delete c.tempPosStart; delete c.tempPosEnd;
+  upsertCrew(c);
   const sc = currentShipCode;
   const crew = state.crew.filter(x => x.recentShipCode === sc || x.shipCode === sc);
   const wrap = document.getElementById(`ship-tab-manifest-${sc}`);
@@ -602,5 +670,6 @@ window.closeManifestEdit      = closeManifestEdit;
 window.saveManifestEdit       = saveManifestEdit;
 window.toggleAddManifestForm  = toggleAddManifestForm;
 window.saveManifestAdd        = saveManifestAdd;
+window.clearTempPromo         = clearTempPromo;
 window.renderPosGrid    = renderPosGrid;
 window.renderTimeline   = renderTimeline;
