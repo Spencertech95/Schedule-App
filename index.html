@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="css/placement.css"/>
   <link rel="stylesheet" href="css/contracts.css"/>
   <link rel="stylesheet" href="css/modals.css"/>
+  <link rel="stylesheet" href="css/notifications.css"/>
 
   <!-- Third-party CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -47,6 +48,7 @@
     <button class="nav-item" data-page="overview" onclick="showPage('overview',this)" style="margin-top:.3rem;">
       <span class="nav-icon">◈</span><span>Overview</span>
     </button>
+    <button class="nav-item" onclick="showPage('notifications',this)"><span class="nav-icon">🔔</span><span>Notifications</span></button>
 
     <!-- Operations -->
     <div class="nav-section" style="margin-top:.4rem;">Operations</div>
@@ -841,6 +843,14 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- NOTIFICATIONS PAGE -->
+<div id="page-notifications" class="page">
+  <div class="page-title">Notifications</div>
+  <div class="page-sub">Actionable items — offers, sign-offs, and certifications that need your attention</div>
+  <div class="report-summary-strip" id="notif-summary" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.5rem;"></div>
+  <div id="notif-list"></div>
 </div>
 
 <!-- SETTINGS PAGE -->

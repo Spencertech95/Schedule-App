@@ -1,0 +1,31 @@
+/* notifications.css — notification inbox */
+
+.notif-item {
+  display:flex;align-items:center;gap:14px;
+  padding:11px 16px;border-radius:var(--r);
+  margin-bottom:6px;
+  border:.5px solid var(--border);
+  border-left:3px solid transparent;
+  transition:filter .15s;
+}
+.notif-item:hover{filter:brightness(1.06);}
+
+.notif-item.notif-critical{border-left-color:#ff7070;background:rgba(255,112,112,.07);}
+.notif-item.notif-warning {border-left-color:var(--highlight);background:rgba(232,116,53,.07);}
+.notif-item.notif-info    {border-left-color:var(--blue-t);background:rgba(41,155,225,.06);}
+
+.notif-icon{font-size:15px;flex-shrink:0;width:22px;text-align:center;}
+.notif-item.notif-critical .notif-icon{color:#ff7070;}
+.notif-item.notif-warning  .notif-icon{color:var(--highlight);}
+.notif-item.notif-info     .notif-icon{color:var(--blue-t);}
+
+.notif-body{flex:1;min-width:0;}
+.notif-title{font-size:13px;font-weight:500;}
+.notif-desc {font-size:11px;color:var(--text2);margin-top:2px;}
+.notif-action{flex-shrink:0;}
+.notif-empty{text-align:center;padding:3rem;color:var(--text2);font-size:13px;}
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] .notif-item.notif-critical{background:rgba(255,112,112,.06);border-color:rgba(0,0,0,.1);}
+[data-theme="light"] .notif-item.notif-warning {background:rgba(232,116,53,.06);border-color:rgba(0,0,0,.1);}
+[data-theme="light"] .notif-item.notif-info    {background:rgba(41,155,225,.05);border-color:rgba(0,0,0,.1);}
