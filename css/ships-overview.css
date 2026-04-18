@@ -113,7 +113,7 @@
 }
 
 .gantt-ship-label {
-  height: 26px;
+  height: 28px;
   display: flex;
   align-items: center;
   padding: 0 .75rem;
@@ -128,7 +128,7 @@
 }
 
 .gantt-pos-label {
-  height: 30px;
+  height: 46px;
   display: flex;
   align-items: center;
   gap: 0;
@@ -183,14 +183,14 @@
 
 /* ── Row area ── */
 .gantt-ship-spacer {
-  height: 26px;
+  height: 28px;
   background: var(--bg2);
   border-bottom: 0.5px solid var(--border);
   border-top: 0.5px solid var(--border);
 }
 
 .gantt-row {
-  height: 30px;
+  height: 46px;
   position: relative;
   border-bottom: 0.5px solid rgba(255,255,255,.04);
 }
@@ -220,28 +220,42 @@
 /* ── Bars ── */
 .gantt-bar {
   position: absolute;
-  top: 4px;
-  height: 22px;
-  border-radius: 4px;
+  top: 5px;
+  height: 36px;
+  border-radius: 5px;
   display: flex;
-  align-items: center;
-  padding: 0 7px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 8px;
+  gap: 1px;
   cursor: pointer;
   z-index: 1;
   transition: filter .12s, transform .1s;
   min-width: 4px;
   overflow: hidden;
 }
-.gantt-bar:hover { filter: brightness(1.25); transform: scaleY(1.06); z-index: 3; }
+.gantt-bar:hover { filter: brightness(1.2); transform: scaleY(1.04); z-index: 3; }
 
 .gantt-bar-name {
-  font-size: 10.5px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   pointer-events: none;
+  line-height: 1.2;
+}
+
+.gantt-bar-dates {
+  font-size: 9.5px;
+  font-weight: 400;
+  color: rgba(255,255,255,.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  line-height: 1.2;
 }
 
 /* Bar colours by ship class */

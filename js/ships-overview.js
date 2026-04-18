@@ -2,9 +2,14 @@
 import { state } from './state.js';
 import { SHIP_CODES_ORDERED, SHIP_DISPLAY } from './ship.js';
 
-const POS_ORDER = ['SPM','VPM','ETDC','EOF','EOS','EOL','ESS','EOMC'];
+const POS_ORDER  = ['SPM','VPM','ETDC','EOF','EOS','EOL','ESS','EOMC'];
 const POS_COLORS = {SPM:'#E87435',VPM:'#299BE1',ETDC:'#13818D',EOF:'#4dd4a0',EOS:'#A4A4A7',EOL:'#7fc8e8',ESS:'#5a9fd4',EOMC:'#E87435'};
-const MS_DAY    = 86_400_000;
+const MS_DAY     = 86_400_000;
+
+function fmtBarDate(ms) {
+  if (!ms) return '?';
+  return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+}
 
 // ── View configs ──────────────────────────────────────────────────────────────
 const VIEWS = {
@@ -222,11 +227,13 @@ function renderGantt() {
       if (!(rPx <= 0 || lPx >= totPx)) {
         const left  = Math.max(0, lPx);
         const width = Math.max(4, Math.min(totPx, rPx) - left);
+        const dateStr = `${fmtBarDate(m.startMs)} → ${fmtBarDate(m.endMs)}`;
         rowHtml += `<div class="gantt-bar${m.future ? ' gantt-future' : ''}"
           style="left:${left}px;width:${width}px;background:${col}b8;border:0.5px solid ${col};"
-          title="${m.name} · ${m.abbr}${m.future ? ' (upcoming)' : ''}"
+          title="${m.name} · ${m.abbr} · ${dateStr}"
           onclick="openProfile(${m.crewId})">
           <span class="gantt-bar-name">${m.name}</span>
+          <span class="gantt-bar-dates">${dateStr}</span>
         </div>`;
       }
 
