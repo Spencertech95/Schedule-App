@@ -98,10 +98,16 @@ export function renderRules() {
     return;
   }
   list.innerHTML = rules.map(r => {
-    const dirLabel = r.direction === 'before' ? 'before' : r.direction === 'after' ? 'after' : 'before or after';
+    let text;
+    if (r.type === 'handover') {
+      text = `<strong>${r.pos}</strong> must overlap with incoming relief for at least <strong>${r.days}</strong> day${r.days !== 1 ? 's' : ''}`;
+    } else {
+      const dirLabel = r.direction === 'before' ? 'before' : r.direction === 'after' ? 'after' : 'before or after';
+      text = `<strong>${r.posA}</strong> cannot sign off within <strong>${r.days}</strong> day${r.days !== 1 ? 's' : ''} ${dirLabel} <strong>${r.posB}</strong> signing off`;
+    }
     return `<div class="rule-row">
       <span class="rule-dot">●</span>
-      <span class="rule-text"><strong>${r.posA}</strong> cannot sign off within <strong>${r.days}</strong> day${r.days !== 1 ? 's' : ''} ${dirLabel} <strong>${r.posB}</strong> signing off</span>
+      <span class="rule-text">${text}</span>
       <button class="btn btn-sm btn-danger" onclick="deleteSchedulingRule(${r.id})" style="margin-left:auto;flex-shrink:0;">✕ Remove</button>
     </div>`;
   }).join('');
@@ -124,6 +130,20 @@ export function addSchedulingRule() {
   document.getElementById('rule-days').value = 14;
 }
 
+export function addHandoverRule() {
+  const pos  = document.getElementById('rule-handover-pos').value;
+  const days = parseInt(document.getElementById('rule-handover-days').value);
+  if (!pos || !days) {
+    if (typeof window._showToast === 'function') window._showToast('Select a position and enter days');
+    return;
+  }
+  if (!_settings.schedulingRules) _settings.schedulingRules = [];
+  _settings.schedulingRules.push({ id: Date.now(), type: 'handover', pos, days });
+  saveSettings();
+  renderRules();
+  document.getElementById('rule-handover-days').value = 7;
+}
+
 export function deleteSchedulingRule(id) {
   if (!_settings.schedulingRules) return;
   _settings.schedulingRules = _settings.schedulingRules.filter(r => r.id !== id);
@@ -132,7 +152,7 @@ export function deleteSchedulingRule(id) {
 }
 
 export function populateRuleSelects() {
-  ['rule-pos-a', 'rule-pos-b'].forEach(elId => {
+  ['rule-pos-a', 'rule-pos-b', 'rule-handover-pos'].forEach(elId => {
     const el = document.getElementById(elId);
     if (!el) return;
     el.innerHTML = posOptions('');
@@ -176,5 +196,6 @@ window.saveSettingsForm        = saveSettingsForm;
 window.resetSettings           = resetSettings;
 window.updateGapLabel          = updateGapLabel;
 window.addSchedulingRule       = addSchedulingRule;
+window.addHandoverRule         = addHandoverRule;
 window.deleteSchedulingRule    = deleteSchedulingRule;
 window.populateRuleSelects     = populateRuleSelects;

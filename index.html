@@ -938,10 +938,12 @@
   <!-- Scheduling Rules — full width -->
   <div class="card" style="margin-bottom:1rem;">
     <div class="card-title">Scheduling rules</div>
-    <div class="card-sub" style="margin-bottom:1rem;">Define sign-off proximity constraints between positions</div>
+    <div class="card-sub" style="margin-bottom:1rem;">Sign-off proximity and handover overlap constraints</div>
     <div id="settings-rules-list" style="margin-bottom:1rem;"></div>
-    <!-- Add rule form -->
-    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+
+    <!-- Sign-off proximity form -->
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:6px;">Sign-off proximity</div>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:1rem;">
       <select id="rule-pos-a" style="flex:1;min-width:120px;max-width:180px;">
         <option value="">Position A</option>
       </select>
@@ -958,6 +960,18 @@
       </select>
       <span style="font-size:12px;color:var(--text2);white-space:nowrap;">signing off</span>
       <button class="btn btn-primary btn-sm" onclick="addSchedulingRule()" style="flex-shrink:0;">+ Add rule</button>
+    </div>
+
+    <!-- Handover overlap form -->
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:6px;">Handover overlap</div>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+      <select id="rule-handover-pos" style="flex:1;min-width:120px;max-width:180px;">
+        <option value="">Position</option>
+      </select>
+      <span style="font-size:12px;color:var(--text2);white-space:nowrap;">must overlap with incoming relief for at least</span>
+      <input id="rule-handover-days" type="number" min="1" max="90" value="7" style="width:70px;flex-shrink:0;"/>
+      <span style="font-size:12px;color:var(--text2);white-space:nowrap;">days</span>
+      <button class="btn btn-primary btn-sm" onclick="addHandoverRule()" style="flex-shrink:0;">+ Add rule</button>
     </div>
   </div>
 
