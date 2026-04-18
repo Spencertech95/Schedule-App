@@ -69,6 +69,11 @@ textarea{resize:vertical;min-height:65px;}
 .ov-row:last-child{border-bottom:none;}
 .ov-name{font-size:12px;font-weight:500;}
 .ov-sub{font-size:11px;color:var(--text2);margin-top:1px;}
+.ov-scroll{max-height:276px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;}
+.ov-scroll::-webkit-scrollbar{width:4px;}
+.ov-scroll::-webkit-scrollbar-track{background:transparent;}
+.ov-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
+[data-theme="light"] .ov-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);}
 .row-actions{display:flex;gap:5px;flex-shrink:0;}
 .tag-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
 .tag{padding:2px 7px;background:rgba(255,255,255,.07);border:0.5px solid var(--border);border-radius:999px;font-size:10px;}

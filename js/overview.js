@@ -2,15 +2,8 @@
 import { state } from './state.js';
 import { classBadge, crewLink } from './utils.js';
 
-const MAX = 5;
-
-function moreNote(total) {
-  if (total <= MAX) return '';
-  return `<div style="font-size:11px;color:var(--text2);padding-top:4px;">+${total - MAX} more</div>`;
-}
-
 function sectionHead(label, mt = false) {
-  return `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);${mt ? 'margin-top:12px;' : ''}margin-bottom:5px;">${label}</div>`;
+  return `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);${mt ? 'margin-top:10px;' : ''}margin-bottom:5px;">${label}</div>`;
 }
 
 export function renderOverview() {
@@ -55,13 +48,13 @@ export function renderOverview() {
 
   document.getElementById('upcoming-endings').innerHTML = `
     <div class="card-title">Contracts Ending <span class="badge badge-gray" style="font-size:10px;margin-left:6px;">60 days</span></div>
-    <div style="margin-top:8px;">${ending.length
-      ? ending.slice(0, MAX).map(c => {
+    <div class="ov-scroll" style="margin-top:8px;">${ending.length
+      ? ending.map(c => {
           const pos  = state.positions.find(p => p.id == c.posId);
           const ship = state.ships.find(s => s.id == c.shipId);
           const days = Math.round((new Date(c.end) - now) / 86400000);
           return `<div class="ov-row"><div><div class="ov-name">${crewLink(c.name, c.id)}</div><div class="ov-sub">${pos ? pos.abbr : '—'} · ${ship ? ship.name : '—'}</div></div><span class="badge ${days < 30 ? 'badge-red' : 'badge-amber'}">${days}d</span></div>`;
-        }).join('') + moreNote(ending.length)
+        }).join('')
       : '<p class="empty" style="margin:0;">None in the next 60 days.</p>'}
     </div>`;
 
@@ -72,12 +65,12 @@ export function renderOverview() {
 
   document.getElementById('cert-alerts').innerHTML = `
     <div class="card-title">Cert Alerts <span class="badge badge-gray" style="font-size:10px;margin-left:6px;">90 days</span></div>
-    <div style="margin-top:8px;">${alerts.length
-      ? alerts.slice(0, MAX).map(c => {
+    <div class="ov-scroll" style="margin-top:8px;">${alerts.length
+      ? alerts.map(c => {
           const ship = state.ships.find(s => s.id == c.shipId);
           const days = Math.round((new Date(c.medical) - now) / 86400000);
           return `<div class="ov-row"><div><div class="ov-name">${crewLink(c.name, c.id)}</div><div class="ov-sub">Expires ${c.medical} · ${ship ? ship.name : '—'}</div></div><span class="badge ${days < 30 ? 'badge-red' : 'badge-amber'}">${days}d</span></div>`;
-        }).join('') + moreNote(alerts.length)
+        }).join('')
       : '<p class="empty" style="margin:0;">None in the next 90 days.</p>'}
     </div>`;
 
@@ -101,7 +94,7 @@ export function renderOverview() {
     .filter(o => o.stage === 'Sent')
     .sort((a, b) => (a.sentDate || '').localeCompare(b.sentDate || ''));
 
-  const sentRows = sentOffers.slice(0, MAX).map(o => {
+  const sentRows = sentOffers.map(o => {
     const crew = state.crew.find(c => c.id == o.crewId);
     const daysWaiting = o.sentDate ? Math.round((now - new Date(o.sentDate)) / 86400000) : null;
     return `<div class="ov-row">
@@ -117,7 +110,7 @@ export function renderOverview() {
     <div class="card-title">Open Offers</div>
     <div style="display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 10px;">${stagePills || '<span style="font-size:12px;color:var(--text2);">No active offers</span>'}</div>
     ${sentOffers.length
-      ? sectionHead('Awaiting response') + sentRows + moreNote(sentOffers.length)
+      ? sectionHead('Awaiting response') + `<div class="ov-scroll">${sentRows}</div>`
       : '<p class="empty" style="margin:0;">No offers awaiting crew response.</p>'}`;
 
   // ── Upcoming Turnover ──
@@ -147,8 +140,8 @@ export function renderOverview() {
     <div class="card-title">Upcoming Turnover <span class="badge badge-gray" style="font-size:10px;margin-left:6px;">30 days</span></div>
     ${signingOff.length || signingOn.length
       ? `<div style="display:grid;grid-template-columns:${hasBoth ? '1fr 1fr' : '1fr'};gap:0 1.5rem;margin-top:8px;">
-          ${signingOff.length ? `<div>${sectionHead('Signing off')}${signingOff.slice(0, MAX).map(turnoverRow).join('')}${moreNote(signingOff.length)}</div>` : ''}
-          ${signingOn.length  ? `<div>${sectionHead('Signing on')} ${signingOn.slice(0, MAX).map(turnoverRow).join('')}${moreNote(signingOn.length)}</div>` : ''}
+          ${signingOff.length ? `<div>${sectionHead('Signing off')}<div class="ov-scroll">${signingOff.map(turnoverRow).join('')}</div></div>` : ''}
+          ${signingOn.length  ? `<div>${sectionHead('Signing on')} <div class="ov-scroll">${signingOn.map(turnoverRow).join('')}</div></div>` : ''}
          </div>`
       : '<p class="empty" style="margin-top:8px;">No turnover in the next 30 days.</p>'}`;
 }
