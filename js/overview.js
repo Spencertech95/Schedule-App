@@ -1,6 +1,6 @@
 // ── overview.js — overview page rendering ────────────────────────────────────
 import { state } from './state.js';
-import { classBadge, crewLink } from './utils.js';
+import { crewLink } from './utils.js';
 
 function sectionHead(label, mt = false) {
   return `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);${mt ? 'margin-top:10px;' : ''}margin-bottom:5px;">${label}</div>`;
@@ -25,21 +25,6 @@ export function renderOverview() {
     <div class="metric"><div class="metric-label">Incoming</div><div class="metric-value">${incoming}</div></div>
     <div class="metric"><div class="metric-label">Ending (60d)</div><div class="metric-value ${ending60 > 0 ? 'warn' : 'ok'}">${ending60}</div></div>
     <div class="metric"><div class="metric-label">Cert alerts (90d)</div><div class="metric-value ${certAlerts > 0 ? 'alert' : 'ok'}">${certAlerts}</div></div>`;
-
-  // ── Manning by class ──
-  const classes = ['Millennium', 'Solstice', 'Edge'];
-  const perShip = { Millennium: 10, Solstice: 13, Edge: 20 };
-  document.getElementById('overview-manning').innerHTML = `
-    <div class="card-title">Manning</div>
-    <table class="data-table" style="margin-top:8px;">
-      <thead><tr><th>Class</th><th class="num">Ships</th><th class="num">Per ship</th><th class="num">Total</th></tr></thead>
-      <tbody>${classes.map(c => {
-        const n = state.ships.filter(s => s.shipClass === c).length;
-        return `<tr><td>${classBadge(c)} ${c}</td><td class="num">${n}</td><td class="num">${perShip[c]}</td><td class="num">${n * perShip[c]}</td></tr>`;
-      }).join('')}
-      <tr class="total-row"><td>Fleet total</td><td class="num">${state.ships.length}</td><td class="num">—</td><td class="num">${fleetTotal}</td></tr>
-      </tbody>
-    </table>`;
 
   // ── Contracts ending ──
   const ending = state.crew
