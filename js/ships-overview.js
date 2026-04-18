@@ -94,6 +94,29 @@ function px(ms, view) {
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 function buildRows() {
+  // Build posId → abbr map so manually-added crew (who lack c.abbr) still resolve
+  const posIdToAbbr = {};
+  for (const p of state.positions) posIdToAbbr[p.id] = p.abbr;
+
+  // Build shipId → sc map so manually-added crew (who lack c.shipCode) still resolve
+  const shipIdToSc = {};
+  for (const sc of SHIP_CODES_ORDERED) {
+    const d = SHIP_DISPLAY[sc];
+    const s = d && state.ships.find(sh => sh.name === d.name);
+    if (s) shipIdToSc[s.id] = sc;
+  }
+
+  // Debug: log first crew member's key fields so we can spot mismatches
+  if (state.crew.length) {
+    const s = state.crew[0];
+    console.log('[Gantt] sample crew[0]', {
+      name: s.name, abbr: s.abbr, posId: s.posId,
+      shipCode: s.shipCode, recentShipCode: s.recentShipCode, shipId: s.shipId,
+      start: s.start, end: s.end, status: s.status,
+    });
+  }
+  console.log('[Gantt] total crew:', state.crew.length);
+
   const ships = [];
 
   for (const sc of SHIP_CODES_ORDERED) {
@@ -102,20 +125,36 @@ function buildRows() {
     for (const abbr of POS_ABBRS) {
       const bars = [];
 
-      // Current / recent crew on this ship in this position (match by c.abbr, same as ship page)
       for (const c of state.crew) {
-        const onShip = c.recentShipCode === sc || c.shipCode === sc;
-        if (!onShip || c.abbr !== abbr || !c.start) continue;
-        const endMs = dateMs(c.end) || (dateMs(c.start) + 180 * MS_DAY);
+        // Match ship — by code string OR by derived shipId
+        const onShip = c.recentShipCode === sc || c.shipCode === sc
+          || (c.shipId && shipIdToSc[c.shipId] === sc);
+        if (!onShip) continue;
+
+        // Match position — by abbr string OR by posId → abbr
+        const crewAbbr = c.abbr || posIdToAbbr[c.posId] || '';
+        if (crewAbbr !== abbr) continue;
+
+        // Require at least one of start/end
+        const sMs = dateMs(c.start);
+        const eMs = dateMs(c.end);
+        if (!sMs && !eMs) continue;
+
         bars.push({
           name: c.name, crewId: c.id, sc,
-          startMs: dateMs(c.start), endMs, future: false,
+          startMs: sMs ?? (eMs - 180 * MS_DAY),
+          endMs:   eMs ?? (sMs + 180 * MS_DAY),
+          future: false,
         });
       }
 
       // Future assignments
       for (const c of state.crew) {
-        if (c.futureShip !== sc || !c.futureOn || c.abbr !== abbr) continue;
+        if (!c.futureOn) continue;
+        const fsc = c.futureShip || (c.futureShipId && shipIdToSc[c.futureShipId]);
+        if (fsc !== sc) continue;
+        const crewAbbr = c.abbr || posIdToAbbr[c.posId] || '';
+        if (crewAbbr !== abbr) continue;
         const endMs = dateMs(c.futureOff) || (dateMs(c.futureOn) + 180 * MS_DAY);
         bars.push({
           name: c.futureName || c.name, crewId: c.id, sc,
@@ -130,6 +169,9 @@ function buildRows() {
       ships.push({ sc, posRows });
     }
   }
+
+  const totalBars = ships.reduce((n, s) => n + s.posRows.reduce((m, r) => m + r.bars.length, 0), 0);
+  console.log('[Gantt] rendered:', ships.length, 'ships,', totalBars, 'bars');
 
   return ships;
 }
