@@ -42,20 +42,7 @@
 }
 .nav-icon{font-size:14px;width:17px;text-align:center;flex-shrink:0;}
 
-/* ── Collapsible ships section ── */
-.nav-section-toggle{
-  display:flex;align-items:center;justify-content:space-between;
-  width:100%;background:none;border:none;
-  cursor:pointer;user-select:none;
-  transition:color .15s;
-}
-.nav-section-toggle:hover{color:rgba(136,150,184,0.9);}
-.nav-chevron{
-  font-size:9px;
-  transition:transform .2s ease;
-  opacity:.5;
-}
-.nav-chevron.open{transform:rotate(90deg);}
+/* ── Collapsible ships drawer ── */
 .nav-ships-drawer{
   overflow:hidden;
   max-height:0;
