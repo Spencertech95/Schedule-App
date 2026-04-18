@@ -1,6 +1,6 @@
 // ── ships-overview.js — All Ships Gantt chart ───────────────────────────────
 import { state } from './state.js';
-import { SHIP_CODES_ORDERED, SHIP_DISPLAY, POS_ORDER, POS_COLORS, POS_COLORS_FUTURE } from './ship.js';
+import { SHIP_CODES_ORDERED, SHIP_DISPLAY, POS_ORDER, POS_COLORS } from './ship.js';
 
 const MS_DAY = 86_400_000;
 
@@ -41,7 +41,9 @@ function today0() {
 }
 
 function dateMs(s) {
-  return s ? new Date(s + 'T00:00:00').getTime() : null;
+  if (!s) return null;
+  const t = new Date(s).getTime();
+  return isNaN(t) ? null : t;
 }
 
 function firstTick(startMs, view) {
@@ -83,7 +85,7 @@ function px(ms, view) {
 }
 
 // ── Data ──────────────────────────────────────────────────────────────────────
-function buildRows() {
+function buildRows(winStartMs, winEndMs) {
   const posIdToAbbr = {};
   for (const p of state.positions) posIdToAbbr[p.id] = p.abbr;
 
@@ -98,24 +100,23 @@ function buildRows() {
 
       const sMs = dateMs(c.start);
       const eMs = dateMs(c.end);
-      const startMs = sMs ?? (eMs ? eMs - 180 * MS_DAY : today0() - 90 * MS_DAY);
-      const endMs   = eMs ?? (sMs ? sMs + 180 * MS_DAY : today0() + 90 * MS_DAY);
+
+      // Require at least one date; skip bars with no date info
+      if (!sMs && !eMs) continue;
+
+      // Use window boundaries as fallbacks, matching ship.js renderTimeline
+      const startMs = sMs ?? winStartMs;
+      const endMs   = eMs ?? winEndMs;
+
+      // Skip if bar is entirely outside the visible window
+      if (endMs < winStartMs || startMs > winEndMs) continue;
 
       members.push({
         name: c.name, crewId: c.id,
         abbr: c.abbr || posIdToAbbr[c.posId] || '',
-        startMs, endMs, future: false,
-      });
-    }
-
-    for (const c of state.crew) {
-      if (c.futureShip !== sc || !c.futureOn) continue;
-      const sMs = dateMs(c.futureOn);
-      const eMs = dateMs(c.futureOff) ?? (sMs + 180 * MS_DAY);
-      members.push({
-        name: c.futureName || c.name, crewId: c.id,
-        abbr: c.abbr || posIdToAbbr[c.posId] || '',
-        startMs: sMs, endMs: eMs, future: true,
+        startMs, endMs,
+        startLabel: c.start || null,
+        endLabel:   c.end   || null,
       });
     }
 
@@ -146,7 +147,7 @@ function renderGantt() {
   const endMs  = _startMs + v.totalDays * MS_DAY;
   const totPx  = Math.round(v.totalDays * v.pxPerDay);
   const today  = today0();
-  const rows   = buildRows();
+  const rows   = buildRows(_startMs, endMs);
 
   document.querySelectorAll('.gantt-tab')
     .forEach(b => b.classList.toggle('active', b.dataset.view === _view));
@@ -191,30 +192,24 @@ function renderGantt() {
     rowHtml += `<div class="gantt-ship-spacer"></div>`;
 
     for (const m of ship.members) {
-      const col = m.future
-        ? (POS_COLORS_FUTURE[m.abbr] || 'var(--blue-t)')
-        : (POS_COLORS[m.abbr] || '#4dd4a0');
-      const opacity = m.future ? 0.55 : 1;
+      const col = POS_COLORS[m.abbr] || '#4dd4a0';
 
       labHtml += `<div class="gantt-pos-label" title="${m.name}">
         <span class="badge badge-gray" style="font-size:9px;width:34px;text-align:center;flex-shrink:0;">${m.abbr || '—'}</span>
         <span style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.name}</span>
       </div>`;
 
-      rowHtml += `<div class="gantt-row">`;
+      const lPx  = Math.round(px(m.startMs, _view));
+      const rPx  = Math.round(px(m.endMs,   _view));
+      const left  = Math.max(0, lPx);
+      const width = Math.max(4, Math.min(totPx, rPx) - left);
 
-      const lPx = Math.round(px(m.startMs, _view));
-      const rPx = Math.round(px(m.endMs,   _view));
-      if (!(rPx <= 0 || lPx >= totPx)) {
-        const left  = Math.max(0, lPx);
-        const width = Math.max(4, Math.min(totPx, rPx) - left);
-        rowHtml += `<div class="gantt-bar"
-          style="left:${left}px;width:${width}px;background:${col};opacity:${opacity};"
-          title="${m.name} · ${m.abbr} · ${m.startMs ? new Date(m.startMs).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '?'} → ${m.endMs ? new Date(m.endMs).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '?'}"
-          onclick="openProfile(${m.crewId})">${width > 30 ? m.name : ''}</div>`;
-      }
-
-      rowHtml += `</div>`;
+      rowHtml += `<div class="gantt-row">
+        <div class="gantt-bar"
+          style="left:${left}px;width:${width}px;background:${col};"
+          title="${m.name} · ${m.abbr} · ${m.startLabel || '?'} → ${m.endLabel || '?'}"
+          onclick="openProfile(${m.crewId})">${width > 30 ? m.name : ''}</div>
+      </div>`;
     }
   }
 
