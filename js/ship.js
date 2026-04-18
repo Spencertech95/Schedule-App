@@ -363,10 +363,13 @@ export function renderManifest(sc, crew, now) {
     const notEnded = !c.tempPosEnd || c.tempPosEnd >= today;
     if (!notEnded) return `<td>${base}</td>`;
     const tempColor = POS_COLORS[c.tempAbbr] || '#A4A4A7';
-    const label = started ? 'Acting' : `From ${c.tempPosStart}`;
+    const label = started ? 'Acting' : 'Scheduled';
     return `<td>
-      <span class="badge" style="background:${tempColor}22;color:${tempColor};border:.5px solid ${tempColor}55;font-size:10px;">↑ ${c.tempAbbr}</span>
-      <div style="font-size:9px;color:var(--text2);margin-top:2px;">${label} (${c.abbr})</div>
+      <div style="display:flex;align-items:center;gap:3px;">
+        ${base}
+        <span style="font-size:15px;line-height:1;color:#FFD700;text-shadow:0 0 6px rgba(255,215,0,.6);" title="Temporarily acting as ${c.tempAbbr}">★</span>
+      </div>
+      <div style="font-size:9px;color:${tempColor};font-weight:700;margin-top:2px;letter-spacing:.03em;">${label}: ${c.tempAbbr}</div>
     </td>`;
   }
 
