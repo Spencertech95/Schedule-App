@@ -843,6 +843,70 @@
   </div>
 </div>
 
+<!-- SETTINGS PAGE -->
+<div id="page-settings" class="page">
+  <div class="page-title">Settings</div>
+  <div class="page-sub">Scheduler account, Smart Suggest thresholds, and display preferences</div>
+
+  <!-- Account — full width -->
+  <div class="card" style="margin-bottom:1rem;">
+    <div class="card-title">Scheduler account</div>
+    <div class="card-sub" style="margin-bottom:1rem;">Your name and email appear in offer emails and as the default approver</div>
+    <div class="grid-2">
+      <div class="field"><label>Scheduler name</label><input id="settings-scheduler-name" placeholder="e.g. Jane Smith"/></div>
+      <div class="field"><label>Scheduler email</label><input id="settings-scheduler-email" type="email" placeholder="e.g. jane.smith@celebrity.com"/></div>
+      <div class="field"><label>Company name</label><input id="settings-company-name" placeholder="Celebrity Cruises"/></div>
+      <div class="field"><label>Department</label><input id="settings-department" placeholder="Technical Entertainment Crew Scheduling"/></div>
+    </div>
+  </div>
+
+  <!-- Smart Suggest + Contracts side by side -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Smart Suggest</div>
+      <div class="card-sub" style="margin-bottom:1rem;">Placement scoring thresholds</div>
+      <div class="field" style="margin-bottom:.75rem;">
+        <label>Min gap between sign-off and next boarding — <span id="settings-ss-gap-label" style="color:var(--blue-t);font-weight:600;"></span></label>
+        <input id="settings-ss-gap" type="range" min="14" max="90" step="7" oninput="updateGapLabel(this.value)" style="width:100%;accent-color:var(--blue-t);margin-top:6px;"/>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2);margin-top:2px;"><span>2 weeks</span><span>13 weeks</span></div>
+      </div>
+      <div class="field" style="max-width:180px;margin-bottom:0;">
+        <label>Default contract length (months)</label>
+        <input id="settings-contract-months" type="number" min="1" max="12" step="1"/>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Contracts &amp; offers</div>
+      <div class="card-sub" style="margin-bottom:1rem;">Alert windows and offer defaults</div>
+      <div class="field" style="max-width:180px;margin-bottom:4px;">
+        <label>Sign-off alert window (days)</label>
+        <input id="settings-signoff-alert" type="number" min="7" max="90" step="1"/>
+      </div>
+      <div style="font-size:11px;color:var(--text2);">Crew signing off within this window are flagged in the dashboard and Smart Suggest.</div>
+    </div>
+  </div>
+
+  <!-- Display + actions row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Display</div>
+      <div class="card-sub" style="margin-bottom:1rem;">Date formatting preferences</div>
+      <div class="field" style="max-width:240px;margin-bottom:0;">
+        <label>Date format</label>
+        <select id="settings-date-format">
+          <option value="YYYY-MM-DD">YYYY-MM-DD (2026-04-17)</option>
+          <option value="DD/MM/YYYY">DD/MM/YYYY (17/04/2026)</option>
+          <option value="MM/DD/YYYY">MM/DD/YYYY (04/17/2026)</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-primary" onclick="saveSettingsForm()">Save settings</button>
+      <button class="btn" onclick="resetSettings()" style="font-size:12px;">Reset to defaults</button>
+    </div>
+  </div>
+</div>
+
 <!-- EMAIL COMPOSE MODAL -->
 <div class="email-overlay hidden" id="email-overlay" onclick="closeEmailIfOutside(event)">
   <div class="email-modal" id="email-modal">
@@ -914,70 +978,6 @@
       <div id="ofr-result-sub"   style="font-size:13px;color:var(--text2);"></div>
     </div>
 
-  </div>
-</div>
-
-<!-- SETTINGS PAGE -->
-<div id="page-settings" class="page">
-  <div class="page-title">Settings</div>
-  <div class="page-sub">Scheduler account, Smart Suggest thresholds, and display preferences</div>
-
-  <!-- Account — full width -->
-  <div class="card" style="margin-bottom:1rem;">
-    <div class="card-title">Scheduler account</div>
-    <div class="card-sub" style="margin-bottom:1rem;">Your name and email appear in offer emails and as the default approver</div>
-    <div class="grid-2">
-      <div class="field"><label>Scheduler name</label><input id="settings-scheduler-name" placeholder="e.g. Jane Smith"/></div>
-      <div class="field"><label>Scheduler email</label><input id="settings-scheduler-email" type="email" placeholder="e.g. jane.smith@celebrity.com"/></div>
-      <div class="field"><label>Company name</label><input id="settings-company-name" placeholder="Celebrity Cruises"/></div>
-      <div class="field"><label>Department</label><input id="settings-department" placeholder="Technical Entertainment Crew Scheduling"/></div>
-    </div>
-  </div>
-
-  <!-- Smart Suggest + Contracts side by side -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-    <div class="card" style="margin-bottom:0;">
-      <div class="card-title">Smart Suggest</div>
-      <div class="card-sub" style="margin-bottom:1rem;">Placement scoring thresholds</div>
-      <div class="field" style="margin-bottom:.75rem;">
-        <label>Min gap between sign-off and next boarding — <span id="settings-ss-gap-label" style="color:var(--blue-t);font-weight:600;"></span></label>
-        <input id="settings-ss-gap" type="range" min="14" max="90" step="7" oninput="updateGapLabel(this.value)" style="width:100%;accent-color:var(--blue-t);margin-top:6px;"/>
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2);margin-top:2px;"><span>2 weeks</span><span>13 weeks</span></div>
-      </div>
-      <div class="field" style="max-width:180px;margin-bottom:0;">
-        <label>Default contract length (months)</label>
-        <input id="settings-contract-months" type="number" min="1" max="12" step="1"/>
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:0;">
-      <div class="card-title">Contracts &amp; offers</div>
-      <div class="card-sub" style="margin-bottom:1rem;">Alert windows and offer defaults</div>
-      <div class="field" style="max-width:180px;margin-bottom:4px;">
-        <label>Sign-off alert window (days)</label>
-        <input id="settings-signoff-alert" type="number" min="7" max="90" step="1"/>
-      </div>
-      <div style="font-size:11px;color:var(--text2);">Crew signing off within this window are flagged in the dashboard and Smart Suggest.</div>
-    </div>
-  </div>
-
-  <!-- Display + actions row -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-    <div class="card" style="margin-bottom:0;">
-      <div class="card-title">Display</div>
-      <div class="card-sub" style="margin-bottom:1rem;">Date formatting preferences</div>
-      <div class="field" style="max-width:240px;margin-bottom:0;">
-        <label>Date format</label>
-        <select id="settings-date-format">
-          <option value="YYYY-MM-DD">YYYY-MM-DD (2026-04-17)</option>
-          <option value="DD/MM/YYYY">DD/MM/YYYY (17/04/2026)</option>
-          <option value="MM/DD/YYYY">MM/DD/YYYY (04/17/2026)</option>
-        </select>
-      </div>
-    </div>
-    <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:8px;">
-      <button class="btn btn-primary" onclick="saveSettingsForm()">Save settings</button>
-      <button class="btn" onclick="resetSettings()" style="font-size:12px;">Reset to defaults</button>
-    </div>
   </div>
 </div>
 
