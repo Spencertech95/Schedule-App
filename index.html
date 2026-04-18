@@ -74,14 +74,14 @@
     <div class="nav-section" style="margin-top:.4rem;">Admin</div>
     <button class="nav-item" onclick="showPage('positions',this)"><span class="nav-icon">◻</span><span>Positions</span></button>
     <button class="nav-item" onclick="showPage('compliance',this)"><span class="nav-icon">✓</span><span>Compliance</span></button>
+    <button class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙</span><span>Settings</span></button>
 
   </div><!-- /sidebar-nav -->
 
   <!-- Sidebar footer — pinned to bottom -->
   <div class="sidebar-footer">
     <div class="sidebar-footer-row" style="gap:6px;">
-      <button class="sidebar-footer-btn" onclick="openSettings()" title="Settings">⚙ Settings</button>
-      <button class="sidebar-footer-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode" style="flex:0 0 auto;padding:6px 10px;">🌙</button>
+      <button class="sidebar-footer-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode" style="flex:1;">🌙 Theme</button>
     </div>
   </div>
 
@@ -918,79 +918,60 @@
 </div>
 
 <!-- SETTINGS PAGE -->
-<!-- SETTINGS OVERLAY -->
-<div id="settings-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;" onclick="closeSettingsIfOutside(event)">
-  <div style="background:var(--surface);border:.5px solid var(--border);border-radius:12px;width:min(680px,95vw);max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5);">
+<div id="page-settings" class="page">
+  <div class="page-title">Settings</div>
+  <div class="page-sub">Scheduler account, Smart Suggest thresholds, and display preferences</div>
+  <div style="max-width:680px;display:flex;flex-direction:column;gap:1rem;">
 
-    <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:.5px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;border-radius:12px 12px 0 0;">
-      <div>
-        <div style="font-size:16px;font-weight:600;color:#fff;">Settings</div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px;">Scheduler details, Smart Suggest thresholds, display preferences</div>
-      </div>
-      <button onclick="closeSettings()" style="background:rgba(255,255,255,.06);border:.5px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:18px;line-height:1;">&times;</button>
-    </div>
-
-    <!-- Body -->
-    <div style="padding:1.25rem 1.5rem;">
-
-      <!-- Scheduler account -->
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.6rem;">Scheduler account</div>
-      <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;">Your name and email appear in offer emails and as the default approver</div>
-      <div class="grid-2" style="margin-bottom:1.25rem;">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:4px;">Scheduler account</div>
+      <div class="card-sub" style="margin-bottom:1rem;">Your name and email appear in offer emails and as the default approver</div>
+      <div class="grid-2">
         <div class="field"><label>Scheduler name</label><input id="settings-scheduler-name" placeholder="e.g. Jane Smith"/></div>
         <div class="field"><label>Scheduler email</label><input id="settings-scheduler-email" type="email" placeholder="e.g. jane.smith@celebrity.com"/></div>
         <div class="field"><label>Company name</label><input id="settings-company-name" placeholder="Celebrity Cruises"/></div>
         <div class="field"><label>Department</label><input id="settings-department" placeholder="Technical Entertainment Crew Scheduling"/></div>
       </div>
+    </div>
 
-      <div style="border-top:.5px solid var(--border);margin-bottom:1.25rem;"></div>
-
-      <!-- Smart Suggest -->
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.6rem;">Smart Suggest</div>
-      <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;">Placement scoring thresholds used when generating ship options</div>
-      <div class="field" style="max-width:100%;margin-bottom:.75rem;">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:4px;">Smart Suggest</div>
+      <div class="card-sub" style="margin-bottom:1rem;">Placement scoring thresholds used when generating ship options</div>
+      <div class="field" style="margin-bottom:.75rem;">
         <label>Minimum gap between sign-off and next boarding — <span id="settings-ss-gap-label" style="color:var(--blue-t);font-weight:600;"></span></label>
         <input id="settings-ss-gap" type="range" min="14" max="90" step="7" oninput="updateGapLabel(this.value)" style="width:100%;accent-color:var(--blue-t);margin-top:6px;"/>
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2);margin-top:2px;"><span>2 weeks</span><span>13 weeks</span></div>
       </div>
-      <div class="field" style="max-width:200px;margin-bottom:1.25rem;">
+      <div class="field" style="max-width:200px;">
         <label>Default contract length (months)</label>
-        <input id="settings-contract-months" type="number" min="1" max="12" step="1" style="width:100%;"/>
+        <input id="settings-contract-months" type="number" min="1" max="12" step="1"/>
       </div>
+    </div>
 
-      <div style="border-top:.5px solid var(--border);margin-bottom:1.25rem;"></div>
-
-      <!-- Contracts & Offers -->
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.6rem;">Contracts &amp; offers</div>
-      <div class="field" style="max-width:200px;margin-bottom:1.25rem;">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:4px;">Contracts &amp; offers</div>
+      <div class="field" style="max-width:200px;">
         <label>Sign-off alert window (days)</label>
-        <input id="settings-signoff-alert" type="number" min="7" max="90" step="1" style="width:100%;"/>
+        <input id="settings-signoff-alert" type="number" min="7" max="90" step="1"/>
         <div style="font-size:11px;color:var(--text2);margin-top:4px;">Crew signing off within this window are flagged in the dashboard and Smart Suggest</div>
       </div>
+    </div>
 
-      <div style="border-top:.5px solid var(--border);margin-bottom:1.25rem;"></div>
-
-      <!-- Display -->
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:.6rem;">Display</div>
-      <div class="field" style="max-width:220px;margin-bottom:.5rem;">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:4px;">Display</div>
+      <div class="field" style="max-width:220px;">
         <label>Date format</label>
-        <select id="settings-date-format" style="width:100%;">
+        <select id="settings-date-format">
           <option value="YYYY-MM-DD">YYYY-MM-DD (2026-04-17)</option>
           <option value="DD/MM/YYYY">DD/MM/YYYY (17/04/2026)</option>
           <option value="MM/DD/YYYY">MM/DD/YYYY (04/17/2026)</option>
         </select>
       </div>
-
     </div>
 
-    <!-- Footer -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-top:.5px solid var(--border);position:sticky;bottom:0;background:var(--surface);border-radius:0 0 12px 12px;">
-      <button class="btn" onclick="resetSettings()" style="color:var(--text2);font-size:12px;">Reset to defaults</button>
-      <div style="display:flex;gap:8px;">
-        <button class="btn" onclick="closeSettings()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveSettingsForm()">Save settings</button>
-      </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.25rem 0 1.5rem;">
+      <button class="btn" onclick="resetSettings()" style="font-size:12px;">Reset to defaults</button>
+      <button class="btn btn-primary" onclick="saveSettingsForm()">Save settings</button>
     </div>
 
   </div>

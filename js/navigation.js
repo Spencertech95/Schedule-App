@@ -11,6 +11,7 @@ import { initDeployment } from './deployment.js';
 import { initDocWallet } from './docwallet.js';
 import { renderPositions } from './positions.js';
 import { renderCompliance } from './compliance.js';
+import { renderSettings } from './settings.js';
 
 export function showPage(name, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -32,6 +33,7 @@ export function showPage(name, el) {
   if (name === 'docwallet')  initDocWallet();
   if (name === 'positions')  renderPositions();
   if (name === 'compliance') renderCompliance();
+  if (name === 'settings')  renderSettings();
   if (name === 'ship') { /* rendered via showShip */ }
 }
 

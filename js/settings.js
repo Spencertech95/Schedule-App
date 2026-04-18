@@ -48,7 +48,7 @@ export function setSetting(key, value) {
   saveSettings();
 }
 
-// ── Overlay open / close ──────────────────────────────────────────────────────
+// ── Page render ──────────────────────────────────────────────────────────────
 function populateForm() {
   const s = _settings;
   document.getElementById('settings-scheduler-name').value  = s.schedulerName    || '';
@@ -62,21 +62,7 @@ function populateForm() {
   updateGapLabel(s.ssMinGapDays ?? 42);
 }
 
-export function openSettings() {
-  populateForm();
-  document.getElementById('settings-overlay').style.display = 'flex';
-}
-
-export function closeSettings() {
-  document.getElementById('settings-overlay').style.display = 'none';
-}
-
-export function closeSettingsIfOutside(e) {
-  if (e.target === document.getElementById('settings-overlay')) closeSettings();
-}
-
-// Keep renderSettings as an alias for navigation.js compatibility
-export function renderSettings() { openSettings(); }
+export function renderSettings() { populateForm(); }
 
 function updateGapLabel(val) {
   const weeks = Math.round(val / 7);
@@ -95,7 +81,6 @@ export function saveSettingsForm() {
   _settings.dateFormat       = document.getElementById('settings-date-format').value;
 
   saveSettings();
-  closeSettings();
   if (typeof window._showToast === 'function') window._showToast('Settings saved');
 }
 
@@ -103,13 +88,10 @@ export function resetSettings() {
   if (!confirm('Reset all settings to defaults?')) return;
   _settings = { ...DEFAULTS };
   saveSettings();
-  renderSettings();
+  populateForm();
   if (typeof window._showToast === 'function') window._showToast('Settings reset to defaults');
 }
 
-window.openSettings            = openSettings;
-window.closeSettings           = closeSettings;
-window.closeSettingsIfOutside  = closeSettingsIfOutside;
-window.saveSettingsForm        = saveSettingsForm;
-window.resetSettings           = resetSettings;
-window.updateGapLabel          = updateGapLabel;
+window.saveSettingsForm = saveSettingsForm;
+window.resetSettings    = resetSettings;
+window.updateGapLabel   = updateGapLabel;
