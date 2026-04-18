@@ -87,28 +87,25 @@ function renderSmartSuggest() {
       if (posF && c.abbr !== posF) return false;
       if (clsF && (SCM[c.recentShipCode || c.shipCode] !== clsF)) return false;
       const d = (new Date(c.end) - now) / 864e5;
-      return d >= 0 && d <= windowDays;
+      if (d < 0 || d > windowDays) return false;
+      // Hide crew who already have an active offer — only re-show if all offers are Declined
+      return !state.offers.some(o => o.crewId == c.id && o.stage !== 'Declined');
     })
     .map(crewMember => {
-      const daysUntil     = Math.round((new Date(crewMember.end) - now) / 864e5);
-      const shipOptions   = ssBuildShipOptions(crewMember, windowDays, vacDays, SCM, SNM, CB, SCO);
-      const existingOffer = state.offers.find(o =>
-        o.crewId == crewMember.id && !['Confirmed','Declined'].includes(o.stage)
-      );
-      return { crewMember, daysUntil, shipOptions, existingOffer };
+      const daysUntil   = Math.round((new Date(crewMember.end) - now) / 864e5);
+      const shipOptions = ssBuildShipOptions(crewMember, windowDays, vacDays, SCM, SNM, CB, SCO);
+      return { crewMember, daysUntil, shipOptions };
     })
     .sort((a, b) => a.daysUntil - b.daysUntil);
 
-  const urgent     = crewOffers.filter(o => o.daysUntil <= 14 && !o.existingOffer).length;
-  const needsOffer = crewOffers.filter(o => !o.existingOffer && o.shipOptions.length > 0).length;
-  const inProgress = crewOffers.filter(o => !!o.existingOffer).length;
-  const noOptions  = crewOffers.filter(o => !o.existingOffer && o.shipOptions.length === 0).length;
+  const urgent     = crewOffers.filter(o => o.daysUntil <= 14).length;
+  const needsOffer = crewOffers.filter(o => o.shipOptions.length > 0).length;
+  const noOptions  = crewOffers.filter(o => o.shipOptions.length === 0).length;
 
   document.getElementById('ss-kpi').innerHTML = `
-    <div class="co-stat"><div class="co-stat-label">Signing off in ${windowDays}d</div><div class="co-stat-val">${crewOffers.length}</div></div>
+    <div class="co-stat"><div class="co-stat-label">Needs offer (${windowDays}d)</div><div class="co-stat-val">${crewOffers.length}</div></div>
     <div class="co-stat" style="border-color:rgba(255,107,122,.25)"><div class="co-stat-label" style="color:var(--red-t);">⚠ Urgent (≤14d)</div><div class="co-stat-val" style="color:var(--red-t);">${urgent}</div></div>
-    <div class="co-stat" style="border-color:rgba(255,107,122,.2)"><div class="co-stat-label" style="color:var(--red-t);">Needs offer</div><div class="co-stat-val" style="color:var(--red-t);">${needsOffer}</div></div>
-    <div class="co-stat" style="border-color:rgba(77,168,247,.2)"><div class="co-stat-label" style="color:var(--blue-t);">Offer in progress</div><div class="co-stat-val" style="color:var(--blue-t);">${inProgress}</div></div>
+    <div class="co-stat" style="border-color:rgba(77,168,247,.2)"><div class="co-stat-label" style="color:var(--blue-t);">Options found</div><div class="co-stat-val" style="color:var(--blue-t);">${needsOffer}</div></div>
     <div class="co-stat" style="border-color:rgba(164,164,167,.2)"><div class="co-stat-label" style="color:var(--text2);">No options found</div><div class="co-stat-val" style="color:var(--text2);">${noOptions}</div></div>`;
 
   const badge = document.getElementById('cotab-suggest-count');
@@ -213,12 +210,13 @@ function renderSSByCrew(crewOffers, SCM, CB, SNM, PC) {
     </div>`).join('');
 }
 
-function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, SCM, CB, SNM, PC) {
+function ssRenderCrewCard({crewMember, daysUntil, shipOptions}, SCM, CB, SNM, PC) {
   const posColor     = PC[crewMember.abbr] || '#A4A4A7';
   const crewSc       = crewMember.recentShipCode || crewMember.shipCode;
   const crewCls      = SCM[crewSc] || '';
   const crewClsBadge = CB[crewCls] || 'badge-gray';
   const isSelected   = _ssSelections.has(crewMember.id);
+  const isEss        = crewMember.abbr === 'ESS';
 
   const urgBadge = daysUntil <= 0  ? `<span class="badge badge-red">Signed off</span>`
     : daysUntil <= 7  ? `<span class="badge badge-red">🔴 ${daysUntil}d</span>`
@@ -226,21 +224,12 @@ function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, S
     : daysUntil <= 30 ? `<span class="badge badge-amber">${daysUntil}d</span>`
     : `<span class="badge badge-blue">${daysUntil}d</span>`;
 
-  const isEss        = crewMember.abbr === 'ESS';
-  // Single-ship positions: always offer just 1 option, scheduler picks and sends directly
-  const isSingleShip = SS_SINGLE_SHIP.has(crewMember.abbr);
-
-  // ESS: header button sends all options at once — crew picks via per-ship accept links
-  // Single-ship & other non-ESS: per-card buttons (scheduler chooses which ship to offer)
-  const headerActionBtn = existingOffer
-    ? `<span class="pipe-badge pipe-${existingOffer.stage.toLowerCase()}" style="font-size:10px;">${existingOffer.stage}</span>
-       <button class="btn btn-sm" style="font-size:10px;margin-left:6px;" onclick="openEmailCompose(${existingOffer.id})">✉ Re-send</button>`
-    : isEss && shipOptions.length
-      ? `<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="ssCreateAndEmail(${crewMember.id},'${shipOptions.map(o=>`${o.sc}:${o.openStr}`).join(',')}')">✉ Send offer (${shipOptions.length} option${shipOptions.length !== 1 ? 's' : ''})</button>
-         <button class="btn btn-sm" style="font-size:10px;" onclick="ssCreateDraft(${crewMember.id},'${shipOptions.map(o=>`${o.sc}:${o.openStr}`).join(',')}')">Draft</button>`
-      : isEss
-      ? `<span style="font-size:10px;color:var(--text2);font-style:italic;">No ESS vacancies found</span>`
-      : ''; // non-ESS / single-ship: buttons live on each ship card
+  const headerActionBtn = isEss && shipOptions.length
+    ? `<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="ssCreateAndEmail(${crewMember.id},'${shipOptions.map(o=>`${o.sc}:${o.openStr}`).join(',')}')">✉ Send offer (${shipOptions.length} option${shipOptions.length !== 1 ? 's' : ''})</button>
+       <button class="btn btn-sm" style="font-size:10px;" onclick="ssCreateDraft(${crewMember.id},'${shipOptions.map(o=>`${o.sc}:${o.openStr}`).join(',')}')">Draft</button>`
+    : isEss
+    ? `<span style="font-size:10px;color:var(--text2);font-style:italic;">No ESS vacancies found</span>`
+    : '';
 
   const optionCards = shipOptions.length ? shipOptions.map((opt, i) => {
     const rankLabel = ['1st choice','2nd choice','3rd choice'][i];
@@ -251,14 +240,9 @@ function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, S
       : sameCls     ? `<span class="badge badge-teal"  style="font-size:9px;">Same class</span>` : '';
     const gapColor  = opt.timingGap <= 3 ? 'var(--green-t)' : opt.timingGap <= 14 ? 'var(--amber-t)' : 'var(--text2)';
     const gapLabel  = opt.timingGap <= 1 ? 'Perfect timing' : `${opt.timingGap}d gap`;
-
-    // Non-ESS: per-card offer button — scheduler picks which ship to send
-    const cardBtn = !isEss && !existingOffer
+    const cardBtn   = !isEss
       ? `<button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;font-size:10px;margin-top:8px;" onclick="ssCreateAndEmail(${crewMember.id},'${opt.sc}:${opt.openStr}')">✉ Offer this ship</button>`
-      : !isEss && existingOffer
-      ? `<button class="btn btn-sm" style="width:100%;justify-content:center;font-size:10px;margin-top:8px;" onclick="openEmailCompose(${existingOffer.id})">✉ Re-send</button>`
       : '';
-
     return `<div class="ss-ship-card rank-${i+1}">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <span style="font-size:9px;font-weight:700;color:${rankColor};text-transform:uppercase;letter-spacing:.06em;">${rankLabel}</span>
@@ -273,7 +257,7 @@ function ssRenderCrewCard({crewMember, daysUntil, shipOptions, existingOffer}, S
     </div>`;
   }).join('') : !isEss ? `<div style="font-size:12px;color:var(--text2);font-style:italic;padding:4px 0;">No vacancies found in this window for ${crewMember.abbr}.</div>` : '';
 
-  return `<div class="ss-crew-card ${existingOffer ? 'has-offer' : ''} ${isSelected ? 'ss-selected' : ''}" id="ss-card-${crewMember.id}">
+  return `<div class="ss-crew-card ${isSelected ? 'ss-selected' : ''}" id="ss-card-${crewMember.id}">
     <div class="ss-crew-header">
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
@@ -312,7 +296,6 @@ function renderSSByShip(crewOffers, SCM, CB, SNM, SD, SCO, PC) {
     const cls      = SCM[sc] || '';
     const clsBadge = CB[cls] || 'badge-gray';
     const entries  = byShip[sc];
-    const needsOffer = entries.filter(e => !e.existingOffer).length;
     return `<div class="ss-ship-block">
       <div class="ss-ship-block-header">
         <span style="font-size:20px;">${d.icon}</span>
@@ -320,8 +303,7 @@ function renderSSByShip(crewOffers, SCM, CB, SNM, SD, SCO, PC) {
           <div style="font-size:14px;font-weight:700;">Celebrity ${d.name}</div>
           <span class="badge ${clsBadge}" style="font-size:9px;">${sc}</span>
         </div>
-        <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-          ${needsOffer ? `<span class="badge badge-red" style="font-size:10px;">${needsOffer} need${needsOffer===1?'s':''} offer</span>` : ''}
+        <div style="margin-left:auto;">
           <span style="font-size:11px;color:var(--text2);">${entries.length} crew option${entries.length!==1?'s':''}</span>
         </div>
       </div>
@@ -332,9 +314,7 @@ function renderSSByShip(crewOffers, SCM, CB, SNM, SD, SCO, PC) {
           const rankColor = ['var(--green-t)','var(--blue-t)','var(--text2)'][e.rank] || 'var(--text2)';
           const gapColor  = e.opt.timingGap <= 3 ? 'var(--green-t)' : e.opt.timingGap <= 14 ? 'var(--amber-t)' : 'var(--text2)';
           const shipCodes = e.shipOptions.map(o => `${o.sc}:${o.openStr}`).join(',');
-          const btn = e.existingOffer
-            ? `<button class="btn btn-sm" style="font-size:10px;" onclick="openEmailCompose(${e.existingOffer.id})">✉ Email</button>`
-            : `<button class="btn btn-primary btn-sm" style="font-size:10px;" onclick="ssCreateAndEmail(${e.crewMember.id},'${shipCodes}')">✉ Offer</button>`;
+          const btn = `<button class="btn btn-primary btn-sm" style="font-size:10px;" onclick="ssCreateAndEmail(${e.crewMember.id},'${shipCodes}')">✉ Offer</button>`;
           return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:.5px solid rgba(255,255,255,.04);">
             <span class="badge" style="background:${posColor}22;color:${posColor};border:.5px solid ${posColor}55;font-size:9px;flex-shrink:0;">${e.crewMember.abbr}</span>
             <div style="flex:1;min-width:0;">
