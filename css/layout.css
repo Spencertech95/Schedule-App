@@ -45,18 +45,15 @@
 /* ── Collapsible ships section ── */
 .nav-section-toggle{
   display:flex;align-items:center;justify-content:space-between;
-  padding:.6rem 1rem .25rem;
-  font-size:9.5px;font-weight:700;
-  color:rgba(136,150,184,0.6);
-  text-transform:uppercase;letter-spacing:.1em;
+  width:100%;background:none;border:none;
   cursor:pointer;user-select:none;
   transition:color .15s;
 }
 .nav-section-toggle:hover{color:rgba(136,150,184,0.9);}
 .nav-chevron{
-  font-size:10px;
+  font-size:9px;
   transition:transform .2s ease;
-  color:rgba(136,150,184,0.4);
+  opacity:.5;
 }
 .nav-chevron.open{transform:rotate(90deg);}
 .nav-ships-drawer{
