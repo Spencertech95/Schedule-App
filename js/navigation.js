@@ -23,6 +23,7 @@ export function showPage(name, el) {
   pageEl.classList.add('active');
   el.classList.add('active');
   history.replaceState(null, '', '#' + name);
+  document.getElementById('main-content')?.scrollTo(0, 0);
   if (name === 'overview')   renderOverview();
   if (name === 'fleet')      renderFleet();
   if (name === 'rotations')  initRotations();
