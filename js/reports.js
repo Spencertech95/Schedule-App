@@ -25,13 +25,10 @@ export function setReportWindow(w, el) {
   document.querySelectorAll('.rw-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   const isCert = w === 'cert';
-  const isE1   = w === 'e1';
-  document.getElementById('report-sign-off-section').style.display = (!isCert && !isE1) ? '' : 'none';
-  document.getElementById('report-cert-section').style.display     = isCert  ? '' : 'none';
-  document.getElementById('report-e1-section').style.display       = isE1    ? '' : 'none';
-  if (isE1)        renderE1Report();
-  else if (isCert) renderCertReport();
-  else             renderReport();
+  document.getElementById('report-sign-off-section').style.display = isCert ? 'none' : '';
+  document.getElementById('report-cert-section').style.display     = isCert ? '' : 'none';
+  if (isCert) renderCertReport();
+  else        renderReport();
 }
 
 function renderReportSummary() {

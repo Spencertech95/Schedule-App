@@ -412,6 +412,10 @@
       <span style="font-size:13px;">⚡</span> Smart suggest
       <span class="co-tab-count co-tab-count-red" id="cotab-suggest-count"></span>
     </button>
+    <button class="co-tab" id="cotab-e1" onclick="switchCoMainTab('e1',this)">
+      <span style="font-size:13px;">⬆</span> E1 upload
+      <span class="co-tab-count co-tab-count-amber" id="cotab-e1-count"></span>
+    </button>
   </div>
 
   <div id="co-tab-pipeline">
@@ -504,6 +508,25 @@
     <div id="ss-body"></div>
   </div>
 
+  <div id="co-tab-e1" style="display:none;">
+    <div class="card" style="padding:1rem 1.25rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div class="card-title">E1 upload — confirmed contracts</div>
+          <div class="card-sub" id="e1-sub">Confirmed contracts pending upload to E1</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-sm" onclick="downloadE1Csv()" style="font-size:11px;">⬇ Download CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="confirmE1Upload()" id="e1-confirm-btn" style="font-size:11px;" disabled>✓ Confirm uploaded to E1</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;">
+        Select rows to confirm, then click <strong>Confirm uploaded to E1</strong> — the offer stage will advance to <strong>Confirmed</strong>.
+      </div>
+      <div id="e1-body"></div>
+    </div>
+  </div>
+
   <!-- New/Edit offer modal -->
   <div class="co-modal-overlay hidden" id="co-modal-overlay" onclick="closeCoModalIfOutside(event)">
     <div class="co-modal" id="co-modal">
@@ -535,7 +558,6 @@
     <button class="rw-tab" onclick="setReportWindow(60,this)">Next 60 days</button>
     <button class="rw-tab" onclick="setReportWindow(90,this)">Next 90 days</button>
     <button class="rw-tab" onclick="setReportWindow('cert',this)">Cert &amp; doc alerts</button>
-    <button class="rw-tab" onclick="setReportWindow('e1',this)">E1 upload</button>
   </div>
   <div id="report-sign-off-section">
     <div class="card" style="padding:1rem 1.25rem;">
@@ -558,24 +580,6 @@
       </div>
       <div class="cert-head"><div class="report-head-cell">Crew member</div><div class="report-head-cell">Position</div><div class="report-head-cell">Ship</div><div class="report-head-cell">Alert type</div><div class="report-head-cell">Expiry</div></div>
       <div id="cert-body"></div>
-    </div>
-  </div>
-  <div id="report-e1-section" style="display:none;">
-    <div class="card" style="padding:1rem 1.25rem;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div class="card-title">E1 upload — confirmed contracts</div>
-          <div class="card-sub" id="e1-sub">Confirmed contracts pending upload to E1</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-sm" onclick="downloadE1Csv()" style="font-size:11px;">⬇ Download CSV</button>
-          <button class="btn btn-primary btn-sm" onclick="confirmE1Upload()" id="e1-confirm-btn" style="font-size:11px;" disabled>✓ Confirm uploaded to E1</button>
-        </div>
-      </div>
-      <div style="font-size:11px;color:var(--text2);margin-bottom:.75rem;">
-        Select rows to confirm, then click <strong>Confirm uploaded to E1</strong> — the offer stage will advance to <strong>Confirmed</strong>.
-      </div>
-      <div id="e1-body"></div>
     </div>
   </div>
 </div>

@@ -6,6 +6,7 @@ import { upsertOffer, dbDeleteOffer, upsertCrew } from './db.js';
 import { saveCrewEmail, getCrewEmail } from './crew.js';
 import { openEmailCompose } from './email.js';
 import { getSetting } from './settings.js';
+import { renderE1Report } from './reports.js';
 
 export const CO_STAGES    = ['Draft','Sent','Acknowledged','Accepted','Declined','Confirmed'];
 export const CO_STAGE_IDX = {Draft:0,Sent:1,Acknowledged:2,Accepted:3,Declined:4,Confirmed:5};
@@ -36,10 +37,13 @@ export function switchCoMainTab(tab, btn) {
   _coMainTab = tab;
   document.getElementById('co-tab-pipeline').style.display = tab === 'pipeline' ? 'block' : 'none';
   document.getElementById('co-tab-suggest').style.display  = tab === 'suggest'  ? 'block' : 'none';
+  const e1El = document.getElementById('co-tab-e1');
+  if (e1El) e1El.style.display = tab === 'e1' ? 'block' : 'none';
   document.querySelectorAll('.co-tab').forEach(b => b.classList.remove('active'));
   const activeBtn = btn || document.getElementById('cotab-' + tab);
   if (activeBtn) activeBtn.classList.add('active');
   if (tab === 'suggest') renderSmartSuggest();
+  if (tab === 'e1') renderE1Report();
 }
 
 export function setSSWindow(days, btn) {
@@ -435,6 +439,10 @@ export function updateCoPipelineTabCount() {
   const active = state.offers.filter(o => !['Confirmed','Declined'].includes(o.stage)).length;
   const el = document.getElementById('cotab-pipeline-count');
   if (el) { el.textContent = active || ''; el.style.display = active ? '' : 'none'; }
+  // E1 badge — confirmed offers not yet uploaded
+  const e1Count = state.offers.filter(o => o.stage === 'Confirmed' && !o.e1Uploaded).length;
+  const e1el = document.getElementById('cotab-e1-count');
+  if (e1el) { e1el.textContent = e1Count || ''; e1el.style.display = e1Count ? '' : 'none'; }
 }
 
 function coMigrateOffers() {

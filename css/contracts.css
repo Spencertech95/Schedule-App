@@ -187,6 +187,7 @@
 .co-tab.active{color:#fff;border-bottom-color:var(--highlight);}
 .co-tab-count{background:rgba(255,255,255,.1);color:var(--text2);font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;min-width:18px;text-align:center;}
 .co-tab-count-red{background:rgba(255,107,122,.2);color:var(--red-t);}
+.co-tab-count-amber{background:rgba(255,185,80,.2);color:var(--amber-t,#ffb950);}
 .co-tab.active .co-tab-count{background:rgba(255,127,69,.2);color:var(--highlight);}
 /* Smart suggest */
 .ss-win-group{display:flex;gap:2px;background:rgba(255,255,255,.04);border:.5px solid var(--border);border-radius:var(--r);padding:3px;}
