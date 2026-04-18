@@ -79,10 +79,6 @@
 
   <!-- Sidebar footer — pinned to bottom -->
   <div class="sidebar-footer">
-    <button class="sidebar-import-btn" onclick="openImport()">
-      <span style="font-size:14px;">↑</span> Import roster
-    </button>
-    <div style="font-size:10px;color:var(--text2);padding:3px 12px 0;" id="last-import-label"></div>
     <div class="sidebar-footer-row" style="gap:6px;">
       <button class="sidebar-footer-btn" onclick="openSettings()" title="Settings">⚙ Settings</button>
       <button class="sidebar-footer-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode" style="flex:0 0 auto;padding:6px 10px;">🌙</button>
@@ -323,8 +319,10 @@
       <option value="EDGE CLASS">Edge</option>
     </select>
     <span class="dash-count" id="crew-count-label"></span>
+    <button class="btn btn-sm" onclick="openImport()" style="font-size:11px;">↑ Import roster</button>
     <button class="btn btn-primary btn-sm" onclick="toggleForm('crew-form')">+ Add crew</button>
   </div>
+  <div id="last-import-label" style="font-size:11px;color:var(--text2);margin-bottom:.5rem;"></div>
   <div id="crew-form" class="add-form" style="display:none;">
     <div class="grid-3">
       <div class="field"><label>Full name</label><input id="crew-name" placeholder="Full name"/></div>

@@ -118,9 +118,6 @@
 .days-ok{background:rgba(77,212,160,.15);color:#4dd4a0;border:.5px solid rgba(77,212,160,.3);}
 .days-future{background:rgba(41,155,225,.15);color:#299BE1;border:.5px solid rgba(41,155,225,.3);}
 
-.sidebar-import-btn{display:flex;align-items:center;gap:7px;margin:8px 10px 0;padding:7px 10px;font-size:12px;font-weight:500;background:var(--highlight-dim);border:.5px solid rgba(255,127,69,.4);border-radius:var(--r);cursor:pointer;color:var(--highlight);transition:all .15s;}
-.sidebar-import-btn:hover{background:rgba(255,127,69,.22);box-shadow:0 2px 10px rgba(255,127,69,.2);}
-
 @keyframes livePulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.65;transform:scale(1.1);}}
 
 /* ── DOCUMENT WALLET ─────────────────────────────────────────────────────── */
