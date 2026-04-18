@@ -100,15 +100,12 @@ function buildRows() {
     const posRows = [];
 
     for (const abbr of POS_ABBRS) {
-      const pos = state.positions.find(p => p.abbr === abbr);
-      if (!pos) continue;
-
       const bars = [];
 
-      // Current / recently onboard crew
+      // Current / recent crew on this ship in this position (match by c.abbr, same as ship page)
       for (const c of state.crew) {
         const onShip = c.recentShipCode === sc || c.shipCode === sc;
-        if (!onShip || c.posId !== pos.id || !c.start) continue;
+        if (!onShip || c.abbr !== abbr || !c.start) continue;
         const endMs = dateMs(c.end) || (dateMs(c.start) + 180 * MS_DAY);
         bars.push({
           name: c.name, crewId: c.id, sc,
@@ -118,9 +115,7 @@ function buildRows() {
 
       // Future assignments
       for (const c of state.crew) {
-        if (c.futureShip !== sc || !c.futureOn) continue;
-        const fpos = state.positions.find(p => p.id === c.posId);
-        if (!fpos || fpos.abbr !== abbr) continue;
+        if (c.futureShip !== sc || !c.futureOn || c.abbr !== abbr) continue;
         const endMs = dateMs(c.futureOff) || (dateMs(c.futureOn) + 180 * MS_DAY);
         bars.push({
           name: c.futureName || c.name, crewId: c.id, sc,
