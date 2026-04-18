@@ -1,6 +1,7 @@
 // ── overview.js — overview page rendering ────────────────────────────────────
 import { state } from './state.js';
 import { crewLink } from './utils.js';
+import { getSetting } from './settings.js';
 
 function sectionHead(label, mt = false) {
   return `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);${mt ? 'margin-top:10px;' : ''}margin-bottom:5px;">${label}</div>`;
@@ -10,24 +11,28 @@ export function renderOverview() {
   const now = new Date();
 
   // ── KPI metrics ──
+  const contractEndingDays = getSetting('contractEndingDays') || 60;
+  const certAlertDays      = getSetting('certAlertDays')      || 90;
+  const offerOverdueDays   = getSetting('offerOverdueDays')   || 5;
+
   const onboard    = state.crew.filter(c => c.status === 'Onboard').length;
   const incoming   = state.crew.filter(c => c.status === 'Incoming').length;
-  const ending60   = state.crew.filter(c => { const d = (new Date(c.end) - now) / 86400000; return d >= 0 && d <= 60; }).length;
-  const certAlerts = state.crew.filter(c => { const d = (new Date(c.medical) - now) / 86400000; return d >= 0 && d <= 90; }).length;
+  const endingN    = state.crew.filter(c => { const d = (new Date(c.end) - now) / 86400000; return d >= 0 && d <= contractEndingDays; }).length;
+  const certN      = state.crew.filter(c => { const d = (new Date(c.medical) - now) / 86400000; return d >= 0 && d <= certAlertDays; }).length;
 
   document.getElementById('metrics').innerHTML = `
     <div class="metric"><div class="metric-label">Onboard</div><div class="metric-value ok">${onboard}</div></div>
     <div class="metric"><div class="metric-label">Incoming</div><div class="metric-value">${incoming}</div></div>
-    <div class="metric"><div class="metric-label">Ending (60d)</div><div class="metric-value ${ending60 > 0 ? 'warn' : 'ok'}">${ending60}</div></div>
-    <div class="metric"><div class="metric-label">Cert alerts (90d)</div><div class="metric-value ${certAlerts > 0 ? 'alert' : 'ok'}">${certAlerts}</div></div>`;
+    <div class="metric"><div class="metric-label">Ending (${contractEndingDays}d)</div><div class="metric-value ${endingN > 0 ? 'warn' : 'ok'}">${endingN}</div></div>
+    <div class="metric"><div class="metric-label">Cert alerts (${certAlertDays}d)</div><div class="metric-value ${certN > 0 ? 'alert' : 'ok'}">${certN}</div></div>`;
 
   // ── Contracts ending ──
   const ending = state.crew
-    .filter(c => { const d = (new Date(c.end) - now) / 86400000; return d >= 0 && d <= 60; })
+    .filter(c => { const d = (new Date(c.end) - now) / 86400000; return d >= 0 && d <= contractEndingDays; })
     .sort((a, b) => a.end.localeCompare(b.end));
 
   document.getElementById('upcoming-endings').innerHTML = `
-    <div class="card-title">Contracts Ending <span class="badge badge-gray" style="font-size:10px;margin-left:6px;">60 days</span></div>
+    <div class="card-title">Contracts Ending <span class="badge badge-gray" style="font-size:10px;margin-left:6px;">${contractEndingDays}d</span></div>
     <div class="ov-scroll" style="margin-top:8px;">${ending.length
       ? ending.map(c => {
           const pos  = state.positions.find(p => p.id == c.posId);
@@ -40,11 +45,11 @@ export function renderOverview() {
 
   // ── Cert alerts ──
   const alerts = state.crew
-    .filter(c => { const d = (new Date(c.medical) - now) / 86400000; return d >= 0 && d <= 90; })
+    .filter(c => { const d = (new Date(c.medical) - now) / 86400000; return d >= 0 && d <= certAlertDays; })
     .sort((a, b) => a.medical.localeCompare(b.medical));
 
   document.getElementById('cert-alerts').innerHTML = `
-    <div class="card-title">Cert Alerts <span class="badge badge-gray" style="font-size:10px;margin-left:6px;">90 days</span></div>
+    <div class="card-title">Cert Alerts <span class="badge badge-gray" style="font-size:10px;margin-left:6px;">${certAlertDays}d</span></div>
     <div class="ov-scroll" style="margin-top:8px;">${alerts.length
       ? alerts.map(c => {
           const ship = state.ships.find(s => s.id == c.shipId);
@@ -82,7 +87,7 @@ export function renderOverview() {
         <div class="ov-name">${crew ? crewLink(crew.name, crew.id) : (o.crewName || '—')}</div>
         <div class="ov-sub">${o.type || 'Offer'} · ${SHIP_NAMES[o.ship] || o.ship || '—'}${o.dateFrom ? ' · ' + o.dateFrom : ''}</div>
       </div>
-      ${daysWaiting !== null ? `<span class="badge ${daysWaiting >= 5 ? 'badge-red' : 'badge-amber'}" style="flex-shrink:0;">${daysWaiting}d</span>` : ''}
+      ${daysWaiting !== null ? `<span class="badge ${daysWaiting >= offerOverdueDays ? 'badge-red' : 'badge-amber'}" style="flex-shrink:0;">${daysWaiting}d</span>` : ''}
     </div>`;
   }).join('');
 

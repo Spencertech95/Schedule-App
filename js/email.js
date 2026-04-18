@@ -159,7 +159,7 @@ export function openEmailCompose(offerId) {
   document.getElementById('email-overlay').classList.remove('hidden');
   document.getElementById('email-modal-sub').textContent = `${typeLabel} for ${crew?.name || '—'}`;
   document.getElementById('email-to').value      = getCrewEmail(o.crewId);
-  document.getElementById('email-from').value    = '';
+  document.getElementById('email-from').value    = getSetting('offerFromEmail') || getSetting('schedulerEmail') || '';
   document.getElementById('email-subject').value = subject;
   document.getElementById('email-body').value    = buildOfferEmailBody(o);
   document.getElementById('email-copy-confirm').style.display = 'none';

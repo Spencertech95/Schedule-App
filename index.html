@@ -892,7 +892,7 @@
     </div>
   </div>
 
-  <!-- Smart Suggest + Contracts side by side -->
+  <!-- Smart Suggest + Alert Windows side by side -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
     <div class="card" style="margin-bottom:0;">
       <div class="card-title">Smart Suggest</div>
@@ -908,33 +908,65 @@
       </div>
     </div>
     <div class="card" style="margin-bottom:0;">
-      <div class="card-title">Contracts &amp; offers</div>
-      <div class="card-sub" style="margin-bottom:1rem;">Alert windows and offer defaults</div>
-      <div class="field" style="max-width:180px;margin-bottom:4px;">
-        <label>Sign-off alert window (days)</label>
-        <input id="settings-signoff-alert" type="number" min="7" max="90" step="1"/>
+      <div class="card-title">Alert windows</div>
+      <div class="card-sub" style="margin-bottom:1rem;">Controls which crew appear in overview cards and notifications</div>
+      <div class="grid-2" style="gap:.75rem;">
+        <div class="field" style="margin-bottom:0;">
+          <label>Sign-off alert (days)</label>
+          <input id="settings-signoff-alert" type="number" min="7" max="90" step="1"/>
+          <div style="font-size:10px;color:var(--text2);margin-top:3px;">Dashboard &amp; Smart Suggest</div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Contract ending (days)</label>
+          <input id="settings-contract-ending" type="number" min="7" max="180" step="1"/>
+          <div style="font-size:10px;color:var(--text2);margin-top:3px;">Overview contracts card</div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Cert expiry alert (days)</label>
+          <input id="settings-cert-alert" type="number" min="7" max="365" step="1"/>
+          <div style="font-size:10px;color:var(--text2);margin-top:3px;">Overview cert alerts card</div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Offer overdue after (days)</label>
+          <input id="settings-offer-overdue" type="number" min="1" max="30" step="1"/>
+          <div style="font-size:10px;color:var(--text2);margin-top:3px;">Red badge on sent offers</div>
+        </div>
       </div>
-      <div style="font-size:11px;color:var(--text2);">Crew signing off within this window are flagged in the dashboard and Smart Suggest.</div>
     </div>
   </div>
 
-  <!-- Display + actions row -->
+  <!-- Offer email defaults + Display + actions -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
     <div class="card" style="margin-bottom:0;">
-      <div class="card-title">Display</div>
-      <div class="card-sub" style="margin-bottom:1rem;">Date formatting preferences</div>
-      <div class="field" style="max-width:240px;margin-bottom:0;">
-        <label>Date format</label>
-        <select id="settings-date-format">
-          <option value="YYYY-MM-DD">YYYY-MM-DD (2026-04-17)</option>
-          <option value="DD/MM/YYYY">DD/MM/YYYY (17/04/2026)</option>
-          <option value="MM/DD/YYYY">MM/DD/YYYY (04/17/2026)</option>
-        </select>
+      <div class="card-title">Offer email defaults</div>
+      <div class="card-sub" style="margin-bottom:1rem;">Pre-filled values in the email compose overlay</div>
+      <div class="field" style="margin-bottom:.75rem;">
+        <label>From email</label>
+        <input id="settings-offer-from-email" type="email" placeholder="e.g. scheduling@celebrity.com"/>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Reply-to email</label>
+        <input id="settings-offer-reply-to" type="email" placeholder="e.g. scheduling@celebrity.com"/>
+        <div style="font-size:10px;color:var(--text2);margin-top:3px;">Leave blank to use the From address</div>
       </div>
     </div>
-    <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:8px;">
-      <button class="btn btn-primary" onclick="saveSettingsForm()">Save settings</button>
-      <button class="btn" onclick="resetSettings()" style="font-size:12px;">Reset to defaults</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title">Display</div>
+        <div class="card-sub" style="margin-bottom:1rem;">Date formatting</div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Date format</label>
+          <select id="settings-date-format">
+            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:8px;">
+        <button class="btn btn-primary" onclick="saveSettingsForm()">Save settings</button>
+        <button class="btn" onclick="resetSettings()" style="font-size:12px;">Reset to defaults</button>
+      </div>
     </div>
   </div>
 

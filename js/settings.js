@@ -9,14 +9,21 @@ const DEFAULTS = {
   department:       'Technical Entertainment Crew Scheduling',
 
   // Smart Suggest
-  ssMinGapDays:     42,   // minimum days between sign-off and next boarding
-  contractMonths:   6,    // default contract length in months
+  ssMinGapDays:   42,  // minimum days between sign-off and next boarding
+  contractMonths:  6,  // default contract length in months
 
-  // Contracts & Offers
-  signoffAlertDays: 30,   // days-before sign-off to flag in dashboard
+  // Alert windows
+  signoffAlertDays:   30,  // days-before sign-off to flag in dashboard
+  contractEndingDays: 60,  // days-before contract end shown in overview
+  certAlertDays:      90,  // days-before cert expiry shown in overview
+  offerOverdueDays:    5,  // days after sending before offer flagged overdue
+
+  // Offer email defaults
+  offerFromEmail: '',  // pre-filled "from" in compose overlay
+  offerReplyTo:   '',  // reply-to address in compose overlay
 
   // Display
-  dateFormat:       'YYYY-MM-DD', // or 'DD/MM/YYYY' or 'MM/DD/YYYY'
+  dateFormat: 'YYYY-MM-DD',
 };
 
 // In-memory settings object — loaded once on init
@@ -51,14 +58,19 @@ export function setSetting(key, value) {
 // ── Page render ──────────────────────────────────────────────────────────────
 function populateForm() {
   const s = _settings;
-  document.getElementById('settings-scheduler-name').value  = s.schedulerName    || '';
-  document.getElementById('settings-scheduler-email').value = s.schedulerEmail   || '';
-  document.getElementById('settings-company-name').value    = s.companyName      || '';
-  document.getElementById('settings-department').value      = s.department       || '';
-  document.getElementById('settings-ss-gap').value          = s.ssMinGapDays     ?? 42;
-  document.getElementById('settings-contract-months').value = s.contractMonths   ?? 6;
-  document.getElementById('settings-signoff-alert').value   = s.signoffAlertDays ?? 30;
-  document.getElementById('settings-date-format').value     = s.dateFormat       || 'YYYY-MM-DD';
+  document.getElementById('settings-scheduler-name').value    = s.schedulerName        || '';
+  document.getElementById('settings-scheduler-email').value   = s.schedulerEmail       || '';
+  document.getElementById('settings-company-name').value      = s.companyName          || '';
+  document.getElementById('settings-department').value        = s.department           || '';
+  document.getElementById('settings-ss-gap').value            = s.ssMinGapDays         ?? 42;
+  document.getElementById('settings-contract-months').value   = s.contractMonths       ?? 6;
+  document.getElementById('settings-signoff-alert').value     = s.signoffAlertDays     ?? 30;
+  document.getElementById('settings-contract-ending').value   = s.contractEndingDays   ?? 60;
+  document.getElementById('settings-cert-alert').value        = s.certAlertDays        ?? 90;
+  document.getElementById('settings-offer-overdue').value     = s.offerOverdueDays     ?? 5;
+  document.getElementById('settings-offer-from-email').value  = s.offerFromEmail       || '';
+  document.getElementById('settings-offer-reply-to').value    = s.offerReplyTo         || '';
+  document.getElementById('settings-date-format').value       = s.dateFormat           || 'YYYY-MM-DD';
   updateGapLabel(s.ssMinGapDays ?? 42);
 }
 
@@ -71,14 +83,19 @@ function updateGapLabel(val) {
 }
 
 export function saveSettingsForm() {
-  _settings.schedulerName    = document.getElementById('settings-scheduler-name').value.trim();
-  _settings.schedulerEmail   = document.getElementById('settings-scheduler-email').value.trim();
-  _settings.companyName      = document.getElementById('settings-company-name').value.trim();
-  _settings.department       = document.getElementById('settings-department').value.trim();
-  _settings.ssMinGapDays     = parseInt(document.getElementById('settings-ss-gap').value) || 42;
-  _settings.contractMonths   = parseInt(document.getElementById('settings-contract-months').value) || 6;
-  _settings.signoffAlertDays = parseInt(document.getElementById('settings-signoff-alert').value) || 30;
-  _settings.dateFormat       = document.getElementById('settings-date-format').value;
+  _settings.schedulerName        = document.getElementById('settings-scheduler-name').value.trim();
+  _settings.schedulerEmail       = document.getElementById('settings-scheduler-email').value.trim();
+  _settings.companyName          = document.getElementById('settings-company-name').value.trim();
+  _settings.department           = document.getElementById('settings-department').value.trim();
+  _settings.ssMinGapDays         = parseInt(document.getElementById('settings-ss-gap').value)             || 42;
+  _settings.contractMonths       = parseInt(document.getElementById('settings-contract-months').value)    || 6;
+  _settings.signoffAlertDays     = parseInt(document.getElementById('settings-signoff-alert').value)      || 30;
+  _settings.contractEndingDays   = parseInt(document.getElementById('settings-contract-ending').value)    || 60;
+  _settings.certAlertDays        = parseInt(document.getElementById('settings-cert-alert').value)         || 90;
+  _settings.offerOverdueDays     = parseInt(document.getElementById('settings-offer-overdue').value)      || 5;
+  _settings.offerFromEmail       = document.getElementById('settings-offer-from-email').value.trim();
+  _settings.offerReplyTo         = document.getElementById('settings-offer-reply-to').value.trim();
+  _settings.dateFormat           = document.getElementById('settings-date-format').value;
 
   saveSettings();
   if (typeof window._showToast === 'function') window._showToast('Settings saved');
