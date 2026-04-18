@@ -296,16 +296,48 @@ function fromDbRotation(r) {
 
 function toDbOffer(o) {
   return {
-    id: o.id, type: o.type || 'Offer', crew_id: o.crewId, ship_id: o.shipId,
-    pos_id: o.posId, stage: o.stage || 'draft', start_date: o.startDate || '',
-    end_date: o.endDate || '', notes: o.notes || '', history: o.history || [],
+    id: o.id,
+    type: o.type || 'Offer',
+    crew_id: o.crewId,
+    ship: o.ship || '',
+    stage: o.stage || 'Draft',
+    start_date: o.dateFrom || o.startDate || '',
+    end_date: o.dateTo || o.endDate || '',
+    crew_name: o.crewName || '',
+    subtype: o.subtype || '',
+    approver: o.approver || '',
+    created: o.created || '',
+    sent_date: o.sentDate || '',
+    terminal_date: o.terminalDate || '',
+    e1_uploaded: o.e1Uploaded || false,
+    e1_uploaded_date: o.e1UploadedDate || '',
+    ship_options: o.shipOptions || null,
+    ship_option_details: o.shipOptionDetails || null,
+    notes: o.notes || '',
+    history: o.history || [],
   };
 }
 function fromDbOffer(r) {
   return {
-    id: r.id, type: r.type || 'Offer', crewId: r.crew_id, shipId: r.ship_id,
-    posId: r.pos_id, stage: r.stage || 'draft', startDate: r.start_date || '',
-    endDate: r.end_date || '', notes: r.notes || '', history: r.history || [],
+    id: r.id,
+    type: r.type || 'Offer',
+    crewId: r.crew_id,
+    ship: r.ship || '',
+    stage: r.stage || 'Draft',
+    dateFrom: r.start_date || '',
+    dateTo: r.end_date || '',
+    crewName: r.crew_name || '',
+    subtype: r.subtype || '',
+    approver: r.approver || '',
+    created: r.created || '',
+    sentDate: r.sent_date || '',
+    terminalDate: r.terminal_date || '',
+    e1Uploaded: r.e1_uploaded || false,
+    e1UploadedDate: r.e1_uploaded_date || '',
+    shipOptions: r.ship_options || null,
+    shipOptionDetails: r.ship_option_details || null,
+    notes: r.notes || '',
+    history: r.history || [],
   };
 }
 

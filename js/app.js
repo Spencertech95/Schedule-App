@@ -4,7 +4,7 @@
 import { loadAll, upsertOffer } from './db.js';
 import { state }   from './state.js';
 import { showToast, getShipPortForDate } from './utils.js';
-import { loadSettings } from './settings.js';
+import { loadSettings, getSetting } from './settings.js';
 
 // Page modules — imported for their side-effects (window.* registrations)
 import './navigation.js';
@@ -144,15 +144,18 @@ function showOfferResponseOverlay() {
   document.getElementById('ofr-sub').textContent   = `For ${crew?.name || 'Crew Member'} · Celebrity ${shipName}`;
 
   // Resolve the correct boarding/leave dates for the specific ship clicked
+  const contractMonths = getSetting('contractMonths') || 6;
   const shipDetail  = ship && offer.shipOptionDetails?.find(d => d.sc === ship);
-  const joinDate    = shipDetail?.boardingDate || offer.dateFrom || offer.startDate || '—';
+  const joinDate    = shipDetail?.boardingDate || offer.dateFrom || '—';
   const leaveDate   = (() => {
-    if (shipDetail?.boardingDate) {
-      const d = new Date(shipDetail.boardingDate + 'T00:00:00');
-      d.setMonth(d.getMonth() + 6);
+    const base = shipDetail?.boardingDate || (joinDate !== '—' ? joinDate : null);
+    if (base) {
+      if (offer.dateTo && !shipDetail) return offer.dateTo; // prefer stored end date for single-ship
+      const d = new Date(base + 'T00:00:00');
+      d.setMonth(d.getMonth() + contractMonths);
       return d.toISOString().slice(0, 10);
     }
-    return offer.dateTo || offer.endDate || '—';
+    return offer.dateTo || '—';
   })();
 
   const embarkInfo = getShipPortForDate(resolvedShip, joinDate);

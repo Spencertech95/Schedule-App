@@ -331,7 +331,7 @@ function renderSSByShip(crewOffers, SCM, CB, SNM, SD, SCO, PC) {
           const rankLabel = ['1st','2nd','3rd'][e.rank] || '';
           const rankColor = ['var(--green-t)','var(--blue-t)','var(--text2)'][e.rank] || 'var(--text2)';
           const gapColor  = e.opt.timingGap <= 3 ? 'var(--green-t)' : e.opt.timingGap <= 14 ? 'var(--amber-t)' : 'var(--text2)';
-          const shipCodes = e.shipOptions.map(o => o.sc).join(',');
+          const shipCodes = e.shipOptions.map(o => `${o.sc}:${o.openStr}`).join(',');
           const btn = e.existingOffer
             ? `<button class="btn btn-sm" style="font-size:10px;" onclick="openEmailCompose(${e.existingOffer.id})">✉ Email</button>`
             : `<button class="btn btn-primary btn-sm" style="font-size:10px;" onclick="ssCreateAndEmail(${e.crewMember.id},'${shipCodes}')">✉ Offer</button>`;

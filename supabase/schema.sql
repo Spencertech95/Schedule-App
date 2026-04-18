@@ -109,3 +109,17 @@ create table if not exists app_meta (
 -- Seed nextId
 insert into app_meta (key, value) values ('nextId', '500')
   on conflict (key) do nothing;
+
+-- ── Migration: expand offers table ───────────────────────────────────────────
+-- Run these if upgrading an existing database (safe to re-run, IF NOT EXISTS).
+alter table offers add column if not exists crew_name            text    default '';
+alter table offers add column if not exists ship                 text    default '';
+alter table offers add column if not exists subtype              text    default '';
+alter table offers add column if not exists approver             text    default '';
+alter table offers add column if not exists created              text    default '';
+alter table offers add column if not exists sent_date            text    default '';
+alter table offers add column if not exists terminal_date        text    default '';
+alter table offers add column if not exists e1_uploaded          boolean default false;
+alter table offers add column if not exists e1_uploaded_date     text    default '';
+alter table offers add column if not exists ship_options         jsonb;
+alter table offers add column if not exists ship_option_details  jsonb;
