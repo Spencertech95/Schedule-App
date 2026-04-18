@@ -20,10 +20,14 @@
 
 /* ── LIGHT MODE ── */
 [data-theme="light"] .year-tab.active{color:var(--text);}
-[data-theme="light"] .ship-tab{background:rgba(0,0,0,.05);}
-[data-theme="light"] .rotation-month{background:rgba(0,0,0,.04);}
-[data-theme="light"] .rotation-month:hover{background:rgba(0,0,0,.07);}
-[data-theme="light"] .rotation-table tr:hover td{background:rgba(0,0,0,.03);}
+[data-theme="light"] .year-tab:hover{color:var(--text);}
+[data-theme="light"] .rotation-year-tabs{border-bottom-color:rgba(0,0,0,.12);}
+[data-theme="light"] .ship-tab{background:#f1f4fa;border-color:rgba(0,0,0,.14);}
+[data-theme="light"] .rotation-month{background:#f5f7fc;border-color:rgba(0,0,0,.12);}
+[data-theme="light"] .rotation-month:hover{background:#edf0f7;}
+[data-theme="light"] .rotation-table th{border-bottom-color:rgba(0,0,0,.12);}
+[data-theme="light"] .rotation-table td{border-bottom-color:rgba(0,0,0,.08);}
+[data-theme="light"] .rotation-table tr:hover td{background:rgba(0,0,0,.04);}
 .pos-block{margin-bottom:3px;}
 .pos-name{font-size:11px;font-weight:500;}
 .date-pair{font-size:11px;color:var(--text2);}

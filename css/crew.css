@@ -69,13 +69,16 @@
 .tl-outer{position:relative;}
 
 /* ── LIGHT MODE ── */
-[data-theme="light"] .dash-pill{background:rgba(0,0,0,.05);}
-[data-theme="light"] .dash-pill:hover{color:var(--text);background:rgba(0,0,0,.09);border-color:rgba(0,0,0,.2);}
+[data-theme="light"] .dash-pill{background:#f1f4fa;border-color:rgba(0,0,0,.15);}
+[data-theme="light"] .dash-pill:hover{color:var(--text);background:#e4e9f3;border-color:rgba(0,0,0,.25);}
 [data-theme="light"] .ds-value{color:var(--text);}
+[data-theme="light"] .dash-stat{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08);}
 [data-theme="light"] .ship-kpi-value{color:var(--text);}
-[data-theme="light"] .ship-kpi{background:rgba(0,0,0,.04);}
-[data-theme="light"] .roster-table tr:hover td{background:rgba(0,0,0,.03);}
-[data-theme="light"] .crew-slot{background:rgba(0,0,0,.03);}
-[data-theme="light"] .dash-stat{box-shadow:0 1px 6px rgba(0,0,0,.07);}
-[data-theme="light"] .tl-bar{color:rgba(0,0,0,.75);}
+[data-theme="light"] .ship-kpi{background:#f1f4fa;border-color:rgba(0,0,0,.12);}
+[data-theme="light"] .roster-table th{border-bottom-color:rgba(0,0,0,.12);}
+[data-theme="light"] .roster-table td{border-bottom-color:rgba(0,0,0,.07);}
+[data-theme="light"] .roster-table tr:hover td{background:rgba(0,0,0,.04);}
+[data-theme="light"] .crew-slot{background:#f5f7fc;border-color:rgba(0,0,0,.12);}
+[data-theme="light"] .tl-bar{color:rgba(0,0,0,.8);}
 [data-theme="light"] .tl-offboard{color:rgba(0,0,0,.7);}
+[data-theme="light"] .ship-chip{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.14);}

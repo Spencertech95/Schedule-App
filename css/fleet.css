@@ -11,4 +11,6 @@
 .fleet-ship-meta{font-size:10px;color:var(--text2);}
 
 /* ── LIGHT MODE ── */
-[data-theme="light"] .fleet-ship:hover{background:rgba(0,0,0,.03);}
+[data-theme="light"] .fleet-ship:hover{background:rgba(0,0,0,.04);}
+[data-theme="light"] .fleet-class{box-shadow:0 1px 4px rgba(0,0,0,.08);}
+[data-theme="light"] .fleet-ship{border-bottom-color:rgba(0,0,0,.08);}

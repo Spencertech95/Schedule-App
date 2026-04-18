@@ -28,7 +28,8 @@
 .pf-empty{font-size:13px;color:var(--text2);padding:1.5rem 0;text-align:center;}
 
 /* ── LIGHT MODE ── */
-[data-theme="light"] .pf-pill{background:rgba(0,0,0,.05);}
-[data-theme="light"] .pf-ship-header{background:rgba(0,0,0,.03);}
-[data-theme="light"] .pf-candidate{background:rgba(0,0,0,.03);}
-[data-theme="light"] .pf-score-bar{background:rgba(0,0,0,.08);}
+[data-theme="light"] .pf-pill{background:#f1f4fa;border-color:rgba(0,0,0,.14);}
+[data-theme="light"] .pf-ship-header{background:#f5f7fc;border-bottom-color:rgba(0,0,0,.1);}
+[data-theme="light"] .pf-pos-row{border-bottom-color:rgba(0,0,0,.08);}
+[data-theme="light"] .pf-candidate{background:#f1f4fa;}
+[data-theme="light"] .pf-score-bar{background:rgba(0,0,0,.1);}
