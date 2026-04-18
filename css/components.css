@@ -63,6 +63,12 @@ textarea{resize:vertical;min-height:65px;}
 /* ROWS / TAGS */
 .row-item{display:flex;align-items:flex-start;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border);gap:12px;}
 .row-item:last-child{border-bottom:none;}
+
+/* Compact row used on overview cards */
+.ov-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:0.5px solid var(--border);}
+.ov-row:last-child{border-bottom:none;}
+.ov-name{font-size:12px;font-weight:500;}
+.ov-sub{font-size:11px;color:var(--text2);margin-top:1px;}
 .row-actions{display:flex;gap:5px;flex-shrink:0;}
 .tag-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
 .tag{padding:2px 7px;background:rgba(255,255,255,.07);border:0.5px solid var(--border);border-radius:999px;font-size:10px;}
