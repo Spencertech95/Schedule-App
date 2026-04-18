@@ -2,7 +2,7 @@
 import { state } from './state.js';
 import { uid } from './state.js';
 import { showToast } from './utils.js';
-import { upsertOffer, dbDeleteOffer } from './db.js';
+import { upsertOffer, dbDeleteOffer, upsertCrew } from './db.js';
 import { saveCrewEmail, getCrewEmail } from './crew.js';
 import { openEmailCompose } from './email.js';
 import { getSetting } from './settings.js';
@@ -964,11 +964,36 @@ export function saveCoEdit(id) {
     o.history = o.history || [];
     o.history.push({date: today2, note: `Stage changed: ${oldStage} → ${newStage}`});
     if (['Confirmed','Declined'].includes(newStage) && !o.terminalDate) o.terminalDate = today2;
+    // Apply accepted/confirmed offer to the crew record
+    if (['Accepted','Confirmed'].includes(newStage)) applyOfferToCrew(o);
   }
   renderCoDetailModal(o);
   renderCoSummary();
   renderContracts();
   upsertOffer(o);
+}
+
+// When an offer reaches Accepted (or Confirmed), write future assignment back to the crew record.
+// For a new Offer: set futureShip/futureOn/futureOff so the crew member appears in Incoming Crew.
+// For an Extension: extend the current sign-off date in place.
+function applyOfferToCrew(o) {
+  if (o.type === 'Leave') return; // leave requests don't change ship assignments
+  const c = state.crew.find(x => x.id == o.crewId);
+  if (!c) return;
+
+  if (o.type === 'Extension') {
+    // Extend the current contract end date
+    if (o.dateTo) { c.end = o.dateTo; c.signOff = o.dateTo; }
+  } else {
+    // New offer — populate future assignment fields
+    if (o.ship)    c.futureShip = o.ship;
+    if (o.dateFrom) c.futureOn  = o.dateFrom;
+    if (o.dateTo)   c.futureOff = o.dateTo;
+    const SNM = window.SHIP_NAME_MAP || {};
+    if (o.ship && SNM[o.ship]) c.futureName = SNM[o.ship];
+  }
+
+  upsertCrew(c);
 }
 
 export function advanceCoStage(id, stage) {
@@ -983,6 +1008,8 @@ export function advanceCoStage(id, stage) {
   }
   o.history = o.history || [];
   o.history.push({date: today, note: `Stage: ${oldStage} → ${stage}`});
+  // Apply accepted/confirmed offer to the crew record
+  if (['Accepted','Confirmed'].includes(stage)) applyOfferToCrew(o);
   renderCoDetailModal(o);
   renderCoSummary();
   renderContracts();
