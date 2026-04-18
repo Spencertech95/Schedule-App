@@ -684,6 +684,7 @@ function renderCoTable() {
             <th style="text-align:left;padding:6px 8px;font-weight:500;">Stage</th>
             <th style="text-align:left;padding:6px 8px;font-weight:500;">Dates</th>
             <th style="text-align:left;padding:6px 8px;font-weight:500;">Created</th>
+            <th style="text-align:left;padding:6px 8px;font-weight:500;">Sent</th>
             <th style="text-align:left;padding:6px 8px;font-weight:500;">Closed</th>
           </tr></thead>
           <tbody>${archived.length ? archived.map(o => {
@@ -698,9 +699,10 @@ function renderCoTable() {
               <td style="padding:7px 8px;">${coStageBadge(o.stage)}</td>
               <td style="padding:7px 8px;color:var(--text2);white-space:nowrap;">${dd2}</td>
               <td style="padding:7px 8px;color:var(--text2);">${o.created||'—'}</td>
+              <td style="padding:7px 8px;color:var(--text2);">${o.sentDate||'—'}</td>
               <td style="padding:7px 8px;color:var(--text2);">${o.e1UploadedDate || getTerminalDate(o)||'—'}</td>
             </tr>`;
-          }).join('') : `<tr><td colspan="7" style="padding:14px 8px;color:var(--text2);font-size:12px;text-align:center;">No archived offers yet — confirmed contracts move here after E1 upload.</td></tr>`}</tbody>
+          }).join('') : `<tr><td colspan="8" style="padding:14px 8px;color:var(--text2);font-size:12px;text-align:center;">No archived offers yet — confirmed contracts move here after E1 upload.</td></tr>`}</tbody>
         </table>
       </div>`;
 }
@@ -1017,7 +1019,13 @@ export function advanceCoStage(id, stage) {
 }
 
 export function deleteCoOffer(id) {
-  state.offers = state.offers.filter(o => o.id !== id);
+  const o = state.offers.find(x => x.id === id);
+  // Offers that have been sent or beyond are permanent records — block deletion
+  if (o && o.stage !== 'Draft') {
+    showToast(`Cannot delete — this offer has been sent and is a permanent record. Archive it via E1 upload instead.`, 6000);
+    return;
+  }
+  state.offers = state.offers.filter(x => x.id !== id);
   renderCoSummary();
   renderContracts();
   dbDeleteOffer(id);

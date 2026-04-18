@@ -193,8 +193,9 @@ export function sendEmailViaMailto() {
 
   if (offer && offer.stage === 'Draft') {
     offer.stage = 'Sent';
+    offer.sentDate = new Date().toISOString().slice(0, 10);
     offer.history = offer.history || [];
-    offer.history.push({date: new Date().toISOString().slice(0, 10), note: 'Offer emailed to crew member — stage advanced to Sent'});
+    offer.history.push({date: offer.sentDate, note: 'Offer emailed to crew member — stage advanced to Sent'});
     upsertOffer(offer);
     // re-render contracts if page is active
     if (typeof window.renderContracts === 'function') window.renderContracts();
