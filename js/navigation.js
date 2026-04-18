@@ -15,7 +15,7 @@ import { renderSettings } from './settings.js';
 import { renderNotifications } from './notifications.js';
 
 export function showPage(name, el) {
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.topbar-nav-item, .topbar-action-btn, .nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pageEl = document.getElementById('page-' + name);
   if (!pageEl) return;

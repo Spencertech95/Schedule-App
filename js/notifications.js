@@ -110,7 +110,22 @@ export function renderNotifications() {
   const critical = items.filter(i => i.urgency === 'critical').length;
   const warning  = items.filter(i => i.urgency === 'warning').length;
 
-  document.getElementById('notif-summary').innerHTML = `
+  // Update topbar badge
+  const badge = document.getElementById('notif-badge');
+  if (badge) {
+    const actionable = critical + warning;
+    if (actionable > 0) {
+      badge.textContent = actionable > 99 ? '99+' : String(actionable);
+      badge.classList.add('has-count');
+    } else {
+      badge.textContent = '';
+      badge.classList.remove('has-count');
+    }
+  }
+
+  const summaryEl = document.getElementById('notif-summary');
+  if (!summaryEl) return;
+  summaryEl.innerHTML = `
     <div class="rsum rsum-30" style="cursor:default;">
       <div class="rsum-label">Critical</div>
       <div class="rsum-value">${critical}</div>
@@ -146,7 +161,6 @@ export function renderNotifications() {
 
 // Navigate to a page from within a notification action button
 window.notifGo = function(page) {
-  const btn = [...document.querySelectorAll('.nav-item')]
-    .find(b => (b.getAttribute('onclick') || '').includes(`'${page}'`));
+  const btn = document.querySelector(`.topbar-nav-item[onclick*="'${page}'"], .nav-item[onclick*="'${page}'"]`);
   if (btn) window.showPage(page, btn);
 };

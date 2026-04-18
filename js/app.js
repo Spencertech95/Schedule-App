@@ -5,6 +5,7 @@ import { loadAll, upsertOffer } from './db.js';
 import { state }   from './state.js';
 import { showToast, getShipPortForDate } from './utils.js';
 import { loadSettings, getSetting } from './settings.js';
+import { renderNotifications } from './notifications.js';
 
 // Page modules — imported for their side-effects (window.* registrations)
 import './navigation.js';
@@ -61,6 +62,9 @@ async function boot() {
   window.renderPositions?.();
   window.renderCompliance?.();
 
+  // Populate notification badge without rendering the full page
+  renderNotifications();
+
   // Navigate to the page from the URL hash, or default to overview
   const hash = window.location.hash.slice(1); // strip leading #
   let navigated = false;
@@ -73,7 +77,7 @@ async function boot() {
         navigated = true;
       }
     } else {
-      const navBtn = document.querySelector(`.nav-item[onclick*="'${hash}'"]`);
+      const navBtn = document.querySelector(`.topbar-nav-item[onclick*="'${hash}'"], .nav-item[onclick*="'${hash}'"]`);
       if (navBtn) {
         window.showPage(hash, navBtn);
         navigated = true;
@@ -81,8 +85,9 @@ async function boot() {
     }
   }
   if (!navigated) {
-    const defaultNav = document.querySelector('.nav-item[data-page="overview"]')
-      || document.querySelector('.nav-item[onclick*="overview"]');
+    const defaultNav = document.querySelector('.topbar-nav-item[data-page="overview"]')
+      || document.querySelector('.topbar-nav-item[onclick*="overview"]')
+      || document.querySelector('.nav-item[data-page="overview"]');
     window.showPage('overview', defaultNav || document.createElement('button'));
     if (defaultNav) defaultNav.classList.add('active');
   }

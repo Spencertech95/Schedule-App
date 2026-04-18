@@ -57,12 +57,9 @@ export function toggleShipsNav() {
 }
 
 export function showShip(shipCode, el) {
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.topbar-nav-item, .topbar-action-btn, .nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-ship').classList.add('active');
-  // Ensure ships drawer is open when a ship is active
-  const drawer = document.getElementById('ship-nav-items');
-  if (drawer) drawer.classList.add('open');
   if (el) el.classList.add('active');
   currentShipCode = shipCode;
   history.replaceState(null, '', '#ship-' + shipCode);

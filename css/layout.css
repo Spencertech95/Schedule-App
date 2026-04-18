@@ -1,96 +1,209 @@
-/* layout.css — sidebar, main content, page sections */
+/* layout.css — topbar, ships sidebar, main content, page sections */
 
-/* ── SIDEBAR ── */
-.sidebar{
-  width:var(--sidebar);flex-shrink:0;
-  background:var(--sidebar-bg);
-  border-right:0.5px solid var(--border);
-  display:flex;flex-direction:column;
-  height:100vh;position:sticky;top:0;
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
+/* ── TOP BAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  border-bottom: 0.5px solid var(--border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
-.sidebar-brand{
-  padding:1.4rem 1rem 1.1rem;
-  border-bottom:0.5px solid var(--border);
-  background:linear-gradient(135deg,rgba(77,168,247,0.06),rgba(167,139,250,0.06));
-}
-.sidebar-brand h1{font-size:13px;font-weight:600;line-height:1.4;color:#fff;letter-spacing:.01em;}
-.sidebar-brand p{font-size:11px;color:var(--text2);margin-top:2px;}
-.sidebar-nav{padding:0.6rem 0;flex:1;overflow-y:auto;}
-.nav-section{
-  padding:.6rem 1rem .25rem;
-  font-size:9.5px;font-weight:700;
-  color:rgba(136,150,184,0.6);
-  text-transform:uppercase;letter-spacing:.1em;
-}
-.nav-item{
-  display:flex;align-items:center;gap:9px;
-  padding:7px 1rem;font-size:12.5px;
-  color:var(--text2);cursor:pointer;
-  border:none;background:none;
-  width:100%;text-align:left;
-  border-left:2px solid transparent;
-  transition:all .15s;
-}
-.nav-item:hover{color:#fff;background:rgba(255,255,255,0.06);}
-.nav-item.active{
-  color:#fff;
-  background:linear-gradient(90deg,rgba(255,127,69,0.18),rgba(255,95,160,0.08));
-  border-left-color:var(--highlight);
-  font-weight:500;
-}
-.nav-icon{font-size:14px;width:17px;text-align:center;flex-shrink:0;}
 
-/* ── Collapsible ships drawer ── */
-.nav-ships-drawer{
-  overflow:hidden;
-  max-height:0;
-  transition:max-height .3s ease;
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 1.2rem;
+  flex-shrink: 0;
+  border-right: 0.5px solid var(--border);
+  height: 100%;
 }
-.nav-ships-drawer.open{max-height:700px;}
 
-/* ── Sidebar footer ── */
-.sidebar-footer{
-  padding:.6rem 0 .75rem;
-  border-top:.5px solid var(--border);
-  flex-shrink:0;
+.topbar-logo {
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  background: var(--highlight-grad);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+  letter-spacing: -.01em;
 }
-.sidebar-footer-row{
-  display:flex;padding:.4rem .75rem 0;gap:6px;
+
+.topbar-title { line-height: 1.3; }
+.topbar-name { font-size: 12.5px; font-weight: 600; color: #fff; }
+.topbar-sub { font-size: 10px; color: var(--text2); }
+
+.topbar-nav {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-.sidebar-footer-btn{
-  flex:1;padding:6px 0;font-size:11px;
-  color:var(--text2);background:rgba(255,255,255,.04);
-  border:.5px solid var(--border);border-radius:6px;
-  cursor:pointer;transition:all .15s;
+.topbar-nav::-webkit-scrollbar { display: none; }
+
+.topbar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 13px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  border: none;
+  background: none;
+  height: 100%;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  border-top: 2px solid transparent;
+  transition: color .15s, background .15s, border-color .15s;
+  flex-shrink: 0;
 }
-.sidebar-footer-btn:hover{background:rgba(255,255,255,.09);color:#fff;}
+.topbar-nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.topbar-nav-item.active {
+  color: #fff;
+  border-bottom-color: var(--highlight);
+  background: rgba(255,127,69,0.08);
+  font-weight: 500;
+}
+.topbar-nav-icon { font-size: 13px; opacity: .75; }
+
+.topbar-nav-sep {
+  width: 0.5px;
+  background: var(--border);
+  margin: 10px 3px;
+  flex-shrink: 0;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 1rem;
+  flex-shrink: 0;
+  border-left: 0.5px solid var(--border);
+  height: 100%;
+}
+
+.topbar-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text2);
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  position: relative;
+}
+.topbar-action-btn:hover { background: rgba(255,255,255,0.09); color: #fff; }
+.topbar-action-btn.active { color: #fff; border-color: var(--highlight); background: rgba(255,127,69,0.1); }
+
+#notif-badge {
+  position: absolute;
+  top: -5px; right: -5px;
+  min-width: 16px; height: 16px;
+  background: var(--highlight);
+  color: #fff;
+  font-size: 9px; font-weight: 700;
+  border-radius: 8px;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+#notif-badge.has-count { display: flex; }
+
+/* ── APP BODY (ships sidebar + main) ── */
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── SHIPS SIDEBAR ── */
+.ships-sidebar {
+  width: 152px;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  border-right: 0.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.ships-sidebar-header {
+  padding: .55rem 1rem .35rem;
+  font-size: 9.5px; font-weight: 700;
+  color: rgba(136,150,184,0.6);
+  text-transform: uppercase; letter-spacing: .1em;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+  position: sticky; top: 0;
+  background: var(--sidebar-bg);
+}
+
+/* ── NAV ITEMS (ships sidebar) ── */
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 1rem;
+  font-size: 12px;
+  color: var(--text2); cursor: pointer;
+  border: none; background: none;
+  width: 100%; text-align: left;
+  border-left: 2px solid transparent;
+  transition: all .15s;
+}
+.nav-item:hover { color: #fff; background: rgba(255,255,255,.06); }
+.nav-item.active {
+  color: #fff;
+  background: linear-gradient(90deg,rgba(255,127,69,0.18),rgba(255,95,160,0.08));
+  border-left-color: var(--highlight);
+  font-weight: 500;
+}
+.nav-icon { font-size: 14px; width: 17px; text-align: center; flex-shrink: 0; }
 
 /* ── MAIN ── */
-.main{flex:1;min-width:0;overflow-y:auto;height:100vh;}
-.page{display:none;padding:1.75rem 2rem;width:100%;}
-.page.active{display:block;}
-.page-title{
-  font-size:20px;font-weight:600;margin-bottom:5px;
+.main { flex:1; min-width:0; overflow-y:auto; }
+.page { display:none; padding:1.75rem 2rem; width:100%; }
+.page.active { display:block; }
+.page-title {
+  font-size:20px; font-weight:600; margin-bottom:5px;
   background:linear-gradient(135deg,#fff 30%,var(--text2));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
   background-clip:text;
 }
-.page-sub{font-size:13px;color:var(--text2);margin-bottom:1.5rem;}
-.page > *{max-width:100%;}
+.page-sub { font-size:13px; color:var(--text2); margin-bottom:1.5rem; }
+.page > * { max-width:100%; }
 @media(min-width:1400px){.page{padding:2rem 2.5rem;}}
 @media(min-width:1800px){.page{padding:2rem 3rem;}}
 @media(max-width:900px){.page{padding:1.25rem 1rem;}}
 @media(max-width:600px){.page{padding:1rem .75rem;}}
 
 /* ── LIGHT MODE ── */
-[data-theme="light"] .sidebar{border-right-color:rgba(0,0,0,.12);}
-[data-theme="light"] .sidebar-brand{border-bottom-color:rgba(0,0,0,.1);}
-[data-theme="light"] .sidebar-brand h1{color:var(--text);}
-[data-theme="light"] .nav-item:hover{color:var(--text);background:rgba(0,0,0,.06);}
-[data-theme="light"] .nav-item.active{color:var(--text);background:rgba(232,82,10,.1);border-left-color:var(--highlight);}
-[data-theme="light"] .sidebar-footer{border-top-color:rgba(0,0,0,.1);}
-[data-theme="light"] .sidebar-footer-btn{background:#f1f4fa;border-color:rgba(0,0,0,.15);}
-[data-theme="light"] .sidebar-footer-btn:hover{background:#e4e9f3;color:var(--text);}
-[data-theme="light"] .page-title{background:linear-gradient(135deg,var(--text) 30%,var(--text2));-webkit-background-clip:text;background-clip:text;}
+[data-theme="light"] .topbar { border-bottom-color: rgba(0,0,0,.12); }
+[data-theme="light"] .topbar-brand { border-right-color: rgba(0,0,0,.1); }
+[data-theme="light"] .topbar-name { color: var(--text); }
+[data-theme="light"] .topbar-nav-item:hover { color: var(--text); background: rgba(0,0,0,.05); }
+[data-theme="light"] .topbar-nav-item.active { color: var(--text); background: rgba(232,82,10,.08); border-bottom-color: var(--highlight); }
+[data-theme="light"] .topbar-action-btn { background: #f1f4fa; border-color: rgba(0,0,0,.15); }
+[data-theme="light"] .topbar-action-btn:hover { background: #e4e9f3; color: var(--text); }
+[data-theme="light"] .topbar-action-btn.active { border-color: var(--highlight); background: rgba(232,82,10,.1); color: var(--text); }
+[data-theme="light"] .ships-sidebar { border-right-color: rgba(0,0,0,.12); }
+[data-theme="light"] .ships-sidebar-header { border-bottom-color: rgba(0,0,0,.1); background: var(--sidebar-bg); }
+[data-theme="light"] .nav-item:hover { color: var(--text); background: rgba(0,0,0,.06); }
+[data-theme="light"] .nav-item.active { color: var(--text); background: rgba(232,82,10,.1); border-left-color: var(--highlight); }
+[data-theme="light"] .page-title { background: linear-gradient(135deg,var(--text) 30%,var(--text2)); -webkit-background-clip:text; background-clip:text; }

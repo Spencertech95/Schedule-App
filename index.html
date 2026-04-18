@@ -32,62 +32,52 @@
 <div id="app-loading" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;font-size:14px;color:var(--text2);">Loading…</div>
 
 <!-- APP SHELL -->
-<div id="app-shell" style="display:flex;flex:1;min-width:0;width:100%;">
+<div id="app-shell" style="display:flex;flex-direction:column;flex:1;min-width:0;width:100%;">
 
-<!-- SIDEBAR -->
-<nav class="sidebar">
-  <div class="sidebar-brand">
-    <div style="width:28px;height:3px;background:var(--highlight);border-radius:2px;margin-bottom:10px;"></div>
-    <h1>Technical Entertainment</h1>
-    <p>Crew Scheduling</p>
-  </div>
-
-  <div class="sidebar-nav">
-
-    <!-- Overview -->
-    <button class="nav-item" data-page="overview" onclick="showPage('overview',this)" style="margin-top:.3rem;">
-      <span class="nav-icon">◈</span><span>Overview</span>
-    </button>
-    <button class="nav-item" onclick="showPage('notifications',this)"><span class="nav-icon">🔔</span><span>Notifications</span></button>
-
-    <!-- Operations -->
-    <div class="nav-section" style="margin-top:.4rem;">Operations</div>
-    <button class="nav-item" data-page="dashboard"  onclick="showPage('dashboard',this)"><span class="nav-icon">⊞</span><span>Crew dashboard</span></button>
-    <button class="nav-item"                         onclick="showPage('placement',this)"><span class="nav-icon">⇄</span><span>Placement finder</span></button>
-    <button class="nav-item"                         onclick="showPage('contracts',this)"><span class="nav-icon">◎</span><span>Contracts &amp; offers</span></button>
-    <button class="nav-item"                         onclick="showPage('reports',this)"><span class="nav-icon">▤</span><span>Reports</span></button>
-
-    <!-- Fleet -->
-    <div class="nav-section" style="margin-top:.4rem;">Fleet</div>
-    <button class="nav-item" onclick="showPage('fleet',this)"><span class="nav-icon">⛴</span><span>Fleet &amp; manning</span></button>
-    <button class="nav-item" onclick="showPage('rotations',this)"><span class="nav-icon">↺</span><span>Ship rotations</span></button>
-    <button class="nav-item" onclick="showPage('deployment',this)"><span class="nav-icon">🗺</span><span>Fleet deployment</span></button>
-
-    <!-- Ships — collapsible -->
-    <div class="nav-section" onclick="toggleShipsNav()" style="margin-top:.4rem;cursor:pointer;user-select:none;">Ships</div>
-    <div id="ship-nav-items" class="nav-ships-drawer"></div>
-
-    <!-- Crew -->
-    <div class="nav-section" style="margin-top:.4rem;">Crew</div>
-    <button class="nav-item" onclick="showPage('crew',this)"><span class="nav-icon">◉</span><span>Crew roster</span></button>
-    <button class="nav-item" onclick="showPage('docwallet',this)"><span class="nav-icon">📋</span><span>Document wallet</span></button>
-
-    <!-- Admin -->
-    <div class="nav-section" style="margin-top:.4rem;">Admin</div>
-    <button class="nav-item" onclick="showPage('positions',this)"><span class="nav-icon">◻</span><span>Positions</span></button>
-    <button class="nav-item" onclick="showPage('compliance',this)"><span class="nav-icon">✓</span><span>Compliance</span></button>
-    <button class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙</span><span>Settings</span></button>
-
-  </div><!-- /sidebar-nav -->
-
-  <!-- Sidebar footer — pinned to bottom -->
-  <div class="sidebar-footer">
-    <div class="sidebar-footer-row" style="gap:6px;">
-      <button class="sidebar-footer-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode" style="flex:1;">🌙 Theme</button>
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">TE</div>
+    <div class="topbar-title">
+      <div class="topbar-name">Technical Entertainment</div>
+      <div class="topbar-sub">Crew Scheduling · Celebrity Fleet</div>
     </div>
   </div>
+  <nav class="topbar-nav">
+    <button class="topbar-nav-item" data-page="overview" onclick="showPage('overview',this)"><span class="topbar-nav-icon">◈</span> Overview</button>
+    <button class="topbar-nav-item" onclick="showPage('dashboard',this)"><span class="topbar-nav-icon">⊞</span> Dashboard</button>
+    <div class="topbar-nav-sep"></div>
+    <button class="topbar-nav-item" onclick="showPage('crew',this)"><span class="topbar-nav-icon">◉</span> Crew</button>
+    <button class="topbar-nav-item" onclick="showPage('docwallet',this)"><span class="topbar-nav-icon">📋</span> Doc Wallet</button>
+    <div class="topbar-nav-sep"></div>
+    <button class="topbar-nav-item" onclick="showPage('contracts',this)"><span class="topbar-nav-icon">◎</span> Contracts</button>
+    <button class="topbar-nav-item" onclick="showPage('placement',this)"><span class="topbar-nav-icon">⇄</span> Placement</button>
+    <button class="topbar-nav-item" onclick="showPage('reports',this)"><span class="topbar-nav-icon">▤</span> Reports</button>
+    <div class="topbar-nav-sep"></div>
+    <button class="topbar-nav-item" onclick="showPage('rotations',this)"><span class="topbar-nav-icon">↺</span> Rotations</button>
+    <button class="topbar-nav-item" onclick="showPage('fleet',this)"><span class="topbar-nav-icon">⛴</span> Fleet</button>
+    <button class="topbar-nav-item" onclick="showPage('deployment',this)"><span class="topbar-nav-icon">🗺</span> Deployment</button>
+    <div class="topbar-nav-sep"></div>
+    <button class="topbar-nav-item" onclick="showPage('positions',this)"><span class="topbar-nav-icon">◻</span> Positions</button>
+    <button class="topbar-nav-item" onclick="showPage('compliance',this)"><span class="topbar-nav-icon">✓</span> Compliance</button>
+    <button class="topbar-nav-item" onclick="showPage('settings',this)"><span class="topbar-nav-icon">⚙</span> Settings</button>
+  </nav>
+  <div class="topbar-actions">
+    <button class="topbar-action-btn" id="notif-topbar-btn" onclick="showPage('notifications',this)" title="Notifications">
+      🔔<span id="notif-badge"></span>
+    </button>
+    <button class="topbar-action-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+  </div>
+</header>
 
-</nav><!-- /sidebar -->
+<!-- APP BODY -->
+<div class="app-body">
+
+<!-- SHIPS SIDEBAR -->
+<nav class="ships-sidebar">
+  <div class="ships-sidebar-header">Ships</div>
+  <div id="ship-nav-items"></div>
+</nav>
 
 <!-- MAIN CONTENT AREA -->
 <div class="main" id="main-content">
@@ -743,6 +733,8 @@
 </div>
 
 </div><!-- /main -->
+
+</div><!-- /app-body -->
 
 <!-- PROFILE SLIDE-OVER PANEL -->
 <div class="profile-overlay" id="profile-overlay">
