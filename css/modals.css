@@ -171,3 +171,33 @@
 .dw-inline-edit{display:flex;align-items:center;gap:6px;}
 .dw-inline-edit input{background:rgba(0,0,0,.3);border:.5px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--text);outline:none;width:130px;}
 .dw-inline-edit input:focus{border-color:var(--highlight);}
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] #toast{background:rgba(15,23,42,.92);color:#fff;}
+[data-theme="light"] .manifest-table thead th{background:rgba(0,0,0,.03);}
+[data-theme="light"] .manifest-table tbody tr{border-bottom-color:rgba(0,0,0,.06);}
+[data-theme="light"] .manifest-table tbody tr:hover td{background:rgba(0,0,0,.03);}
+[data-theme="light"] .manifest-search{color:var(--text);background:rgba(0,0,0,.05);}
+[data-theme="light"] .voyage-table td{border-bottom-color:rgba(0,0,0,.06);}
+[data-theme="light"] .voyage-table tr:hover td{background:rgba(0,0,0,.02);}
+[data-theme="light"] .voyage-table tr.vt-today td{background:rgba(232,82,10,.07);}
+[data-theme="light"] .voyage-table tr.vt-turnaround td{background:rgba(37,99,235,.05);}
+[data-theme="light"] .vc-region{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.12);}
+[data-theme="light"] .vc-chip{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.12);}
+[data-theme="light"] .voyage-card-hdr{background:rgba(0,0,0,.02);}
+[data-theme="light"] .voyage-card.vc-current .voyage-card-hdr{background:rgba(232,82,10,.04);}
+[data-theme="light"] .voyage-card-hdr:hover{background:rgba(0,0,0,.04);}
+[data-theme="light"] .voyage-card-body{border-top-color:rgba(0,0,0,.08);}
+[data-theme="light"] .dw-crew-row:hover{background:rgba(0,0,0,.04);}
+[data-theme="light"] .dw-crew-row.active{background:rgba(232,82,10,.08);}
+[data-theme="light"] .dw-list-search input{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.15);}
+[data-theme="light"] .dw-doc-card{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.1);}
+[data-theme="light"] .dw-doc-card.dw-no-date{background:rgba(0,0,0,.015);}
+[data-theme="light"] .dw-add-form{background:rgba(0,0,0,.04);}
+[data-theme="light"] .dw-add-form select,
+[data-theme="light"] .dw-add-form input{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.15);}
+[data-theme="light"] .dw-inline-edit input{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.15);color:var(--text);}
+[data-theme="light"] .deploy-chip{background:rgba(0,0,0,.05);}
+[data-theme="light"] .deploy-chip:hover{border-color:var(--highlight);color:var(--text);}
+[data-theme="light"] .import-drop{border-color:rgba(0,0,0,.2);}
+[data-theme="light"] .import-progress{background:rgba(0,0,0,.08);}

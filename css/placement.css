@@ -26,3 +26,9 @@
 .pf-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
 .pf-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
 .pf-empty{font-size:13px;color:var(--text2);padding:1.5rem 0;text-align:center;}
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] .pf-pill{background:rgba(0,0,0,.05);}
+[data-theme="light"] .pf-ship-header{background:rgba(0,0,0,.03);}
+[data-theme="light"] .pf-candidate{background:rgba(0,0,0,.03);}
+[data-theme="light"] .pf-score-bar{background:rgba(0,0,0,.08);}

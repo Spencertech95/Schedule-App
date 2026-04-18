@@ -9,3 +9,6 @@
 .fleet-ship:hover{background:rgba(255,255,255,0.05);}
 .fleet-ship-name{font-weight:500;}
 .fleet-ship-meta{font-size:10px;color:var(--text2);}
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] .fleet-ship:hover{background:rgba(0,0,0,.03);}

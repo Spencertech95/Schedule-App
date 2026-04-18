@@ -179,6 +179,53 @@
 /* emergency contact card */
 .prof-ec-card{background:rgba(255,107,122,.06);border:.5px solid rgba(255,107,122,.2);border-radius:var(--r);padding:12px 14px;}
 
+/* ── LIGHT MODE ── */
+[data-theme="light"] .co-vbtn.active{background:rgba(0,0,0,.08);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12);}
+[data-theme="light"] .co-vbtn:hover{color:var(--text);}
+[data-theme="light"] .co-view-toggle{background:rgba(0,0,0,.05);}
+[data-theme="light"] .co-stat-val{color:var(--text);}
+[data-theme="light"] .co-table thead th:hover{color:var(--text);}
+[data-theme="light"] .co-table tbody tr{border-bottom-color:rgba(0,0,0,.06);}
+[data-theme="light"] .co-table tbody tr:hover td{background:rgba(0,0,0,.03);}
+[data-theme="light"] .co-card-name{color:var(--text);}
+[data-theme="light"] .co-card{box-shadow:0 1px 6px rgba(0,0,0,.08);}
+[data-theme="light"] .co-tab:hover{color:var(--text);}
+[data-theme="light"] .co-tab.active{color:var(--text);}
+[data-theme="light"] .co-tab-count{background:rgba(0,0,0,.08);}
+[data-theme="light"] .co-col{background:rgba(0,0,0,.04);}
+[data-theme="light"] .co-col-count{background:rgba(0,0,0,.08);}
+[data-theme="light"] .co-pf-step::after{background:rgba(0,0,0,.1);}
+[data-theme="light"] .co-pf-dot.pending{background:rgba(0,0,0,.08);}
+[data-theme="light"] .co-step{background:rgba(0,0,0,.08);}
+[data-theme="light"] .co-detail-item span{color:var(--text);}
+[data-theme="light"] .email-field input{color:var(--text);}
+[data-theme="light"] .email-body{color:var(--text);background:rgba(0,0,0,.03);}
+[data-theme="light"] .profile-name{color:var(--text);}
+[data-theme="light"] .profile-tab:hover:not(.active){color:var(--text);}
+[data-theme="light"] .prof-field{background:rgba(0,0,0,.03);}
+[data-theme="light"] .prof-field .pf-val{color:var(--text);}
+[data-theme="light"] .prof-field input,
+[data-theme="light"] .prof-field select,
+[data-theme="light"] .prof-field textarea{color:var(--text);}
+[data-theme="light"] .prof-field input::placeholder,
+[data-theme="light"] .prof-field textarea::placeholder{color:var(--text2);}
+[data-theme="light"] .prof-tl-title{color:var(--text);}
+[data-theme="light"] .prof-stat{background:rgba(0,0,0,.04);}
+[data-theme="light"] .prof-stat-val{color:var(--text);}
+[data-theme="light"] .prof-skill-bar{background:rgba(0,0,0,.08);}
+[data-theme="light"] .prof-star{color:rgba(0,0,0,.15);}
+[data-theme="light"] .ss-win-group{background:rgba(0,0,0,.04);}
+[data-theme="light"] .ss-win-btn:hover:not(.active){color:var(--text);background:rgba(0,0,0,.06);}
+[data-theme="light"] .ss-crew-card{background:rgba(0,0,0,.03);}
+[data-theme="light"] .ss-ship-card{background:rgba(0,0,0,.04);}
+[data-theme="light"] .ss-candidate-chip{background:rgba(0,0,0,.05);}
+[data-theme="light"] .ss-candidate-chip:hover{background:rgba(232,82,10,.08);}
+[data-theme="light"] .ss-fit-bar{background:rgba(0,0,0,.08);}
+[data-theme="light"] .ss-ship-block{background:rgba(0,0,0,.03);}
+[data-theme="light"] .ss-ship-block-header{background:rgba(0,0,0,.02);}
+[data-theme="light"] .ss-opening-cell-head{background:rgba(0,0,0,.03);}
+[data-theme="light"] .profile-footer{background:rgba(0,0,0,.04);}
+
 @media(max-width:1200px){.co-board{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:800px){.co-board{grid-template-columns:repeat(2,1fr);}.co-summary{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:550px){.co-summary{grid-template-columns:1fr 1fr;}.co-board{grid-template-columns:1fr;}}

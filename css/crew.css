@@ -67,3 +67,15 @@
 .tl-ruler-mark{font-size:9px;color:var(--text2);border-left:0.5px solid var(--border);padding-left:3px;flex-shrink:0;}
 .today-line{position:absolute;top:0;bottom:0;width:2px;background:var(--highlight);z-index:5;opacity:0.9;}
 .tl-outer{position:relative;}
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] .dash-pill{background:rgba(0,0,0,.05);}
+[data-theme="light"] .dash-pill:hover{color:var(--text);background:rgba(0,0,0,.09);border-color:rgba(0,0,0,.2);}
+[data-theme="light"] .ds-value{color:var(--text);}
+[data-theme="light"] .ship-kpi-value{color:var(--text);}
+[data-theme="light"] .ship-kpi{background:rgba(0,0,0,.04);}
+[data-theme="light"] .roster-table tr:hover td{background:rgba(0,0,0,.03);}
+[data-theme="light"] .crew-slot{background:rgba(0,0,0,.03);}
+[data-theme="light"] .dash-stat{box-shadow:0 1px 6px rgba(0,0,0,.07);}
+[data-theme="light"] .tl-bar{color:rgba(0,0,0,.75);}
+[data-theme="light"] .tl-offboard{color:rgba(0,0,0,.7);}

@@ -83,3 +83,11 @@
 @media(min-width:1800px){.page{padding:2rem 3rem;}}
 @media(max-width:900px){.page{padding:1.25rem 1rem;}}
 @media(max-width:600px){.page{padding:1rem .75rem;}}
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] .sidebar-brand h1{color:var(--text);}
+[data-theme="light"] .nav-item:hover{color:var(--text);background:rgba(0,0,0,.05);}
+[data-theme="light"] .nav-item.active{color:var(--text);background:rgba(232,82,10,.08);border-left-color:var(--highlight);}
+[data-theme="light"] .sidebar-footer-btn{background:rgba(0,0,0,.04);}
+[data-theme="light"] .sidebar-footer-btn:hover{background:rgba(0,0,0,.08);color:var(--text);}
+[data-theme="light"] .page-title{background:linear-gradient(135deg,var(--text) 30%,var(--text2));-webkit-background-clip:text;background-clip:text;}

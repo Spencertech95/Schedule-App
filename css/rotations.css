@@ -17,6 +17,13 @@
 .rotation-table td{font-size:12px;padding:7px 9px;border-bottom:0.5px solid var(--border);vertical-align:top;}
 .rotation-table tr:last-child td{border-bottom:none;}
 .rotation-table tr:hover td{background:rgba(255,255,255,0.04);}
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] .year-tab.active{color:var(--text);}
+[data-theme="light"] .ship-tab{background:rgba(0,0,0,.05);}
+[data-theme="light"] .rotation-month{background:rgba(0,0,0,.04);}
+[data-theme="light"] .rotation-month:hover{background:rgba(0,0,0,.07);}
+[data-theme="light"] .rotation-table tr:hover td{background:rgba(0,0,0,.03);}
 .pos-block{margin-bottom:3px;}
 .pos-name{font-size:11px;font-weight:500;}
 .date-pair{font-size:11px;color:var(--text2);}

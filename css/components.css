@@ -81,3 +81,18 @@ textarea{resize:vertical;min-height:65px;}
 /* FILTERS */
 .filters{display:flex;gap:7px;margin-bottom:1rem;flex-wrap:wrap;}
 .filter-select{width:auto;min-width:130px;font-size:12px;}
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] .card-title{color:var(--text);}
+[data-theme="light"] .metric-value{color:var(--text);}
+[data-theme="light"] .card{box-shadow:0 2px 12px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.7);}
+[data-theme="light"] .card:hover{box-shadow:0 4px 20px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.8);}
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.18);}
+[data-theme="light"] .btn{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.15);}
+[data-theme="light"] .btn:hover{background:rgba(0,0,0,.09);border-color:rgba(0,0,0,.22);}
+[data-theme="light"] .data-table th{background:rgba(0,0,0,.03);}
+[data-theme="light"] .data-table tr:hover td{background:rgba(0,0,0,.03);}
+[data-theme="light"] .add-form{background:rgba(0,0,0,.04);}
+[data-theme="light"] .tag{background:rgba(0,0,0,.05);}
