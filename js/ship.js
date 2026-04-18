@@ -1,6 +1,7 @@
 // ── ship.js — individual ship pages ──────────────────────────────────────────
 import { state } from './state.js';
 import { parsePortLocation, getShipPortForDate } from './utils.js';
+import { upsertCrew } from './db.js';
 
 export const SHIP_CODES_ORDERED = ['ML','IN','SM','CS','SL','EQ','EC','SI','RF','EG','AX','BY','AT','XC'];
 export const SHIP_DISPLAY = {
@@ -201,6 +202,44 @@ export function renderManifest(sc, crew, now) {
     return `<span class="days-badge days-future">${days}d</span>`;
   }
 
+  function editRow(c, isIncoming) {
+    const signOnField  = isIncoming ? 'futureOn'  : 'start';
+    const signOffField = isIncoming ? 'futureOff' : 'end';
+    return `<tr id="manifest-edit-row-${c.id}" style="display:none;background:rgba(255,255,255,.03);">
+      <td colspan="9" style="padding:10px 12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;">
+          Edit — ${c.name}${isIncoming ? ' (incoming)' : ''}
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="field" style="margin:0;min-width:130px;">
+            <label style="font-size:10px;">Sign on</label>
+            <input type="date" id="medit-signon-${c.id}" value="${(isIncoming ? c.futureOn : c.start) || ''}"
+              style="width:100%;font-size:12px;"/>
+          </div>
+          <div class="field" style="margin:0;min-width:130px;">
+            <label style="font-size:10px;">Sign off</label>
+            <input type="date" id="medit-signoff-${c.id}" value="${(isIncoming ? c.futureOff : c.end) || ''}"
+              style="width:100%;font-size:12px;"/>
+          </div>
+          <div class="field" style="margin:0;min-width:130px;">
+            <label style="font-size:10px;">Gateway airport</label>
+            <input type="text" id="medit-airport-${c.id}" value="${c.airport || ''}" placeholder="e.g. MIA"
+              style="width:100%;font-size:12px;"/>
+          </div>
+          <div class="field" style="margin:0;flex:1;min-width:180px;">
+            <label style="font-size:10px;">Reason / note</label>
+            <input type="text" id="medit-note-${c.id}" placeholder="e.g. Delayed, Extension approved…"
+              style="width:100%;font-size:12px;"/>
+          </div>
+          <div style="display:flex;gap:6px;padding-bottom:1px;">
+            <button class="btn btn-sm btn-primary" onclick="saveManifestEdit(${c.id},${isIncoming})">Save</button>
+            <button class="btn btn-sm" onclick="closeManifestEdit(${c.id})">Cancel</button>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }
+
   const currentRows = current.map(c => {
     const posColor = POS_COLORS[c.abbr] || '#A4A4A7';
     return `<tr>
@@ -212,7 +251,8 @@ export function renderManifest(sc, crew, now) {
       ${portCell(c.end)}
       <td style="font-size:11px;color:var(--text2);">${c.airport || '—'}</td>
       <td style="font-size:11px;color:var(--text2);">${c.nat || '—'}</td>
-    </tr>`;
+      <td><button class="btn btn-sm" onclick="openManifestEdit(${c.id})" style="padding:2px 8px;font-size:10px;">Edit</button></td>
+    </tr>${editRow(c, false)}`;
   }).join('');
 
   const incomingRows = incoming.map(c => {
@@ -226,7 +266,8 @@ export function renderManifest(sc, crew, now) {
       ${portCell(c.futureOff)}
       <td style="font-size:11px;color:var(--text2);">${c.airport || '—'}</td>
       <td style="font-size:11px;color:var(--text2);">${c.nat || '—'}</td>
-    </tr>`;
+      <td><button class="btn btn-sm" onclick="openManifestEdit(${c.id})" style="padding:2px 8px;font-size:10px;">Edit</button></td>
+    </tr>${editRow(c, true)}`;
   }).join('');
 
   const th = `<thead><tr>
@@ -238,6 +279,7 @@ export function renderManifest(sc, crew, now) {
     <th>Debark port</th>
     <th>Gateway</th>
     <th>Nationality</th>
+    <th></th>
   </tr></thead>`;
 
   return `
@@ -272,6 +314,50 @@ export function renderManifest(sc, crew, now) {
         </table>
       </div>
     </div>`;
+}
+
+export function openManifestEdit(id) {
+  // Close any other open edit rows first
+  document.querySelectorAll('[id^="manifest-edit-row-"]').forEach(row => {
+    if (row.id !== `manifest-edit-row-${id}`) row.style.display = 'none';
+  });
+  const row = document.getElementById(`manifest-edit-row-${id}`);
+  if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
+export function closeManifestEdit(id) {
+  const row = document.getElementById(`manifest-edit-row-${id}`);
+  if (row) row.style.display = 'none';
+}
+
+export function saveManifestEdit(id, isIncoming) {
+  const c = state.crew.find(x => x.id === id);
+  if (!c) return;
+
+  const signOn  = document.getElementById(`medit-signon-${id}`)?.value.trim()  || '';
+  const signOff = document.getElementById(`medit-signoff-${id}`)?.value.trim() || '';
+  const airport = document.getElementById(`medit-airport-${id}`)?.value.trim() || '';
+  const note    = document.getElementById(`medit-note-${id}`)?.value.trim()    || '';
+
+  if (isIncoming) {
+    if (signOn)  c.futureOn  = signOn;
+    if (signOff) c.futureOff = signOff;
+  } else {
+    if (signOn)  c.start = signOn;
+    if (signOff) c.end   = signOff;
+  }
+  if (airport) c.airport = airport;
+  if (note && !c.notes.includes(note)) {
+    c.notes = c.notes ? `${c.notes}\n${note}` : note;
+  }
+
+  upsertCrew(c);
+  closeManifestEdit(id);
+  // Re-render the manifest to reflect the updated dates/gateway
+  const sc = currentShipCode;
+  const crew = state.crew.filter(x => x.recentShipCode === sc || x.shipCode === sc);
+  const wrap = document.getElementById(`ship-tab-manifest-${sc}`);
+  if (wrap) wrap.innerHTML = renderManifest(sc, crew, new Date());
 }
 
 export function filterManifest(sc, section, query) {
@@ -419,7 +505,10 @@ window.showShip         = showShip;
 window.renderShipPage   = renderShipPage;
 window.switchShipTab    = switchShipTab;
 window.deployPortOnDate = deployPortOnDate;
-window.renderManifest   = renderManifest;
-window.filterManifest   = filterManifest;
+window.renderManifest      = renderManifest;
+window.filterManifest      = filterManifest;
+window.openManifestEdit    = openManifestEdit;
+window.closeManifestEdit   = closeManifestEdit;
+window.saveManifestEdit    = saveManifestEdit;
 window.renderPosGrid    = renderPosGrid;
 window.renderTimeline   = renderTimeline;
