@@ -59,7 +59,6 @@ export async function loadAll() {
   if (manningRow) {
     try {
       const saved = JSON.parse(manningRow.value);
-      // Merge saved values into state.manning, converting string keys to ints
       ['Millennium','Solstice','Edge'].forEach(cls => {
         if (saved[cls]) {
           Object.entries(saved[cls]).forEach(([k, v]) => {
@@ -68,6 +67,19 @@ export async function loadAll() {
         }
       });
     } catch(e) { console.warn('Failed to parse manning data', e); }
+  }
+
+  const shipManningRow = metaR.data?.find(r => r.key === 'shipManning');
+  if (shipManningRow) {
+    try {
+      const saved = JSON.parse(shipManningRow.value);
+      Object.entries(saved).forEach(([code, posMap]) => {
+        state.shipManning[code] = {};
+        Object.entries(posMap).forEach(([k, v]) => {
+          state.shipManning[code][parseInt(k)] = parseInt(v);
+        });
+      });
+    } catch(e) { console.warn('Failed to parse shipManning data', e); }
   }
 }
 
@@ -141,6 +153,12 @@ export async function saveManning() {
   const { error } = await supabase.from('app_meta')
     .upsert({ key: 'manning', value: JSON.stringify(state.manning) });
   if (error) onError('saveManning', error);
+}
+
+export async function saveShipManning() {
+  const { error } = await supabase.from('app_meta')
+    .upsert({ key: 'shipManning', value: JSON.stringify(state.shipManning) });
+  if (error) onError('saveShipManning', error);
 }
 
 // ── BULK CREW REPLACE (import) ────────────────────────────────────────────────

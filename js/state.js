@@ -9,6 +9,7 @@ export const state = {
     Solstice:   { ...CLASS_MANNING.Solstice },
     Edge:       { ...CLASS_MANNING.Edge },
   },
+  shipManning: {}, // per-ship overrides keyed by ship code e.g. { ML: {1:1,2:2,...} }
   crew: [],
   offers: [],
   rotations: {},

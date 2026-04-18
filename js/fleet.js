@@ -2,7 +2,7 @@
 import { state } from './state.js';
 import { uid } from './state.js';
 import { classBadge, statusBadge, toggleForm } from './utils.js';
-import { upsertShip, dbDeleteShip, saveManning } from './db.js';
+import { upsertShip, dbDeleteShip, saveManning, saveShipManning } from './db.js';
 
 export function renderFleet() {
   const codeMap = {};
@@ -17,10 +17,15 @@ export function renderFleet() {
     {name:'Edge',       badge:'badge-purple', color:'var(--purple-t)', bg:'var(--purple-bg)'}
   ];
 
+  function getShipReq(ship, code) {
+    // Per-ship override takes priority over class default
+    return state.shipManning[code] || state.manning[ship.shipClass] || {};
+  }
+
   function shipStats(ship) {
-    const req = state.manning[ship.shipClass] || {};
-    const reqTotal = Object.values(req).reduce((a, b) => a + b, 0);
     const code = codeMap[ship.name] || '';
+    const req = getShipReq(ship, code);
+    const reqTotal = Object.values(req).reduce((a, b) => a + b, 0);
     const onboard = {};
     state.crew.filter(c => c.shipId === ship.id && c.status === 'Onboard')
       .forEach(c => { onboard[c.posId] = (onboard[c.posId] || 0) + 1; });
@@ -76,15 +81,27 @@ export function renderFleet() {
       if (st.vacancies > 0) alerts.push(`<span style="color:var(--red-t);font-size:10px;">&#9888; ${st.vacancies} open ${st.vacancies === 1 ? 'vacancy' : 'vacancies'}</span>`);
       if (st.incomingTotal > 0) alerts.push(`<span style="color:var(--amber-t);font-size:10px;">&#8593; ${st.incomingTotal} incoming</span>`);
 
+      const hasOverride = !!state.shipManning[st.code];
+      const editInputs = state.positions.map(p => {
+        const val = st.req[p.id] || 0;
+        return `<div style="text-align:center;">
+          <div style="font-size:9px;color:var(--text2);margin-bottom:3px;">${p.abbr}</div>
+          <input type="number" min="0" max="20" value="${val}"
+            data-ship="${st.code}" data-pos="${p.id}"
+            style="width:40px;text-align:center;padding:3px;font-size:12px;background:var(--input-bg);border:.5px solid var(--border);border-radius:4px;color:#fff;"/>
+        </div>`;
+      }).join('');
+
       return `<div style="padding:12px 14px;border-bottom:.5px solid var(--border);">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
           <div>
-            <div style="font-weight:500;font-size:13px;">${ship.name}</div>
+            <div style="font-weight:500;font-size:13px;">${ship.name}${hasOverride ? ' <span style="font-size:9px;color:var(--blue-t);font-weight:400;">custom par</span>' : ''}</div>
             <div style="font-size:10px;color:var(--text2);margin-top:1px;">${ship.imo}&nbsp;&middot;&nbsp;${ship.gt}</div>
           </div>
           <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:8px;">
             ${statusBadge(ship.status)}
             <span style="font-size:12px;font-weight:600;color:${barColor};">${st.onboardTotal}/${st.reqTotal}</span>
+            <button class="btn btn-sm" onclick="openShipParEdit('${st.code}')" style="padding:2px 7px;font-size:10px;">Edit par</button>
             <button class="btn btn-sm btn-danger" onclick="deleteShip(${ship.id})" style="padding:2px 6px;font-size:11px;">&#10005;</button>
           </div>
         </div>
@@ -93,6 +110,15 @@ export function renderFleet() {
         </div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:${alerts.length ? '6px' : '0'};">${posChips}</div>
         ${alerts.length ? `<div style="display:flex;gap:10px;flex-wrap:wrap;">${alerts.join('')}</div>` : ''}
+        <div id="ship-par-edit-${st.code}" style="display:none;margin-top:10px;padding:10px;background:rgba(255,255,255,.03);border:.5px solid var(--border);border-radius:6px;">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">Par levels for <strong style="color:#fff;">${ship.name}</strong> — overrides class default</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">${editInputs}</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-primary" onclick="saveShipPar('${st.code}')">Save</button>
+            <button class="btn btn-sm" onclick="closeShipParEdit('${st.code}')">Cancel</button>
+            ${hasOverride ? `<button class="btn btn-sm" onclick="resetShipPar('${st.code}')" style="color:var(--text2);margin-left:auto;">Reset to class default</button>` : ''}
+          </div>
+        </div>
       </div>`;
     }).join('');
 
@@ -224,8 +250,43 @@ export function deleteShip(id) {
   dbDeleteShip(id);
 }
 
+export function openShipParEdit(code) {
+  // Close any other open edit panels first
+  document.querySelectorAll('[id^="ship-par-edit-"]').forEach(el => el.style.display = 'none');
+  const panel = document.getElementById(`ship-par-edit-${code}`);
+  if (panel) panel.style.display = 'block';
+}
+
+export function closeShipParEdit(code) {
+  const panel = document.getElementById(`ship-par-edit-${code}`);
+  if (panel) panel.style.display = 'none';
+}
+
+export function saveShipPar(code) {
+  const panel = document.getElementById(`ship-par-edit-${code}`);
+  if (!panel) return;
+  const inputs = panel.querySelectorAll('input[data-pos]');
+  const vals = {};
+  inputs.forEach(inp => { vals[parseInt(inp.dataset.pos)] = parseInt(inp.value) || 0; });
+  state.shipManning[code] = vals;
+  saveShipManning();
+  renderFleet();
+  if (typeof window._showToast === 'function') window._showToast(`Par levels saved for ${code}`);
+}
+
+export function resetShipPar(code) {
+  delete state.shipManning[code];
+  saveShipManning();
+  renderFleet();
+  if (typeof window._showToast === 'function') window._showToast(`${code} reset to class default`);
+}
+
 window.saveShip          = saveShip;
 window.deleteShip        = deleteShip;
+window.openShipParEdit   = openShipParEdit;
+window.closeShipParEdit  = closeShipParEdit;
+window.saveShipPar       = saveShipPar;
+window.resetShipPar      = resetShipPar;
 window.editManning       = editManning;
 window.cancelManningEdit = cancelManningEdit;
 window.saveManningEdit   = saveManningEdit;
