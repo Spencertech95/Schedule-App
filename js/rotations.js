@@ -1,7 +1,6 @@
 // ── rotations.js — rotation page ─────────────────────────────────────────────
 import { state } from './state.js';
 import { SHIP_DEPLOYMENT } from './data.js';
-import { state } from './state.js';
 import { saveRotations } from './db.js';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
