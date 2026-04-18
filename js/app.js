@@ -26,6 +26,7 @@ import './ship.js';
 import './docwallet.js';
 import './import.js';
 import './settings.js';
+import './ships-overview.js';
 
 // Load settings from localStorage before anything else renders
 loadSettings();

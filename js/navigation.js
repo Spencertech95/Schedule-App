@@ -13,6 +13,7 @@ import { renderPositions } from './positions.js';
 import { renderCompliance } from './compliance.js';
 import { renderSettings } from './settings.js';
 import { renderNotifications } from './notifications.js';
+import { initAllShips } from './ships-overview.js';
 
 export function showPage(name, el) {
   document.querySelectorAll('.topbar-nav-item, .topbar-action-btn, .nav-item').forEach(n => n.classList.remove('active'));
@@ -36,6 +37,7 @@ export function showPage(name, el) {
   if (name === 'compliance') renderCompliance();
   if (name === 'settings')       renderSettings();
   if (name === 'notifications')  renderNotifications();
+  if (name === 'all-ships')      initAllShips();
   if (name === 'ship') { /* rendered via showShip */ }
 }
 

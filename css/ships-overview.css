@@ -1,0 +1,278 @@
+/* ships-overview.css — All Ships Gantt chart */
+
+/* ── Page layout ── */
+#page-all-ships.active {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 52px);
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+/* ── Controls bar ── */
+.gantt-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: .85rem;
+  flex-shrink: 0;
+}
+
+.gantt-tabs {
+  display: flex;
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+.gantt-tab {
+  padding: 5px 14px;
+  font-size: 12px;
+  border: none;
+  background: none;
+  color: var(--text2);
+  cursor: pointer;
+  border-radius: 5px;
+  transition: all .15s;
+}
+.gantt-tab.active {
+  background: var(--highlight);
+  color: #fff;
+  font-weight: 500;
+}
+.gantt-tab:hover:not(.active) {
+  background: rgba(255,255,255,.06);
+  color: #fff;
+}
+
+.gantt-nav-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+}
+.gantt-nav-btn:hover { background: var(--bg2); color: #fff; }
+
+.gantt-today-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--highlight-dim);
+  border: 0.5px solid var(--highlight);
+  border-radius: 6px;
+  color: var(--highlight);
+  cursor: pointer;
+  transition: all .15s;
+}
+.gantt-today-btn:hover { background: rgba(255,127,69,.25); }
+
+/* ── Chart body ── */
+.gantt-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border: 0.5px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Left labels panel ── */
+.gantt-labels {
+  width: 160px;
+  flex-shrink: 0;
+  border-right: 0.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gantt-labels-header {
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 .75rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text2);
+  background: var(--bg2);
+  border-bottom: 0.5px solid var(--border);
+}
+
+.gantt-labels-rows {
+  flex: 1;
+  overflow: hidden; /* scroll is driven by gantt-timeline */
+}
+
+.gantt-ship-label {
+  height: 26px;
+  display: flex;
+  align-items: center;
+  padding: 0 .75rem;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text2);
+  background: var(--bg2);
+  border-bottom: 0.5px solid var(--border);
+  border-top: 0.5px solid var(--border);
+}
+
+.gantt-pos-label {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 .75rem 0 1.1rem;
+  font-size: 11px;
+  color: var(--text2);
+  border-bottom: 0.5px solid rgba(255,255,255,.04);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Right timeline panel ── */
+.gantt-timeline {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.1) transparent;
+}
+.gantt-timeline::-webkit-scrollbar { width: 6px; height: 6px; }
+.gantt-timeline::-webkit-scrollbar-track { background: transparent; }
+.gantt-timeline::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 3px; }
+
+.gantt-timeline-header {
+  height: 36px;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--bg2);
+  border-bottom: 0.5px solid var(--border);
+  overflow: hidden;
+}
+
+/* ── Tick labels ── */
+.gantt-tick {
+  position: absolute;
+  top: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  font-size: 10px;
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 0.5px solid var(--border);
+  box-sizing: border-box;
+}
+.gantt-tick.gt-today {
+  color: var(--highlight);
+  font-weight: 600;
+}
+.gantt-tick.gt-weekend { color: rgba(136,150,184,.5); }
+
+/* ── Row area ── */
+.gantt-ship-spacer {
+  height: 26px;
+  background: var(--bg2);
+  border-bottom: 0.5px solid var(--border);
+  border-top: 0.5px solid var(--border);
+}
+
+.gantt-row {
+  height: 30px;
+  position: relative;
+  border-bottom: 0.5px solid rgba(255,255,255,.04);
+}
+
+/* ── Grid column backgrounds ── */
+.gantt-col-bg {
+  position: absolute;
+  top: 0; bottom: 0;
+  box-sizing: border-box;
+  border-right: 0.5px solid rgba(255,255,255,.04);
+  pointer-events: none;
+}
+.gantt-weekend-bg { background: rgba(255,255,255,.015); }
+
+/* ── Today marker ── */
+.gantt-today-marker {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--highlight);
+  opacity: .65;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 1px;
+}
+
+/* ── Bars ── */
+.gantt-bar {
+  position: absolute;
+  top: 4px;
+  height: 22px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 7px;
+  cursor: pointer;
+  z-index: 1;
+  transition: filter .12s, transform .1s;
+  min-width: 4px;
+  overflow: hidden;
+}
+.gantt-bar:hover { filter: brightness(1.25); transform: scaleY(1.06); z-index: 3; }
+
+.gantt-bar-name {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Bar colours by ship class */
+.gantt-mil  { background: rgba(45,205,196,.72); border: 0.5px solid rgba(45,205,196,.95); }
+.gantt-sol  { background: rgba(77,168,247,.72); border: 0.5px solid rgba(77,168,247,.95); }
+.gantt-edge { background: rgba(167,139,250,.72); border: 0.5px solid rgba(167,139,250,.95); }
+
+.gantt-future { opacity: .5; border-style: dashed !important; }
+
+.gantt-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text2);
+  font-size: 13px;
+}
+
+/* ── Light mode ── */
+[data-theme="light"] .gantt-body { border-color: rgba(0,0,0,.12); }
+[data-theme="light"] .gantt-labels { border-right-color: rgba(0,0,0,.1); }
+[data-theme="light"] .gantt-labels-header { background: #f1f5ff; border-bottom-color: rgba(0,0,0,.1); }
+[data-theme="light"] .gantt-ship-label { background: #f1f5ff; color: #64748b; border-color: rgba(0,0,0,.1); }
+[data-theme="light"] .gantt-pos-label { color: #475569; border-color: rgba(0,0,0,.07); }
+[data-theme="light"] .gantt-timeline-header { background: #f1f5ff; border-bottom-color: rgba(0,0,0,.1); }
+[data-theme="light"] .gantt-tick { color: #64748b; border-right-color: rgba(0,0,0,.08); }
+[data-theme="light"] .gantt-tick.gt-today { color: var(--highlight); }
+[data-theme="light"] .gantt-ship-spacer { background: #f1f5ff; border-color: rgba(0,0,0,.1); }
+[data-theme="light"] .gantt-row { border-bottom-color: rgba(0,0,0,.06); }
+[data-theme="light"] .gantt-col-bg { border-right-color: rgba(0,0,0,.05); }
+[data-theme="light"] .gantt-weekend-bg { background: rgba(0,0,0,.02); }
+[data-theme="light"] .gantt-mil  { background: rgba(45,205,196,.55); border-color: rgba(45,205,196,.8); }
+[data-theme="light"] .gantt-sol  { background: rgba(77,168,247,.55); border-color: rgba(77,168,247,.8); }
+[data-theme="light"] .gantt-edge { background: rgba(167,139,250,.55); border-color: rgba(167,139,250,.8); }
+[data-theme="light"] .gantt-bar-name { color: #fff; }

@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/contracts.css"/>
   <link rel="stylesheet" href="css/modals.css"/>
   <link rel="stylesheet" href="css/notifications.css"/>
+  <link rel="stylesheet" href="css/ships-overview.css"/>
 
   <!-- Third-party CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -76,6 +77,10 @@
 <!-- SHIPS SIDEBAR -->
 <nav class="ships-sidebar">
   <div class="ships-sidebar-header">Ships</div>
+  <button class="nav-item" id="shipnav-all" onclick="showPage('all-ships',this)" style="border-bottom:0.5px solid var(--border);font-weight:500;">
+    <span class="nav-icon" style="font-size:11px;">◈</span>
+    <span style="font-size:12px;">All Ships</span>
+  </button>
   <div id="ship-nav-items"></div>
 </nav>
 
@@ -289,6 +294,35 @@
 <!-- SHIP DYNAMIC PAGE -->
 <div id="page-ship" class="page">
   <div id="ship-page-content"></div>
+</div>
+
+<!-- ALL SHIPS GANTT PAGE -->
+<div id="page-all-ships" class="page">
+  <div class="page-title">All Ships — Crew Gantt</div>
+  <div class="page-sub">Crew assignments across the fleet by position — scroll or switch views to explore the timeline</div>
+
+  <div class="gantt-controls">
+    <div class="gantt-tabs">
+      <button class="gantt-tab" data-view="day"     onclick="ganttSetView('day')">Daily</button>
+      <button class="gantt-tab" data-view="week"    onclick="ganttSetView('week')">Weekly</button>
+      <button class="gantt-tab active" data-view="month"   onclick="ganttSetView('month')">Monthly</button>
+      <button class="gantt-tab" data-view="quarter" onclick="ganttSetView('quarter')">Quarterly</button>
+    </div>
+    <button class="gantt-nav-btn" onclick="ganttNavigate(-1)" title="Previous">◀</button>
+    <button class="gantt-today-btn" onclick="ganttToday()">Today</button>
+    <button class="gantt-nav-btn" onclick="ganttNavigate(1)" title="Next">▶</button>
+  </div>
+
+  <div class="gantt-body">
+    <div class="gantt-labels">
+      <div class="gantt-labels-header">Ship / Position</div>
+      <div class="gantt-labels-rows" id="gantt-labels-rows"></div>
+    </div>
+    <div class="gantt-timeline" id="gantt-timeline">
+      <div class="gantt-timeline-header" id="gantt-header"></div>
+      <div id="gantt-rows"></div>
+    </div>
+  </div>
 </div>
 
 <!-- CREW ROSTER PAGE -->
