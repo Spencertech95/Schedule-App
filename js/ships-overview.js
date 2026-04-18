@@ -2,7 +2,8 @@
 import { state } from './state.js';
 import { SHIP_CODES_ORDERED, SHIP_DISPLAY } from './ship.js';
 
-const POS_ABBRS = ['SPM','VPM','ETDC','EOF','EOS','EOL','ESS','EOMC'];
+const POS_ORDER = ['SPM','VPM','ETDC','EOF','EOS','EOL','ESS','EOMC'];
+const POS_COLORS = {SPM:'#E87435',VPM:'#299BE1',ETDC:'#13818D',EOF:'#4dd4a0',EOS:'#A4A4A7',EOL:'#7fc8e8',ESS:'#5a9fd4',EOMC:'#E87435'};
 const MS_DAY    = 86_400_000;
 
 // ── View configs ──────────────────────────────────────────────────────────────
@@ -94,70 +95,54 @@ function px(ms, view) {
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 function buildRows() {
-  // Build posId → abbr map so manually-added crew (who lack c.abbr) still resolve
   const posIdToAbbr = {};
   for (const p of state.positions) posIdToAbbr[p.id] = p.abbr;
-
-  // Build shipId → sc map so manually-added crew (who lack c.shipCode) still resolve
-  const shipIdToSc = {};
-  for (const sc of SHIP_CODES_ORDERED) {
-    const d = SHIP_DISPLAY[sc];
-    const s = d && state.ships.find(sh => sh.name === d.name);
-    if (s) shipIdToSc[s.id] = sc;
-  }
-
 
   const ships = [];
 
   for (const sc of SHIP_CODES_ORDERED) {
-    const posRows = [];
+    const members = [];
 
-    for (const abbr of POS_ABBRS) {
-      const bars = [];
+    // All currently onboard crew for this ship
+    for (const c of state.crew) {
+      if (c.status !== 'Onboard') continue;
+      if (c.recentShipCode !== sc && c.shipCode !== sc) continue;
 
-      for (const c of state.crew) {
-        // Match ship — by code string OR by derived shipId
-        const onShip = c.recentShipCode === sc || c.shipCode === sc
-          || (c.shipId && shipIdToSc[c.shipId] === sc);
-        if (!onShip) continue;
+      const sMs = dateMs(c.start);
+      const eMs = dateMs(c.end);
+      const startMs = sMs ?? (eMs ? eMs - 180 * MS_DAY : today0() - 90 * MS_DAY);
+      const endMs   = eMs ?? (sMs ? sMs + 180 * MS_DAY : today0() + 90 * MS_DAY);
 
-        // Match position — by abbr string OR by posId → abbr
-        const crewAbbr = c.abbr || posIdToAbbr[c.posId] || '';
-        if (crewAbbr !== abbr) continue;
-
-        // Require at least one of start/end
-        const sMs = dateMs(c.start);
-        const eMs = dateMs(c.end);
-        if (!sMs && !eMs) continue;
-
-        bars.push({
-          name: c.name, crewId: c.id, sc,
-          startMs: sMs ?? (eMs - 180 * MS_DAY),
-          endMs:   eMs ?? (sMs + 180 * MS_DAY),
-          future: false,
-        });
-      }
-
-      // Future assignments
-      for (const c of state.crew) {
-        if (!c.futureOn) continue;
-        const fsc = c.futureShip || (c.futureShipId && shipIdToSc[c.futureShipId]);
-        if (fsc !== sc) continue;
-        const crewAbbr = c.abbr || posIdToAbbr[c.posId] || '';
-        if (crewAbbr !== abbr) continue;
-        const endMs = dateMs(c.futureOff) || (dateMs(c.futureOn) + 180 * MS_DAY);
-        bars.push({
-          name: c.futureName || c.name, crewId: c.id, sc,
-          startMs: dateMs(c.futureOn), endMs, future: true,
-        });
-      }
-
-      posRows.push({ abbr, bars });
+      members.push({
+        name: c.name, crewId: c.id,
+        abbr: c.abbr || posIdToAbbr[c.posId] || '',
+        startMs, endMs, future: false,
+      });
     }
 
-    if (posRows.some(r => r.bars.length)) {
-      ships.push({ sc, posRows });
+    // Crew with upcoming assignments to this ship
+    for (const c of state.crew) {
+      if (c.futureShip !== sc || !c.futureOn) continue;
+      const sMs = dateMs(c.futureOn);
+      const eMs = dateMs(c.futureOff) ?? (sMs + 180 * MS_DAY);
+      members.push({
+        name: c.futureName || c.name, crewId: c.id,
+        abbr: c.abbr || posIdToAbbr[c.posId] || '',
+        startMs: sMs, endMs: eMs, future: true,
+      });
     }
+
+    if (!members.length) continue;
+
+    // Sort by position order then name
+    members.sort((a, b) => {
+      const ai = POS_ORDER.indexOf(a.abbr);
+      const bi = POS_ORDER.indexOf(b.abbr);
+      const pd = (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+      return pd !== 0 ? pd : a.name.localeCompare(b.name);
+    });
+
+    ships.push({ sc, members });
   }
 
   return ships;
@@ -215,30 +200,33 @@ function renderGantt() {
     rowHtml += `<div class="gantt-today-marker" style="left:${todayLeft}px;"></div>`;
   }
 
-  // Ship groups
+  // Ship groups — one row per crew member
   for (const ship of rows) {
     const shipName = SHIP_DISPLAY[ship.sc]?.name || ship.sc;
-    const cls      = barCls(ship.sc);
 
-    labHtml += `<div class="gantt-ship-label">${shipName}</div>`;
+    labHtml += `<div class="gantt-ship-label">${shipName} <span style="opacity:.5;font-weight:400;">(${ship.members.length})</span></div>`;
     rowHtml += `<div class="gantt-ship-spacer"></div>`;
 
-    for (const row of ship.posRows) {
-      labHtml += `<div class="gantt-pos-label">${row.abbr}</div>`;
+    for (const m of ship.members) {
+      const col = POS_COLORS[m.abbr] || '#8896b8';
+
+      labHtml += `<div class="gantt-pos-label" title="${m.name}">
+        ${m.abbr ? `<span style="font-size:9px;font-weight:600;color:${col};margin-right:5px;flex-shrink:0;">${m.abbr}</span>` : ''}
+        <span style="overflow:hidden;text-overflow:ellipsis;">${m.name}</span>
+      </div>`;
+
       rowHtml += `<div class="gantt-row">`;
 
-      for (const bar of row.bars) {
-        if (!bar.startMs) continue;
-        const lPx = Math.round(px(bar.startMs, _view));
-        const rPx = Math.round(px(bar.endMs, _view));
-        if (rPx <= 0 || lPx >= totPx) continue;
+      const lPx = Math.round(px(m.startMs, _view));
+      const rPx = Math.round(px(m.endMs,   _view));
+      if (!(rPx <= 0 || lPx >= totPx)) {
         const left  = Math.max(0, lPx);
         const width = Math.max(4, Math.min(totPx, rPx) - left);
-        rowHtml += `<div class="gantt-bar ${cls}${bar.future ? ' gantt-future' : ''}"
-          style="left:${left}px;width:${width}px;"
-          title="${bar.name}${bar.future ? ' (upcoming)' : ''}"
-          onclick="openProfile(${bar.crewId})">
-          <span class="gantt-bar-name">${bar.name}</span>
+        rowHtml += `<div class="gantt-bar${m.future ? ' gantt-future' : ''}"
+          style="left:${left}px;width:${width}px;background:${col}b8;border:0.5px solid ${col};"
+          title="${m.name} · ${m.abbr}${m.future ? ' (upcoming)' : ''}"
+          onclick="openProfile(${m.crewId})">
+          <span class="gantt-bar-name">${m.name}</span>
         </div>`;
       }
 
@@ -247,7 +235,7 @@ function renderGantt() {
   }
 
   if (!rows.length) {
-    rowHtml += `<div class="gantt-empty">No crew assignments found in view window</div>`;
+    rowHtml += `<div class="gantt-empty">No onboard crew found</div>`;
   }
 
   rowHtml += `</div>`;
