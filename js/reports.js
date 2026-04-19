@@ -330,16 +330,8 @@ export function renderUnderParReport() {
   const SCO = window.SHIP_CODES_ORDERED || Object.keys(SD);
   const CLS2BADGE_L = {'Millennium':'badge-teal','Solstice':'badge-blue','Edge':'badge-purple'};
 
-  let totalGaps = 0;
+  let totalOpen = 0;
   let html = '';
-
-  html += `<div class="gap-head">
-    <div class="report-head-cell">Position</div>
-    <div class="report-head-cell">Ship</div>
-    <div class="report-head-cell" style="text-align:center;">Required</div>
-    <div class="report-head-cell" style="text-align:center;">Onboard</div>
-    <div class="report-head-cell" style="text-align:center;">Gap</div>
-  </div>`;
 
   SCO.forEach(sc => {
     const d = SD[sc];
@@ -356,42 +348,40 @@ export function renderUnderParReport() {
       const current = onboard[posId] || 0;
       if (current < required) {
         const pos = state.positions.find(p => p.id == posId);
-        gaps.push({ pos, required, current, gap: required - current });
+        gaps.push({ pos, needed: required - current });
       }
     });
     if (!gaps.length) return;
 
-    totalGaps += gaps.length;
+    const openSlots = gaps.reduce((s, g) => s + g.needed, 0);
+    totalOpen += openSlots;
     const cb = CLS2BADGE_L[d.cls] || 'badge-gray';
+
     html += `<div class="report-group">
       <div class="report-group-header">
         <span class="badge ${cb}" style="font-size:10px;">${sc}</span>
         <span style="font-size:13px;font-weight:500;">${d.name}</span>
-        <span style="font-size:11px;color:var(--text2);">${gaps.length} gap${gaps.length !== 1 ? 's' : ''}</span>
+        <span style="font-size:11px;color:var(--text2);">${openSlots} open slot${openSlots !== 1 ? 's' : ''}</span>
       </div>
-      ${gaps.map(g => `<div class="gap-row">
-        <div class="report-cell">
-          <span class="badge badge-gray" style="font-size:10px;">${g.pos ? g.pos.abbr : '—'}</span>
-          <span style="font-size:11px;margin-left:6px;">${g.pos ? g.pos.title : '—'}</span>
-        </div>
-        <div class="report-cell" style="font-size:11px;color:var(--text2);">${d.name}</div>
-        <div class="report-cell" style="text-align:center;font-size:12px;">${g.required}</div>
-        <div class="report-cell" style="text-align:center;font-size:12px;color:${g.current === 0 ? 'var(--red-t)' : 'var(--highlight)'};">${g.current}</div>
-        <div class="report-cell" style="text-align:center;">
-          <span class="badge badge-red" style="font-size:11px;">−${g.gap}</span>
-        </div>
-      </div>`).join('')}
+      <div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 2px 8px;">
+        ${gaps.map(g => `
+          <div style="display:flex;align-items:center;gap:6px;background:rgba(255,112,112,.08);border:.5px solid rgba(255,112,112,.25);border-radius:var(--r);padding:7px 12px;">
+            <span class="badge badge-gray" style="font-size:10px;">${g.pos ? g.pos.abbr : '—'}</span>
+            <span style="font-size:12px;">${g.pos ? g.pos.title : '—'}</span>
+            <span class="badge badge-red" style="font-size:11px;margin-left:4px;">Need ${g.needed}</span>
+          </div>`).join('')}
+      </div>
     </div>`;
   });
 
   const sub = document.getElementById('under-par-sub');
-  if (sub) sub.textContent = totalGaps
-    ? `${totalGaps} position gap${totalGaps !== 1 ? 's' : ''} across the fleet`
+  if (sub) sub.textContent = totalOpen
+    ? `${totalOpen} open slot${totalOpen !== 1 ? 's' : ''} across the fleet`
     : 'All ships are fully staffed';
 
-  document.getElementById('under-par-body').innerHTML = totalGaps
+  document.getElementById('under-par-body').innerHTML = totalOpen
     ? html
-    : `<div style="padding:2rem 0;text-align:center;color:var(--text2);">All ships are at or above par — no manning gaps detected.</div>`;
+    : `<div style="padding:2rem 0;text-align:center;color:var(--text2);">All ships are at or above par — no open positions.</div>`;
 }
 
 // ── REPLACEMENTS NEEDED REPORT ────────────────────────────────────────────────
