@@ -56,6 +56,7 @@ async function fetchSchedule() {
     const data = await r.json();
     Object.keys(data).forEach(sc => { if (!Array.isArray(data[sc])) data[sc] = [data[sc]]; });
     _depData = data;
+    window._depData = data;   // expose globally so port lookups in ship.js work
     return true;
   } catch(e) {
     console.error('fetchSchedule:', e);
@@ -498,6 +499,14 @@ function renderVoyagePanel() {
     if (todayRow) todayRow.closest('tr')?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
   }, 80);
 }
+
+// Prefetch at startup so port lookups are accurate on every page, not just after visiting Deployment
+fetch('./ship-schedule.json').then(r => r.ok ? r.json() : null).then(data => {
+  if (!data) return;
+  Object.keys(data).forEach(sc => { if (!Array.isArray(data[sc])) data[sc] = [data[sc]]; });
+  _depData = data;
+  window._depData = data;
+}).catch(() => {});
 
 window.initDeployment   = initDeployment;
 window.deployGoToday    = deployGoToday;
