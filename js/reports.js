@@ -345,14 +345,17 @@ export function renderUnderParReport() {
 
     const incoming = {};
     state.crew.filter(c => c.futureShip === sc && c.futureOn)
-      .forEach(c => { incoming[c.posId] = (incoming[c.posId] || 0) + 1; });
+      .forEach(c => {
+        if (!incoming[c.posId]) incoming[c.posId] = [];
+        incoming[c.posId].push(c);
+      });
 
     const gaps = [];
     Object.entries(req).forEach(([posId, required]) => {
       const current  = onboard[posId]  || 0;
       if (current < required) {
         const pos      = state.positions.find(p => p.id == posId);
-        const arriving = incoming[posId] || 0;
+        const arriving = (incoming[posId] || []).sort((a, b) => (a.futureOn || '').localeCompare(b.futureOn || ''));
         gaps.push({ pos, needed: required - current, arriving });
       }
     });
@@ -370,19 +373,21 @@ export function renderUnderParReport() {
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 2px 8px;">
         ${gaps.map(g => {
-          const stillNeeded = Math.max(0, g.needed - g.arriving);
-          const covered     = Math.min(g.arriving, g.needed);
+          const stillNeeded = Math.max(0, g.needed - g.arriving.length);
           const bg  = stillNeeded > 0 ? 'rgba(255,112,112,.08)'  : 'rgba(77,212,160,.07)';
           const bdr = stillNeeded > 0 ? 'rgba(255,112,112,.25)'  : 'rgba(77,212,160,.25)';
-          return `<div style="display:flex;align-items:center;gap:6px;background:${bg};border:.5px solid ${bdr};border-radius:var(--r);padding:7px 12px;">
-            <span class="badge badge-gray" style="font-size:10px;">${g.pos ? g.pos.abbr : '—'}</span>
-            <span style="font-size:12px;">${g.pos ? g.pos.title : '—'}</span>
-            ${stillNeeded > 0
-              ? `<span class="badge badge-red"   style="font-size:11px;margin-left:4px;">Need ${stillNeeded}</span>`
-              : `<span class="badge badge-green" style="font-size:11px;margin-left:4px;">Covered</span>`}
-            ${covered > 0
-              ? `<span style="font-size:10px;color:var(--blue-t);">↑ ${covered} incoming</span>`
-              : ''}
+          const incomingHtml = g.arriving.map(ic =>
+            `<div style="font-size:10px;color:var(--blue-t);white-space:nowrap;">↑ ${crewLink(ic.name, ic.id)} <span style="color:var(--text2);">${ic.futureOn}</span></div>`
+          ).join('');
+          return `<div style="background:${bg};border:.5px solid ${bdr};border-radius:var(--r);padding:7px 12px;min-width:200px;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:${g.arriving.length ? '5px' : '0'};">
+              <span class="badge badge-gray" style="font-size:10px;">${g.pos ? g.pos.abbr : '—'}</span>
+              <span style="font-size:12px;">${g.pos ? g.pos.title : '—'}</span>
+              ${stillNeeded > 0
+                ? `<span class="badge badge-red"   style="font-size:11px;margin-left:auto;">Need ${stillNeeded}</span>`
+                : `<span class="badge badge-green" style="font-size:11px;margin-left:auto;">Covered</span>`}
+            </div>
+            ${incomingHtml}
           </div>`;
         }).join('')}
       </div>
