@@ -179,6 +179,19 @@
 /* emergency contact card */
 .prof-ec-card{background:rgba(255,107,122,.06);border:.5px solid rgba(255,107,122,.2);border-radius:var(--r);padding:12px 14px;}
 
+/* notes / comment log */
+.prof-comment{background:rgba(255,255,255,.04);border:.5px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;}
+.prof-comment-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px;font-weight:600;color:var(--highlight);}
+.prof-comment-meta .cm-date{color:var(--text2);font-weight:400;}
+.prof-comment-text{font-size:12px;color:#ddd;line-height:1.55;white-space:pre-wrap;}
+.prof-notes-input{width:100%;background:rgba(255,255,255,.05);border:.5px solid var(--border2);border-radius:var(--r);color:#fff;font-size:13px;font-family:inherit;padding:9px 12px;resize:vertical;min-height:80px;outline:none;transition:border-color .15s;}
+.prof-notes-input:focus{border-color:var(--highlight);}
+.prof-notes-input::placeholder{color:var(--border2);}
+[data-theme="light"] .prof-comment{background:#f5f7fc;border-color:rgba(0,0,0,.1);}
+[data-theme="light"] .prof-comment-text{color:var(--text);}
+[data-theme="light"] .prof-notes-input{background:#fff;border-color:rgba(0,0,0,.2);color:var(--text);}
+[data-theme="light"] .prof-notes-input::placeholder{color:rgba(0,0,0,.35);}
+
 /* ── LIGHT MODE ── */
 [data-theme="light"] .co-view-toggle{background:#f1f4fa;border-color:rgba(0,0,0,.14);}
 [data-theme="light"] .co-vbtn.active{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12);border:.5px solid rgba(0,0,0,.14);}

@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { classBadge, statusBadge, showToast } from './utils.js';
 import { upsertCrew, dbDeleteCrew } from './db.js';
 import { renderCrew } from './crew.js';
+import { getSetting } from './settings.js';
 
 let _profId  = null;
 let _profTab = 'overview';
@@ -107,6 +108,7 @@ function renderProfileBody() {
   else if (_profTab === 'history')    body.innerHTML = renderProfHistory(c);
   else if (_profTab === 'skills')     body.innerHTML = renderProfSkills(c);
   else if (_profTab === 'emergency')  body.innerHTML = renderProfEmergency(c);
+  else if (_profTab === 'notes')      body.innerHTML = renderProfNotes(c);
   document.querySelectorAll('.prof-star').forEach(s => {
     s.onclick = () => {
       const rating = parseInt(s.dataset.val);
@@ -355,6 +357,59 @@ function renderProfEmergency(c) {
   </div>`;
 }
 
+function renderProfNotes(c) {
+  const comments = (c.comments || []).slice().sort((a, b) => b.id - a.id);
+  return `
+  <div class="prof-section">
+    <div class="prof-section-title">Add note</div>
+    <textarea class="prof-notes-input" id="pf-new-comment" placeholder="Add a scheduling note…"></textarea>
+    <div style="margin-top:8px;">
+      <button class="btn btn-sm btn-primary" onclick="addProfileComment()">+ Save note</button>
+    </div>
+  </div>
+  <div class="prof-section">
+    <div class="prof-section-title">Notes log ${comments.length ? `<span style="font-size:11px;color:var(--text2);font-weight:400;text-transform:none;letter-spacing:0;">(${comments.length})</span>` : ''}</div>
+    ${comments.length ? comments.map(cm => `
+      <div class="prof-comment">
+        <div class="prof-comment-meta">
+          <span>${esc(cm.author || 'Scheduler')}</span>
+          <span class="cm-date">${cm.date}${cm.time ? ' ' + cm.time : ''}</span>
+          <button onclick="deleteProfileComment(${cm.id})" style="margin-left:auto;background:none;border:none;color:var(--text2);cursor:pointer;font-size:11px;padding:0;line-height:1;" title="Delete note">✕</button>
+        </div>
+        <div class="prof-comment-text">${esc(cm.text)}</div>
+      </div>`).join('') : `<p style="font-size:12px;color:var(--text2);margin:0;">No notes yet.</p>`}
+  </div>`;
+}
+
+export function addProfileComment() {
+  const c = state.crew.find(x => x.id === _profId);
+  if (!c) return;
+  const textarea = document.getElementById('pf-new-comment');
+  const text = textarea?.value.trim();
+  if (!text) { showToast('Enter a note first'); return; }
+  if (!c.comments) c.comments = [];
+  const now = new Date();
+  const author = getSetting('schedulerName') || 'Scheduler';
+  c.comments.push({
+    id: Date.now(),
+    date: now.toISOString().slice(0, 10),
+    time: now.toTimeString().slice(0, 5),
+    author,
+    text,
+  });
+  upsertCrew(c);
+  renderProfileBody();
+  showToast('Note saved');
+}
+
+export function deleteProfileComment(id) {
+  const c = state.crew.find(x => x.id === _profId);
+  if (!c) return;
+  c.comments = (c.comments || []).filter(cm => cm.id !== id);
+  upsertCrew(c);
+  renderProfileBody();
+}
+
 export function setProfSkill(key, val) {
   const c = state.crew.find(x => x.id === _profId);
   if (!c) return;
@@ -454,14 +509,16 @@ export function deleteCrewFromProfile() {
   dbDeleteCrew(_profId);
 }
 
-window.openProfile         = openProfile;
-window.closeProfile        = closeProfile;
-window.switchProfileTab    = switchProfileTab;
-window.saveProfile         = saveProfile;
+window.openProfile           = openProfile;
+window.closeProfile          = closeProfile;
+window.switchProfileTab      = switchProfileTab;
+window.saveProfile           = saveProfile;
 window.deleteCrewFromProfile = deleteCrewFromProfile;
-window.setProfSkill        = setProfSkill;
-window.toggleProfTag       = toggleProfTag;
-window.removeProfCert      = removeProfCert;
-window.addProfCert         = addProfCert;
-window.confirmAddProfCert  = confirmAddProfCert;
-window.addHistoryEntry     = addHistoryEntry;
+window.setProfSkill          = setProfSkill;
+window.toggleProfTag         = toggleProfTag;
+window.removeProfCert        = removeProfCert;
+window.addProfCert           = addProfCert;
+window.confirmAddProfCert    = confirmAddProfCert;
+window.addHistoryEntry       = addHistoryEntry;
+window.addProfileComment     = addProfileComment;
+window.deleteProfileComment  = deleteProfileComment;

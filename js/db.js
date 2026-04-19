@@ -211,7 +211,7 @@ function toDbCrew(c) {
     ec_name: c.ecName || '', ec_rel: c.ecRel || '',
     ec_phone: c.ecPhone || '', ec_email: c.ecEmail || '', ec_addr: c.ecAddr || '',
     // skills & profile
-    training: c.training || '', rating: c.rating || 0, skills: (() => { const s = { ...(c.skills || {}) }; if (c.tempAbbr && c.tempPosStart) { s._tempPromo = { posId: c.tempPosId, abbr: c.tempAbbr, start: c.tempPosStart, end: c.tempPosEnd || '' }; } else { delete s._tempPromo; } return s; })(),
+    training: c.training || '', rating: c.rating || 0, skills: (() => { const s = { ...(c.skills || {}) }; if (c.tempAbbr && c.tempPosStart) { s._tempPromo = { posId: c.tempPosId, abbr: c.tempAbbr, start: c.tempPosStart, end: c.tempPosEnd || '' }; } else { delete s._tempPromo; } if (c.comments?.length) { s._comments = c.comments; } else { delete s._comments; } return s; })(),
     // import / roster data
     abbr: c.abbr || '', ship_code: c.shipCode || c.recentShipCode || '',
     tenure: c.tenure || 0, category: c.category || '',
@@ -242,11 +242,12 @@ function fromDbCrew(r) {
     ecName: r.ec_name || '', ecRel: r.ec_rel || '',
     ecPhone: r.ec_phone || '', ecEmail: r.ec_email || '', ecAddr: r.ec_addr || '',
     // skills & profile
-    training: r.training || '', rating: r.rating || 0, skills: (() => { const s = { ...(r.skills || {}) }; delete s._tempPromo; return s; })(),
+    training: r.training || '', rating: r.rating || 0, skills: (() => { const s = { ...(r.skills || {}) }; delete s._tempPromo; delete s._comments; return s; })(),
     tempPosId: r.skills?._tempPromo?.posId || null,
     tempAbbr: r.skills?._tempPromo?.abbr || '',
     tempPosStart: r.skills?._tempPromo?.start || '',
     tempPosEnd: r.skills?._tempPromo?.end || '',
+    comments: r.skills?._comments || [],
     // import / roster data
     abbr: r.abbr || '', shipCode: r.ship_code || '', recentShipCode: r.ship_code || '',
     tenure: r.tenure || 0, category: r.category || '',
