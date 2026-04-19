@@ -149,7 +149,12 @@ function renderProfOverview(c) {
   <div class="prof-section">
     <div class="prof-section-title">Current assignment</div>
     <div class="prof-grid">
-      <div class="prof-field"><label>Position</label><div class="pf-val">${pos ? pos.title : '—'}</div></div>
+      <div class="prof-field editing"><label>Position</label>
+        <select id="pf-pos" style="width:100%;background:transparent;border:none;color:#fff;font-size:13px;font-family:inherit;outline:none;padding:0;">
+          <option value="">— Unassigned —</option>
+          ${state.positions.map(p => `<option value="${p.id}" ${p.id == c.posId ? 'selected' : ''}>${p.abbr} — ${p.title}</option>`).join('')}
+        </select>
+      </div>
       <div class="prof-field"><label>Ship</label><div class="pf-val">${ship ? ship.name : c.recentShipName || '—'}</div></div>
       <div class="prof-field"><label>Sign on</label><div class="pf-val ${!c.start?'muted':''}">${c.start||'—'}</div></div>
       <div class="prof-field"><label>Sign off</label><div class="pf-val ${!c.end?'muted':''}">${c.end||'—'}</div></div>
@@ -476,6 +481,15 @@ export function saveProfile() {
   if (!c) return;
   const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : null; };
   if (g('pf-name') !== null)          { c.name = g('pf-name') || c.name; }
+  const posEl = document.getElementById('pf-pos');
+  if (posEl) {
+    const newPosId = posEl.value ? parseInt(posEl.value) : null;
+    if (newPosId !== c.posId) {
+      c.posId = newPosId;
+      const pos = state.positions.find(p => p.id === newPosId);
+      c.abbr = pos?.abbr || '';
+    }
+  }
   if (g('pf-nat') !== null)           c.nat       = g('pf-nat');
   if (g('pf-email') !== null)         c.email     = g('pf-email');
   if (g('pf-airport') !== null)       c.airport   = g('pf-airport');
