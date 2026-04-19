@@ -139,17 +139,33 @@ export function switchShipTab(sc, tab) {
 export function deployPortOnDate(sc, dateStr) {
   if (!dateStr) return null;
 
-  // Try exact per-day data if uploaded
+  // Try per-day uploaded data first
   if (window._depData && window._depData[sc]) {
-    const row = window._depData[sc].find(r => r.date === dateStr);
-    if (row) {
-      if (row.dayType === 'S') return { port: 'At sea', city: 'At sea', country: '', dayType: 'S' };
-      const loc = parsePortLocation(row.portName);
-      return { port: loc.city, city: loc.city, country: loc.country, dayType: row.dayType };
+    const rows = window._depData[sc];
+    const exact = rows.find(r => r.date === dateStr);
+
+    // If exact date is a port call, use it
+    if (exact && exact.dayType !== 'S') {
+      const loc = parsePortLocation(exact.portName);
+      return { port: loc.city, city: loc.city, country: loc.country, dayType: exact.dayType };
+    }
+
+    // Exact date is at sea or missing — find nearest port day
+    const target   = new Date(dateStr).getTime();
+    const portRows = rows.filter(r => r.dayType !== 'S');
+    if (portRows.length) {
+      const nearest = portRows.reduce((best, r) => {
+        const d = Math.abs(new Date(r.date).getTime() - target);
+        return !best || d < Math.abs(new Date(best.date).getTime() - target) ? r : best;
+      }, null);
+      if (nearest) {
+        const loc = parsePortLocation(nearest.portName);
+        return { port: loc.city, city: loc.city, country: loc.country, dayType: nearest.dayType };
+      }
     }
   }
 
-  // Fall back to monthly SHIP_DEPLOYMENT data
+  // Fall back to monthly SHIP_DEPLOYMENT data (sea entries already filtered in getShipPortForDate)
   const monthly = getShipPortForDate(sc, dateStr);
   if (monthly) {
     const loc = parsePortLocation(monthly.port);

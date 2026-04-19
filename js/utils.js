@@ -23,14 +23,18 @@ export function getShipPortForDate(shipCode, dateStr) {
   const keys        = Object.keys(monthly).sort();
   if (!keys.length) return null;
 
-  // Pick the port whose position in the ordered list best matches the day within the month
+  // Pick the port whose position in the ordered list best matches the day within the month.
+  // Filters out at-sea / cruising entries — crew always board/depart at a port.
+  const SEA_RE = /\b(AT SEA|CRUISING|PASSAGE|SCENIC SAILING)\b/i;
   function pickPort(ports, ds) {
-    if (ports.length <= 1) return ports[0];
+    const actual = ports.filter(p => !SEA_RE.test(p));
+    const list   = actual.length ? actual : ports;
+    if (list.length <= 1) return list[0];
     const day = parseInt(ds.slice(8, 10), 10) || 1;
     const [y, mo] = ds.slice(0, 7).split('-').map(Number);
     const daysInMonth = new Date(y, mo, 0).getDate();
-    const idx = Math.min(ports.length - 1, Math.floor((day - 1) / daysInMonth * ports.length));
-    return ports[idx];
+    const idx = Math.min(list.length - 1, Math.floor((day - 1) / daysInMonth * list.length));
+    return list[idx];
   }
 
   // Exact match
