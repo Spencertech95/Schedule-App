@@ -54,10 +54,17 @@ function renderProfilePanel() {
   const initials = profInitials(c.name);
 
   const av = document.getElementById('prof-avatar');
-  av.textContent   = initials;
-  av.style.background = col + '22';
-  av.style.color      = col;
-  av.style.border     = `.5px solid ${col}55`;
+  if (c.photo) {
+    av.textContent = '';
+    av.style.background = `url(${c.photo}) center/cover`;
+    av.style.color  = 'transparent';
+    av.style.border = '.5px solid rgba(255,255,255,.15)';
+  } else {
+    av.textContent      = initials;
+    av.style.background = col + '22';
+    av.style.color      = col;
+    av.style.border     = `.5px solid ${col}55`;
+  }
 
   document.getElementById('prof-name').textContent = c.name;
   const SHIP_CLASS_MAP = window.SHIP_CLASS_MAP || {};
@@ -123,7 +130,11 @@ function renderProfOverview(c) {
   const ship = state.ships.find(s => s.id == c.shipId);
   const SHIP_DISPLAY = window.SHIP_DISPLAY || {};
   const fship = c.futureShip ? SHIP_DISPLAY[c.futureShip] : {name: c.futureName || '—'};
+  const photoBtn = c.photo
+    ? `<button class="btn btn-sm btn-danger" onclick="removeProfilePhoto()" style="font-size:10px;padding:2px 8px;">Remove photo</button>`
+    : `<button class="btn btn-sm" onclick="triggerPhotoUpload()" style="font-size:10px;padding:2px 8px;">📷 Upload photo</button>`;
   return `
+  <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem;">${photoBtn}</div>
   <div class="prof-section">
     <div class="prof-section-title">Personal details</div>
     <div class="prof-grid">
@@ -501,6 +512,46 @@ export function deleteCrewFromProfile() {
   dbDeleteCrew(_profId);
 }
 
+export function triggerPhotoUpload() {
+  document.getElementById('prof-photo-input')?.click();
+}
+
+export function uploadProfilePhoto(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 240;
+      const ratio  = Math.min(MAX / img.width, MAX / img.height, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      const c = state.crew.find(x => x.id === _profId);
+      if (!c) return;
+      c.photo = dataUrl;
+      upsertCrew(c);
+      renderProfilePanel();
+      showToast('Photo saved');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+export function removeProfilePhoto() {
+  const c = state.crew.find(x => x.id === _profId);
+  if (!c) return;
+  delete c.photo;
+  upsertCrew(c);
+  renderProfilePanel();
+  showToast('Photo removed');
+}
+
 window.openProfile           = openProfile;
 window.closeProfile          = closeProfile;
 window.switchProfileTab      = switchProfileTab;
@@ -514,3 +565,6 @@ window.confirmAddProfCert    = confirmAddProfCert;
 window.addHistoryEntry       = addHistoryEntry;
 window.addProfileComment     = addProfileComment;
 window.deleteProfileComment  = deleteProfileComment;
+window.triggerPhotoUpload    = triggerPhotoUpload;
+window.uploadProfilePhoto    = uploadProfilePhoto;
+window.removeProfilePhoto    = removeProfilePhoto;
