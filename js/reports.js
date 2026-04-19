@@ -343,12 +343,17 @@ export function renderUnderParReport() {
     state.crew.filter(c => (c.recentShipCode === sc || c.shipCode === sc) && c.status === 'Onboard')
       .forEach(c => { onboard[c.posId] = (onboard[c.posId] || 0) + 1; });
 
+    const incoming = {};
+    state.crew.filter(c => c.futureShip === sc && c.futureOn)
+      .forEach(c => { incoming[c.posId] = (incoming[c.posId] || 0) + 1; });
+
     const gaps = [];
     Object.entries(req).forEach(([posId, required]) => {
-      const current = onboard[posId] || 0;
+      const current  = onboard[posId]  || 0;
       if (current < required) {
-        const pos = state.positions.find(p => p.id == posId);
-        gaps.push({ pos, needed: required - current });
+        const pos      = state.positions.find(p => p.id == posId);
+        const arriving = incoming[posId] || 0;
+        gaps.push({ pos, needed: required - current, arriving });
       }
     });
     if (!gaps.length) return;
@@ -364,12 +369,22 @@ export function renderUnderParReport() {
         <span style="font-size:11px;color:var(--text2);">${openSlots} open slot${openSlots !== 1 ? 's' : ''}</span>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 2px 8px;">
-        ${gaps.map(g => `
-          <div style="display:flex;align-items:center;gap:6px;background:rgba(255,112,112,.08);border:.5px solid rgba(255,112,112,.25);border-radius:var(--r);padding:7px 12px;">
+        ${gaps.map(g => {
+          const stillNeeded = Math.max(0, g.needed - g.arriving);
+          const covered     = Math.min(g.arriving, g.needed);
+          const bg  = stillNeeded > 0 ? 'rgba(255,112,112,.08)'  : 'rgba(77,212,160,.07)';
+          const bdr = stillNeeded > 0 ? 'rgba(255,112,112,.25)'  : 'rgba(77,212,160,.25)';
+          return `<div style="display:flex;align-items:center;gap:6px;background:${bg};border:.5px solid ${bdr};border-radius:var(--r);padding:7px 12px;">
             <span class="badge badge-gray" style="font-size:10px;">${g.pos ? g.pos.abbr : '—'}</span>
             <span style="font-size:12px;">${g.pos ? g.pos.title : '—'}</span>
-            <span class="badge badge-red" style="font-size:11px;margin-left:4px;">Need ${g.needed}</span>
-          </div>`).join('')}
+            ${stillNeeded > 0
+              ? `<span class="badge badge-red"   style="font-size:11px;margin-left:4px;">Need ${stillNeeded}</span>`
+              : `<span class="badge badge-green" style="font-size:11px;margin-left:4px;">Covered</span>`}
+            ${covered > 0
+              ? `<span style="font-size:10px;color:var(--blue-t);">↑ ${covered} incoming</span>`
+              : ''}
+          </div>`;
+        }).join('')}
       </div>
     </div>`;
   });
