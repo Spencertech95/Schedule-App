@@ -47,21 +47,25 @@ function renderReportSummary() {
     if (c.passport && (new Date(c.passport)-now)/864e5 <= 90 && (new Date(c.passport)-now)/864e5 >= 0) nc++;
   });
 
-  // Under-par: count open slots (vacancy fillers needed) across all ships
+  // Under-par: count unfilled open slots (after accounting for vacancy fillers)
   const SD = window.SHIP_DISPLAY || {};
   let underParCount = 0;
   Object.entries(SD).forEach(([sc, d]) => {
     const req = state.shipManning[sc] || state.manning[d.cls] || {};
-    const onboard = {};
+    const onboardByPos = {};
     state.crew.filter(c => (c.recentShipCode === sc || c.shipCode === sc) && c.status === 'Onboard')
-      .forEach(c => { onboard[c.posId] = (onboard[c.posId] || 0) + 1; });
-    const incomingCounts = {};
+      .forEach(c => { if (!onboardByPos[c.posId]) onboardByPos[c.posId] = []; onboardByPos[c.posId].push(c); });
+    const incomingByPos = {};
     state.crew.filter(c => c.futureShip === sc && c.futureOn)
-      .forEach(c => { incomingCounts[c.posId] = (incomingCounts[c.posId] || 0) + 1; });
+      .forEach(c => { if (!incomingByPos[c.posId]) incomingByPos[c.posId] = []; incomingByPos[c.posId].push(c); });
     Object.entries(req).forEach(([posId, required]) => {
-      const current = onboard[posId] || 0;
+      const current = (onboardByPos[posId] || []).length;
       if (current < required) {
-        const vacancyFillers = Math.max(0, (incomingCounts[posId] || 0) - current);
+        const leaverDates = (onboardByPos[posId] || []).filter(c => c.end).map(c => c.end).sort();
+        const remaining = [...leaverDates];
+        const vacancyFillers = (incomingByPos[posId] || [])
+          .sort((a, b) => (a.futureOn || '').localeCompare(b.futureOn || ''))
+          .filter(ic => { const i = remaining.findIndex(e => e <= ic.futureOn); if (i >= 0) { remaining.splice(i, 1); return false; } return true; }).length;
         underParCount += Math.max(0, required - current - vacancyFillers);
       }
     });
@@ -346,25 +350,35 @@ export function renderUnderParReport() {
     const req = state.shipManning[sc] || state.manning[d.cls] || {};
     if (!Object.keys(req).length) return;
 
-    const onboard = {};
+    const onboardByPos = {};
     state.crew.filter(c => (c.recentShipCode === sc || c.shipCode === sc) && c.status === 'Onboard')
-      .forEach(c => { onboard[c.posId] = (onboard[c.posId] || 0) + 1; });
+      .forEach(c => { if (!onboardByPos[c.posId]) onboardByPos[c.posId] = []; onboardByPos[c.posId].push(c); });
 
-    const incoming = {};
+    const incomingByPos = {};
     state.crew.filter(c => c.futureShip === sc && c.futureOn)
-      .forEach(c => {
-        if (!incoming[c.posId]) incoming[c.posId] = [];
-        incoming[c.posId].push(c);
-      });
+      .forEach(c => { if (!incomingByPos[c.posId]) incomingByPos[c.posId] = []; incomingByPos[c.posId].push(c); });
 
     const gaps = [];
     Object.entries(req).forEach(([posId, required]) => {
-      const current  = onboard[posId]  || 0;
+      const current = (onboardByPos[posId] || []).length;
       if (current < required) {
-        const pos      = state.positions.find(p => p.id == posId);
-        const arriving = (incoming[posId] || []).sort((a, b) => (a.futureOn || '').localeCompare(b.futureOn || ''));
-        // Incoming beyond the current onboard count are filling vacancies, not replacing leavers
-        const vacancyFillers = arriving.slice(current);
+        const pos = state.positions.find(p => p.id == posId);
+
+        // Build a queue of sign-off dates for this position's onboard crew
+        const leaverDates = (onboardByPos[posId] || [])
+          .filter(c => c.end).map(c => c.end).sort();
+
+        // An incoming crew member is a vacancy filler if there is no leaver
+        // whose sign-off date falls before the incoming's sign-on date
+        const arriving = (incomingByPos[posId] || [])
+          .sort((a, b) => (a.futureOn || '').localeCompare(b.futureOn || ''));
+        const remaining = [...leaverDates];
+        const vacancyFillers = arriving.filter(ic => {
+          const idx = remaining.findIndex(end => end <= ic.futureOn);
+          if (idx >= 0) { remaining.splice(idx, 1); return false; } // matched a leaver
+          return true; // no leaver to replace — filling a vacancy
+        });
+
         gaps.push({ pos, needed: required - current, vacancyFillers });
       }
     });
