@@ -8,6 +8,7 @@ const SC2NAME_DEP = {ML:'Millennium',IN:'Infinity',SM:'Summit',CS:'Constellation
 /**
  * Returns the embarkation/debarkation info for a ship on a given date.
  * Tries exact month first, then nearest available month in either direction.
+ * Uses the day-of-month to pick the appropriate port from the ordered itinerary list.
  * Returns { port, region, allPorts } or null if no data found.
  */
 export function getShipPortForDate(shipCode, dateStr) {
@@ -22,10 +23,20 @@ export function getShipPortForDate(shipCode, dateStr) {
   const keys        = Object.keys(monthly).sort();
   if (!keys.length) return null;
 
+  // Pick the port whose position in the ordered list best matches the day within the month
+  function pickPort(ports, ds) {
+    if (ports.length <= 1) return ports[0];
+    const day = parseInt(ds.slice(8, 10), 10) || 1;
+    const [y, mo] = ds.slice(0, 7).split('-').map(Number);
+    const daysInMonth = new Date(y, mo, 0).getDate();
+    const idx = Math.min(ports.length - 1, Math.floor((day - 1) / daysInMonth * ports.length));
+    return ports[idx];
+  }
+
   // Exact match
   if (monthly[targetMonth]?.ports?.length) {
     const e = monthly[targetMonth];
-    return { port: e.ports[0], region: e.region, allPorts: e.ports };
+    return { port: pickPort(e.ports, dateStr), region: e.region, allPorts: e.ports };
   }
 
   // Nearest available month (either direction)
@@ -37,7 +48,7 @@ export function getShipPortForDate(shipCode, dateStr) {
 
   const e = nearest && monthly[nearest];
   if (!e?.ports?.length) return null;
-  return { port: e.ports[0], region: e.region, allPorts: e.ports };
+  return { port: pickPort(e.ports, dateStr), region: e.region, allPorts: e.ports };
 }
 
 export function showToast(msg, dur=2800) {
