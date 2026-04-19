@@ -7,8 +7,7 @@ const SC2NAME_DEP = {ML:'Millennium',IN:'Infinity',SM:'Summit',CS:'Constellation
 
 /**
  * Returns the embarkation/debarkation info for a ship on a given date.
- * Looks up the monthly itinerary entry for that date's month (or the next
- * available month if none exists for that exact month).
+ * Tries exact month first, then nearest available month in either direction.
  * Returns { port, region, allPorts } or null if no data found.
  */
 export function getShipPortForDate(shipCode, dateStr) {
@@ -20,13 +19,25 @@ export function getShipPortForDate(shipCode, dateStr) {
 
   const targetMonth = dateStr.slice(0, 7); // YYYY-MM
   const monthly     = deployment.monthly;
+  const keys        = Object.keys(monthly).sort();
+  if (!keys.length) return null;
 
-  // Try exact month, then walk forward to the nearest future month
-  const entry = monthly[targetMonth]
-    || monthly[Object.keys(monthly).sort().find(m => m >= targetMonth) || ''];
-  if (!entry || !entry.ports?.length) return null;
+  // Exact match
+  if (monthly[targetMonth]?.ports?.length) {
+    const e = monthly[targetMonth];
+    return { port: e.ports[0], region: e.region, allPorts: e.ports };
+  }
 
-  return { port: entry.ports[0], region: entry.region, allPorts: entry.ports };
+  // Nearest available month (either direction)
+  function ym(s) { const [y, m] = s.split('-').map(Number); return y * 12 + m; }
+  const tgt = ym(targetMonth);
+  const nearest = keys.reduce((best, k) =>
+    !best || Math.abs(ym(k) - tgt) < Math.abs(ym(best) - tgt) ? k : best
+  , null);
+
+  const e = nearest && monthly[nearest];
+  if (!e?.ports?.length) return null;
+  return { port: e.ports[0], region: e.region, allPorts: e.ports };
 }
 
 export function showToast(msg, dur=2800) {
