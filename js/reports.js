@@ -47,7 +47,7 @@ function renderReportSummary() {
     if (c.passport && (new Date(c.passport)-now)/864e5 <= 90 && (new Date(c.passport)-now)/864e5 >= 0) nc++;
   });
 
-  // Under-par: count position gaps across all ships
+  // Under-par: count open slots (vacancy fillers needed) across all ships
   const SD = window.SHIP_DISPLAY || {};
   let underParCount = 0;
   Object.entries(SD).forEach(([sc, d]) => {
@@ -55,8 +55,15 @@ function renderReportSummary() {
     const onboard = {};
     state.crew.filter(c => (c.recentShipCode === sc || c.shipCode === sc) && c.status === 'Onboard')
       .forEach(c => { onboard[c.posId] = (onboard[c.posId] || 0) + 1; });
+    const incomingCounts = {};
+    state.crew.filter(c => c.futureShip === sc && c.futureOn)
+      .forEach(c => { incomingCounts[c.posId] = (incomingCounts[c.posId] || 0) + 1; });
     Object.entries(req).forEach(([posId, required]) => {
-      if ((onboard[posId] || 0) < required) underParCount++;
+      const current = onboard[posId] || 0;
+      if (current < required) {
+        const vacancyFillers = Math.max(0, (incomingCounts[posId] || 0) - current);
+        underParCount += Math.max(0, required - current - vacancyFillers);
+      }
     });
   });
 
@@ -356,7 +363,9 @@ export function renderUnderParReport() {
       if (current < required) {
         const pos      = state.positions.find(p => p.id == posId);
         const arriving = (incoming[posId] || []).sort((a, b) => (a.futureOn || '').localeCompare(b.futureOn || ''));
-        gaps.push({ pos, needed: required - current, arriving });
+        // Incoming beyond the current onboard count are filling vacancies, not replacing leavers
+        const vacancyFillers = arriving.slice(current);
+        gaps.push({ pos, needed: required - current, vacancyFillers });
       }
     });
     if (!gaps.length) return;
@@ -373,10 +382,10 @@ export function renderUnderParReport() {
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 2px 8px;">
         ${gaps.map(g => {
-          const stillNeeded = Math.max(0, g.needed - g.arriving.length);
+          const stillNeeded = Math.max(0, g.needed - g.vacancyFillers.length);
           const bg  = stillNeeded > 0 ? 'rgba(255,112,112,.08)'  : 'rgba(77,212,160,.07)';
           const bdr = stillNeeded > 0 ? 'rgba(255,112,112,.25)'  : 'rgba(77,212,160,.25)';
-          const incomingHtml = g.arriving.map(ic =>
+          const incomingHtml = g.vacancyFillers.map(ic =>
             `<div style="font-size:10px;color:var(--blue-t);white-space:nowrap;">↑ ${crewLink(ic.name, ic.id)} <span style="color:var(--text2);">${ic.futureOn}</span></div>`
           ).join('');
           return `<div style="background:${bg};border:.5px solid ${bdr};border-radius:var(--r);padding:7px 12px;min-width:200px;">
@@ -386,6 +395,7 @@ export function renderUnderParReport() {
               ${stillNeeded > 0
                 ? `<span class="badge badge-red"   style="font-size:11px;margin-left:auto;">Need ${stillNeeded}</span>`
                 : `<span class="badge badge-green" style="font-size:11px;margin-left:auto;">Covered</span>`}
+
             </div>
             ${incomingHtml}
           </div>`;
