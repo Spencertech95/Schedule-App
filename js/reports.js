@@ -403,7 +403,7 @@ export function renderUnderParReport() {
             `<div style="font-size:10px;color:var(--blue-t);white-space:nowrap;">↑ ${crewLink(ic.name, ic.id)} <span style="color:var(--text2);">${ic.futureOn}</span></div>`
           ).join('');
           return `<div style="background:${bg};border:.5px solid ${bdr};border-radius:var(--r);padding:7px 12px;min-width:200px;">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:${g.arriving.length ? '5px' : '0'};">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:${g.vacancyFillers.length ? '5px' : '0'};">
               <span class="badge badge-gray" style="font-size:10px;">${g.pos ? g.pos.abbr : '—'}</span>
               <span style="font-size:12px;">${g.pos ? g.pos.title : '—'}</span>
               ${stillNeeded > 0
