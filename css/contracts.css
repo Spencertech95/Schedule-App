@@ -114,7 +114,7 @@
 .profile-close{margin-left:auto;flex-shrink:0;}
 
 /* tab bar */
-.profile-tabs{display:flex;gap:2px;padding:.6rem 1.25rem 0;border-bottom:.5px solid var(--border);flex-shrink:0;overflow-x:auto;}
+.profile-tabs{display:flex;gap:2px;padding:.6rem 1.25rem 0;border-bottom:.5px solid var(--border);flex-shrink:0;}
 .profile-tab{padding:7px 14px;font-size:12px;font-weight:600;color:var(--text2);background:none;border:none;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s;white-space:nowrap;}
 .profile-tab.active{color:var(--highlight);border-bottom-color:var(--highlight);}
 .profile-tab:hover:not(.active){color:#fff;}
