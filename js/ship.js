@@ -309,7 +309,7 @@ export function renderManifest(sc, crew, now) {
       ? `<span style="font-size:10px;color:var(--text2);">Currently: <strong style="color:var(--blue-t);">↑ ${c.tempAbbr}</strong> from ${c.tempPosStart}${c.tempPosEnd ? ' → ' + c.tempPosEnd : ''}</span>`
       : '';
     return `<tr id="manifest-edit-row-${c.id}" style="display:none;background:rgba(255,255,255,.03);">
-      <td colspan="9" style="padding:10px 12px;">
+      <td colspan="20" style="padding:10px 12px;">
         <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;">
           Edit — ${c.name}${isIncoming ? ' (incoming)' : ''}
         </div>
@@ -389,6 +389,25 @@ export function renderManifest(sc, crew, now) {
     </td>`;
   }
 
+  // Build replacement lookup: abbr → incoming crew list
+  const incomingByAbbr = {};
+  incoming.forEach(ic => {
+    if (!incomingByAbbr[ic.abbr]) incomingByAbbr[ic.abbr] = [];
+    incomingByAbbr[ic.abbr].push(ic);
+  });
+
+  function replacementCell(c) {
+    const reps = incomingByAbbr[c.abbr] || [];
+    if (!reps.length) return `<td><span style="font-size:10px;font-weight:600;color:var(--red-t);white-space:nowrap;">✕ No replacement</span></td>`;
+    const first = reps[0];
+    const extra = reps.length > 1 ? `<div style="font-size:10px;color:var(--text2);">+${reps.length - 1} more</div>` : '';
+    return `<td>
+      <div style="font-size:11px;color:var(--green-t);font-weight:500;">${crewLink(first.name, first.id)}</div>
+      <div style="font-size:10px;color:var(--text2);">→ ${first.futureOn || '—'}</div>
+      ${extra}
+    </td>`;
+  }
+
   const currentRows = current.map(c => {
     return `<tr>
       <td><div class="manifest-name">${crewLink(c.name, c.id)}</div><div class="manifest-id">#${c.id}</div></td>
@@ -399,6 +418,7 @@ export function renderManifest(sc, crew, now) {
       ${portCell(c.end)}
       <td style="font-size:11px;color:var(--text2);">${c.airport || '—'}</td>
       <td style="font-size:11px;color:var(--text2);">${c.nat || '—'}</td>
+      ${replacementCell(c)}
       <td><button class="btn btn-sm" onclick="openManifestEdit(${c.id})" style="padding:2px 8px;font-size:10px;">Edit</button></td>
     </tr>${editRow(c, false)}`;
   }).join('');
@@ -417,7 +437,19 @@ export function renderManifest(sc, crew, now) {
     </tr>${editRow(c, true)}`;
   }).join('');
 
-  const th = `<thead><tr>
+  const thCurrent = `<thead><tr>
+    <th>Name / ID</th>
+    <th>Position</th>
+    <th>Sign on</th>
+    <th>Embark port</th>
+    <th>Sign off</th>
+    <th>Debark port</th>
+    <th>Gateway</th>
+    <th>Nationality</th>
+    <th>Replacement</th>
+    <th></th>
+  </tr></thead>`;
+  const thIncoming = `<thead><tr>
     <th>Name / ID</th>
     <th>Position</th>
     <th>Sign on</th>
@@ -444,8 +476,8 @@ export function renderManifest(sc, crew, now) {
       ${buildAddForm(sc, 'current')}
       <div style="overflow-x:auto;max-height:460px;overflow-y:auto;" id="manifest-current-wrap-${sc}">
         <table class="manifest-table" id="manifest-current-${sc}">
-          ${th}
-          <tbody>${currentRows || `<tr><td colspan="8" class="manifest-empty">No crew currently onboard.</td></tr>`}</tbody>
+          ${thCurrent}
+          <tbody>${currentRows || `<tr><td colspan="10" class="manifest-empty">No crew currently onboard.</td></tr>`}</tbody>
         </table>
       </div>
     </div>
@@ -464,8 +496,8 @@ export function renderManifest(sc, crew, now) {
       ${buildAddForm(sc, 'incoming')}
       <div style="overflow-x:auto;max-height:460px;overflow-y:auto;" id="manifest-incoming-wrap-${sc}">
         <table class="manifest-table" id="manifest-incoming-${sc}">
-          ${th}
-          <tbody>${incomingRows || `<tr><td colspan="8" class="manifest-empty">No incoming crew with confirmed future assignments.</td></tr>`}</tbody>
+          ${thIncoming}
+          <tbody>${incomingRows || `<tr><td colspan="9" class="manifest-empty">No incoming crew with confirmed future assignments.</td></tr>`}</tbody>
         </table>
       </div>
     </div>`;
