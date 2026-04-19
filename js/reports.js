@@ -22,14 +22,19 @@ export function initReports() {
 
 export function setReportWindow(w, el) {
   rptWindow = w;
-  document.querySelectorAll('.rw-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#page-reports .rw-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  const isCert = w === 'cert';
-  document.getElementById('report-sign-off-section').style.display = isCert ? 'none' : '';
-  document.getElementById('report-cert-section').style.display     = isCert ? '' : 'none';
-  if (isCert) renderCertReport();
-  else        renderReport();
+  document.getElementById('report-sign-off-section').style.display    = (w === 'cert' || w === 'underpar' || w === 'replacements') ? 'none' : '';
+  document.getElementById('report-cert-section').style.display        = w === 'cert'         ? '' : 'none';
+  document.getElementById('report-under-par-section').style.display   = w === 'underpar'     ? '' : 'none';
+  document.getElementById('report-replacements-section').style.display = w === 'replacements' ? '' : 'none';
+  if (w === 'cert')         renderCertReport();
+  else if (w === 'underpar')     renderUnderParReport();
+  else if (w === 'replacements') renderReplacementsReport();
+  else                      renderReport();
 }
+
+function reportTabs() { return document.querySelectorAll('#page-reports .rw-tab'); }
 
 function renderReportSummary() {
   const now = new Date();
@@ -41,11 +46,42 @@ function renderReportSummary() {
     if (c.medical  && (new Date(c.medical) -now)/864e5 <= 90 && (new Date(c.medical) -now)/864e5 >= 0) nc++;
     if (c.passport && (new Date(c.passport)-now)/864e5 <= 90 && (new Date(c.passport)-now)/864e5 >= 0) nc++;
   });
+
+  // Under-par: count position gaps across all ships
+  const SD = window.SHIP_DISPLAY || {};
+  let underParCount = 0;
+  Object.entries(SD).forEach(([sc, d]) => {
+    const req = state.shipManning[sc] || state.manning[d.cls] || {};
+    const onboard = {};
+    state.crew.filter(c => (c.recentShipCode === sc || c.shipCode === sc) && c.status === 'Onboard')
+      .forEach(c => { onboard[c.posId] = (onboard[c.posId] || 0) + 1; });
+    Object.entries(req).forEach(([posId, required]) => {
+      if ((onboard[posId] || 0) < required) underParCount++;
+    });
+  });
+
+  // Replacements needed: onboard crew with no incoming for their abbr
+  let replNeeded = 0;
+  Object.keys(SD).forEach(sc => {
+    const onboardByAbbr = {};
+    state.crew.filter(c => (c.recentShipCode === sc || c.shipCode === sc) && c.status === 'Onboard')
+      .forEach(c => { onboardByAbbr[c.abbr] = (onboardByAbbr[c.abbr] || 0) + 1; });
+    const incomingByAbbr = {};
+    state.crew.filter(c => c.futureShip === sc && c.futureOn)
+      .forEach(c => { incomingByAbbr[c.abbr] = (incomingByAbbr[c.abbr] || 0) + 1; });
+    Object.entries(onboardByAbbr).forEach(([abbr, count]) => {
+      replNeeded += Math.max(0, count - (incomingByAbbr[abbr] || 0));
+    });
+  });
+
+  const tabs = reportTabs();
   document.getElementById('report-summary-strip').innerHTML = `
-    <div class="rsum rsum-30"  onclick="setReportWindow(30,document.querySelectorAll('.rw-tab')[0])"><div class="rsum-label">Signing off — 30 days</div><div class="rsum-value">${n30}</div><div class="rsum-detail">Immediate relief required</div></div>
-    <div class="rsum rsum-60"  onclick="setReportWindow(60,document.querySelectorAll('.rw-tab')[1])"><div class="rsum-label">Signing off — 60 days</div><div class="rsum-value">${n60}</div><div class="rsum-detail">Pipeline planning window</div></div>
-    <div class="rsum rsum-90"  onclick="setReportWindow(90,document.querySelectorAll('.rw-tab')[2])"><div class="rsum-label">Signing off — 90 days</div><div class="rsum-value">${n90}</div><div class="rsum-detail">Forward visibility</div></div>
-    <div class="rsum rsum-cert" onclick="setReportWindow('cert',document.querySelectorAll('.rw-tab')[3])"><div class="rsum-label">Cert / doc alerts</div><div class="rsum-value">${nc}</div><div class="rsum-detail">Expiring within 90 days</div></div>`;
+    <div class="rsum rsum-30"          onclick="setReportWindow(30,reportTabs()[0])"><div class="rsum-label">Signing off — 30 days</div><div class="rsum-value">${n30}</div><div class="rsum-detail">Immediate relief required</div></div>
+    <div class="rsum rsum-60"          onclick="setReportWindow(60,reportTabs()[1])"><div class="rsum-label">Signing off — 60 days</div><div class="rsum-value">${n60}</div><div class="rsum-detail">Pipeline planning window</div></div>
+    <div class="rsum rsum-90"          onclick="setReportWindow(90,reportTabs()[2])"><div class="rsum-label">Signing off — 90 days</div><div class="rsum-value">${n90}</div><div class="rsum-detail">Forward visibility</div></div>
+    <div class="rsum rsum-cert"        onclick="setReportWindow('cert',reportTabs()[3])"><div class="rsum-label">Cert / doc alerts</div><div class="rsum-value">${nc}</div><div class="rsum-detail">Expiring within 90 days</div></div>
+    <div class="rsum rsum-underpar"    onclick="setReportWindow('underpar',reportTabs()[4])"><div class="rsum-label">Under par</div><div class="rsum-value">${underParCount}</div><div class="rsum-detail">Position gaps fleet-wide</div></div>
+    <div class="rsum rsum-replacements" onclick="setReportWindow('replacements',reportTabs()[5])"><div class="rsum-label">Replacements needed</div><div class="rsum-value">${replNeeded}</div><div class="rsum-detail">Crew with no incoming relief</div></div>`;
 }
 
 function renderReport() {
@@ -288,9 +324,155 @@ export function downloadE1Csv() {
   URL.revokeObjectURL(url);
 }
 
-window.setReportWindow    = setReportWindow;
-window.renderReport       = renderReport;
-window.renderCertReport   = renderCertReport;
+// ── UNDER PAR REPORT ─────────────────────────────────────────────────────────
+export function renderUnderParReport() {
+  const SD  = window.SHIP_DISPLAY || {};
+  const SCO = window.SHIP_CODES_ORDERED || Object.keys(SD);
+  const CLS2BADGE_L = {'Millennium':'badge-teal','Solstice':'badge-blue','Edge':'badge-purple'};
+
+  let totalGaps = 0;
+  let html = '';
+
+  html += `<div class="gap-head">
+    <div class="report-head-cell">Position</div>
+    <div class="report-head-cell">Ship</div>
+    <div class="report-head-cell" style="text-align:center;">Required</div>
+    <div class="report-head-cell" style="text-align:center;">Onboard</div>
+    <div class="report-head-cell" style="text-align:center;">Gap</div>
+  </div>`;
+
+  SCO.forEach(sc => {
+    const d = SD[sc];
+    if (!d) return;
+    const req = state.shipManning[sc] || state.manning[d.cls] || {};
+    if (!Object.keys(req).length) return;
+
+    const onboard = {};
+    state.crew.filter(c => (c.recentShipCode === sc || c.shipCode === sc) && c.status === 'Onboard')
+      .forEach(c => { onboard[c.posId] = (onboard[c.posId] || 0) + 1; });
+
+    const gaps = [];
+    Object.entries(req).forEach(([posId, required]) => {
+      const current = onboard[posId] || 0;
+      if (current < required) {
+        const pos = state.positions.find(p => p.id == posId);
+        gaps.push({ pos, required, current, gap: required - current });
+      }
+    });
+    if (!gaps.length) return;
+
+    totalGaps += gaps.length;
+    const cb = CLS2BADGE_L[d.cls] || 'badge-gray';
+    html += `<div class="report-group">
+      <div class="report-group-header">
+        <span class="badge ${cb}" style="font-size:10px;">${sc}</span>
+        <span style="font-size:13px;font-weight:500;">${d.name}</span>
+        <span style="font-size:11px;color:var(--text2);">${gaps.length} gap${gaps.length !== 1 ? 's' : ''}</span>
+      </div>
+      ${gaps.map(g => `<div class="gap-row">
+        <div class="report-cell">
+          <span class="badge badge-gray" style="font-size:10px;">${g.pos ? g.pos.abbr : '—'}</span>
+          <span style="font-size:11px;margin-left:6px;">${g.pos ? g.pos.title : '—'}</span>
+        </div>
+        <div class="report-cell" style="font-size:11px;color:var(--text2);">${d.name}</div>
+        <div class="report-cell" style="text-align:center;font-size:12px;">${g.required}</div>
+        <div class="report-cell" style="text-align:center;font-size:12px;color:${g.current === 0 ? 'var(--red-t)' : 'var(--highlight)'};">${g.current}</div>
+        <div class="report-cell" style="text-align:center;">
+          <span class="badge badge-red" style="font-size:11px;">−${g.gap}</span>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  });
+
+  const sub = document.getElementById('under-par-sub');
+  if (sub) sub.textContent = totalGaps
+    ? `${totalGaps} position gap${totalGaps !== 1 ? 's' : ''} across the fleet`
+    : 'All ships are fully staffed';
+
+  document.getElementById('under-par-body').innerHTML = totalGaps
+    ? html
+    : `<div style="padding:2rem 0;text-align:center;color:var(--text2);">All ships are at or above par — no manning gaps detected.</div>`;
+}
+
+// ── REPLACEMENTS NEEDED REPORT ────────────────────────────────────────────────
+export function renderReplacementsReport() {
+  const SD  = window.SHIP_DISPLAY || {};
+  const SCO = window.SHIP_CODES_ORDERED || Object.keys(SD);
+  const CLS2BADGE_L = {'Millennium':'badge-teal','Solstice':'badge-blue','Edge':'badge-purple'};
+  const now = new Date();
+
+  let totalNeeded = 0;
+  let html = '';
+
+  html += `<div class="repl-head">
+    <div class="report-head-cell">Crew member</div>
+    <div class="report-head-cell">Position</div>
+    <div class="report-head-cell">Sign-off date</div>
+    <div class="report-head-cell">Days left</div>
+  </div>`;
+
+  SCO.forEach(sc => {
+    const d = SD[sc];
+    if (!d) return;
+
+    const onboard = state.crew
+      .filter(c => (c.recentShipCode === sc || c.shipCode === sc) && c.status === 'Onboard')
+      .sort((a, b) => (a.end || '').localeCompare(b.end || ''));
+
+    const incomingByAbbr = {};
+    state.crew.filter(c => c.futureShip === sc && c.futureOn)
+      .forEach(c => { incomingByAbbr[c.abbr] = (incomingByAbbr[c.abbr] || 0) + 1; });
+
+    // For each abbr, the onboard crew with earliest sign-off up to the incoming count are "covered"
+    const coveredCount = {};
+    const exposed = onboard.filter(c => {
+      coveredCount[c.abbr] = coveredCount[c.abbr] || 0;
+      const avail = incomingByAbbr[c.abbr] || 0;
+      if (coveredCount[c.abbr] < avail) { coveredCount[c.abbr]++; return false; }
+      return true;
+    });
+
+    if (!exposed.length) return;
+
+    totalNeeded += exposed.length;
+    const cb = CLS2BADGE_L[d.cls] || 'badge-gray';
+    const urgBadge = days => days === null ? '' : days < 0 ? 'badge-red' : days <= 30 ? 'badge-red' : days <= 60 ? 'badge-amber' : 'badge-blue';
+
+    html += `<div class="report-group">
+      <div class="report-group-header">
+        <span class="badge ${cb}" style="font-size:10px;">${sc}</span>
+        <span style="font-size:13px;font-weight:500;">${d.name}</span>
+        <span style="font-size:11px;color:var(--text2);">${exposed.length} crew need${exposed.length === 1 ? 's' : ''} a replacement</span>
+      </div>
+      ${exposed.map(c => {
+        const pos  = state.positions.find(p => p.id == c.posId);
+        const days = c.end ? Math.round((new Date(c.end) - now) / 864e5) : null;
+        return `<div class="repl-row">
+          <div class="report-cell">${crewLink(c.name, c.id)} <span style="font-size:10px;color:var(--text2);">${c.nat || ''}</span></div>
+          <div class="report-cell"><span class="badge badge-gray" style="font-size:10px;">${pos ? pos.abbr : '—'}</span></div>
+          <div class="report-cell" style="font-size:12px;">${c.end || '—'}</div>
+          <div class="report-cell">${days !== null ? `<span class="badge ${urgBadge(days)}" style="font-size:10px;">${days < 0 ? 'Overdue' : days + 'd'}</span>` : '—'}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+
+  const sub = document.getElementById('replacements-sub');
+  if (sub) sub.textContent = totalNeeded
+    ? `${totalNeeded} crew member${totalNeeded !== 1 ? 's' : ''} onboard with no confirmed incoming replacement`
+    : 'All onboard crew have replacements confirmed';
+
+  document.getElementById('replacements-body').innerHTML = totalNeeded
+    ? html
+    : `<div style="padding:2rem 0;text-align:center;color:var(--text2);">All onboard crew have incoming replacements confirmed.</div>`;
+}
+
+window.setReportWindow         = setReportWindow;
+window.renderReport            = renderReport;
+window.renderCertReport        = renderCertReport;
+window.renderUnderParReport    = renderUnderParReport;
+window.renderReplacementsReport = renderReplacementsReport;
+window.reportTabs              = reportTabs;
 window.renderE1Report     = renderE1Report;
 window.e1UpdateConfirmBtn = e1UpdateConfirmBtn;
 window.confirmE1Upload    = confirmE1Upload;

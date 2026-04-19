@@ -1,7 +1,7 @@
 /* reports.css — sign-off reports and cert alerts */
 
 /* ── REPORTS ── */
-.report-summary-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
+.report-summary-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:1.25rem;}
 .rsum{border-radius:var(--r);padding:.85rem 1rem;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:opacity .15s;}
 .rsum:hover{opacity:.85;}
 .rsum-label{font-size:11px;font-weight:500;color:var(--text2);}
@@ -11,6 +11,20 @@
 .rsum-60{background:rgba(232,116,53,.12);border:.5px solid var(--highlight);} .rsum-60 .rsum-value{color:var(--highlight);}
 .rsum-90{background:rgba(41,155,225,.12);border:.5px solid var(--blue-t);} .rsum-90 .rsum-value{color:var(--blue-t);}
 .rsum-cert{background:rgba(164,164,167,.10);border:.5px solid var(--gray-t);} .rsum-cert .rsum-value{color:var(--gray-t);}
+.rsum-underpar{background:rgba(246,166,35,.10);border:.5px solid #f6a623;} .rsum-underpar .rsum-value{color:#f6a623;}
+.rsum-replacements{background:rgba(255,107,122,.12);border:.5px solid var(--red-t);} .rsum-replacements .rsum-value{color:var(--red-t);}
+.gap-row{display:grid;grid-template-columns:2fr 1fr 60px 60px 60px;border-bottom:.5px solid var(--border);align-items:center;}
+.gap-row:last-child{border-bottom:none;}
+.gap-row:hover{background:rgba(255,255,255,.05);}
+.gap-head{display:grid;grid-template-columns:2fr 1fr 60px 60px 60px;background:rgba(255,255,255,.05);border-radius:var(--r);margin-bottom:4px;}
+.repl-row{display:grid;grid-template-columns:2fr 1fr 1fr 80px;border-bottom:.5px solid var(--border);align-items:center;}
+.repl-row:last-child{border-bottom:none;}
+.repl-row:hover{background:rgba(255,255,255,.05);}
+.repl-head{display:grid;grid-template-columns:2fr 1fr 1fr 80px;background:rgba(255,255,255,.05);border-radius:var(--r);margin-bottom:4px;}
+[data-theme="light"] .gap-row{border-bottom-color:rgba(0,0,0,.08);}
+[data-theme="light"] .gap-head{background:#f1f4fa;}
+[data-theme="light"] .repl-row{border-bottom-color:rgba(0,0,0,.08);}
+[data-theme="light"] .repl-head{background:#f1f4fa;}
 .report-window-tabs{display:flex;gap:3px;margin-bottom:1.25rem;}
 .rw-tab{padding:5px 14px;font-size:12px;font-weight:500;border-radius:var(--r);cursor:pointer;border:.5px solid var(--border);background:rgba(255,255,255,.07);color:var(--text2);transition:all .15s;}
 .rw-tab.active{background:var(--highlight-grad);color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(255,127,69,.3);}

@@ -583,6 +583,8 @@
     <button class="rw-tab" onclick="setReportWindow(60,this)">Next 60 days</button>
     <button class="rw-tab" onclick="setReportWindow(90,this)">Next 90 days</button>
     <button class="rw-tab" onclick="setReportWindow('cert',this)">Cert &amp; doc alerts</button>
+    <button class="rw-tab" onclick="setReportWindow('underpar',this)">Under par</button>
+    <button class="rw-tab" onclick="setReportWindow('replacements',this)">Replacements needed</button>
   </div>
   <div id="report-sign-off-section">
     <div class="card" style="padding:1rem 1.25rem;">
@@ -605,6 +607,24 @@
       </div>
       <div class="cert-head"><div class="report-head-cell">Crew member</div><div class="report-head-cell">Position</div><div class="report-head-cell">Ship</div><div class="report-head-cell">Alert type</div><div class="report-head-cell">Expiry</div></div>
       <div id="cert-body"></div>
+    </div>
+  </div>
+  <div id="report-under-par-section" style="display:none;">
+    <div class="card" style="padding:1rem 1.25rem;">
+      <div style="margin-bottom:1rem;">
+        <div class="card-title">Under par — fleet manning gaps</div>
+        <div class="card-sub" id="under-par-sub"></div>
+      </div>
+      <div id="under-par-body"></div>
+    </div>
+  </div>
+  <div id="report-replacements-section" style="display:none;">
+    <div class="card" style="padding:1rem 1.25rem;">
+      <div style="margin-bottom:1rem;">
+        <div class="card-title">Replacements needed</div>
+        <div class="card-sub" id="replacements-sub"></div>
+      </div>
+      <div id="replacements-body"></div>
     </div>
   </div>
 </div>
