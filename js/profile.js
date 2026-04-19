@@ -294,13 +294,6 @@ function renderProfSkills(c) {
       </div>`).join('')}
   </div>
   <div class="prof-section">
-    <div class="prof-section-title">Scheduler notes</div>
-    <div class="prof-field editing">
-      <label>Internal notes</label>
-      <textarea id="pf-notes" placeholder="Performance flags, preferences, extension eligibility, scheduling notes…" style="min-height:100px;">${esc(c.notes||'')}</textarea>
-    </div>
-  </div>
-  <div class="prof-section">
     <div class="prof-section-title">Tags &amp; flags</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       ${['High performer','Extension eligible','Flight risk','Medical restriction','Language barrier','Leadership candidate','New joiner','VIP crew'].map(tag=>{
@@ -484,7 +477,6 @@ export function saveProfile() {
   if (g('pf-seamanbook') !== null)    c.seamanBook    = g('pf-seamanbook');
   if (g('pf-seamanbookexp') !== null) c.seamanBookExp = g('pf-seamanbookexp');
   if (g('pf-training') !== null)      c.training  = g('pf-training');
-  if (g('pf-notes') !== null)         c.notes     = g('pf-notes');
   if (g('pf-ec-name') !== null)       c.ecName    = g('pf-ec-name');
   if (g('pf-ec-rel') !== null)        c.ecRel     = g('pf-ec-rel');
   if (g('pf-ec-phone') !== null)      c.ecPhone   = g('pf-ec-phone');
