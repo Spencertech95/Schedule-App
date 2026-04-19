@@ -75,7 +75,7 @@ export function renderShipPage(sc) {
   const crew = state.crew.filter(c => c.recentShipCode === sc || c.shipCode === sc);
   const onboard = crew.filter(c => c.status === 'Onboard');
   const offboard = crew.filter(c => c.status === 'Offboard');
-  const withFuture = crew.filter(c => c.futureOn && c.futureShip === sc);
+  const allIncoming = state.crew.filter(c => c.status !== 'Onboard' && c.futureOn && c.futureShip === sc);
   const signing30 = crew.filter(c => {
     if (!c.end || c.status !== 'Onboard') return false;
     const dd = (new Date(c.end) - now) / 86400000;
@@ -85,7 +85,7 @@ export function renderShipPage(sc) {
   const kpiHtml = `
     <div class="ship-kpi"><div class="ship-kpi-label">Onboard</div><div class="ship-kpi-value ok">${onboard.length}</div></div>
     <div class="ship-kpi"><div class="ship-kpi-label">Offboard</div><div class="ship-kpi-value warn">${offboard.length}</div></div>
-    <div class="ship-kpi"><div class="ship-kpi-label">Returning to ship</div><div class="ship-kpi-value">${withFuture.length}</div></div>
+    <div class="ship-kpi"><div class="ship-kpi-label">Incoming</div><div class="ship-kpi-value">${allIncoming.length}</div></div>
     <div class="ship-kpi"><div class="ship-kpi-label">Signing off (30d)</div><div class="ship-kpi-value ${signing30.length > 0 ? 'alert' : ''}">${signing30.length}</div></div>
     <div class="ship-kpi"><div class="ship-kpi-label">Total roster</div><div class="ship-kpi-value">${crew.length}</div></div>`;
 
@@ -248,7 +248,7 @@ export function renderManifest(sc, crew, now) {
     return pa !== pb ? pa - pb : a.name.localeCompare(b.name);
   });
 
-  const incoming = crew.filter(c => c.status !== 'Onboard' && c.futureShip === sc && c.futureOn).sort((a, b) => {
+  const incoming = state.crew.filter(c => c.status !== 'Onboard' && c.futureShip === sc && c.futureOn).sort((a, b) => {
     if (a.futureOn !== b.futureOn) return a.futureOn.localeCompare(b.futureOn);
     const pa = POS_ORDER.indexOf(a.abbr), pb = POS_ORDER.indexOf(b.abbr);
     return pa !== pb ? pa - pb : a.name.localeCompare(b.name);
